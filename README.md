@@ -3,6 +3,8 @@
 ## Overview
 The **Fraud Detection System for Decentralized Finance (DeFi)** is a secure platform that enhances trust in DeFi ecosystems by identifying and preventing fraudulent activities. Combining blockchain analytics with AI-driven anomaly detection, the system provides real-time monitoring and flagging of suspicious transactions.
 
+> **Note**: BlockGuardian is currently under active development. Features and functionalities are being added and improved continuously to enhance user experience.
+
 ## Key Features
 - **Real-Time Transaction Monitoring**: Analyze DeFi transactions in real time to identify anomalies.
 - **AI-Powered Fraud Detection**: Use machine learning models to flag suspicious patterns.

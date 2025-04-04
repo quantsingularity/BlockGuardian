@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.pyc
+.env
+
+# Node
+node_modules/
+dist/
+
+# Machine Learning
+*.pkl
+*.joblib
+
+# IDE
+.vscode/
+.idea/

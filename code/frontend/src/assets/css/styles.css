@@ -1,45 +1,155 @@
+/* Global styles for BlockGuardian application */
+
+/* Import Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  padding: 0;
+  font-family: 'Poppins', 'Roboto', 'Helvetica', 'Arial', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #f5f5f5;
 }
 
+/* App container */
 .app-container {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
 }
 
+/* Content container */
 .content-container {
   flex: 1;
-  padding: 24px 0;
+  display: flex;
+  flex-direction: column;
 }
 
+/* Dashboard stats grid */
 .dashboard-stats {
   margin-bottom: 24px;
 }
 
-.transaction-card {
-  height: 100%;
-  transition: transform 0.3s ease;
-}
-
-.transaction-card:hover {
-  transform: translateY(-5px);
-}
-
+/* Risk indicators */
 .risk-high {
   color: #f44336;
+  font-weight: bold;
 }
 
 .risk-medium {
   color: #ff9800;
+  font-weight: bold;
 }
 
 .risk-low {
   color: #4caf50;
+  font-weight: bold;
+}
+
+/* Card hover effects */
+.hover-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hover-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 30px rgba(50, 50, 93, 0.1), 0 5px 15px rgba(0, 0, 0, 0.07);
+}
+
+/* Transaction card */
+.transaction-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.transaction-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 7px 14px rgba(50, 50, 93, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Animated components */
+.fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.slide-in-up {
+  animation: slideInUp 0.5s ease-in-out;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  .dashboard-stats {
+    margin-bottom: 16px;
+  }
+  
+  .content-container {
+    padding: 16px;
+  }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Dark mode adjustments */
+.dark-mode {
+  background-color: #121212;
+  color: #ffffff;
+}
+
+.dark-mode ::-webkit-scrollbar-track {
+  background: #333;
+}
+
+.dark-mode ::-webkit-scrollbar-thumb {
+  background: #666;
+}
+
+.dark-mode ::-webkit-scrollbar-thumb:hover {
+  background: #888;
 }

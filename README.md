@@ -142,6 +142,3 @@ npm start
 This project is licensed under the MIT License. See the `LICENSE` file for details.
 
 ---
-
-## Contact
-For queries, reach out to the project team at **support@defifraudsystem.com**.

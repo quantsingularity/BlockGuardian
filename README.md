@@ -80,7 +80,7 @@ The **Fraud Detection System for Decentralized Finance (DeFi)** is a secure plat
 ### **1. Clone Repository**
 ```bash
 git clone https://github.com/abrar2030/BlockGuardian.git
-cd DeFi-Fraud-Detection
+cd BlockGuardian
 ```
 
 ### **2. Install Backend Dependencies**

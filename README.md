@@ -4,7 +4,7 @@
 The **Fraud Detection System for Decentralized Finance (DeFi)** is a secure platform that enhances trust in DeFi ecosystems by identifying and preventing fraudulent activities. Combining blockchain analytics with AI-driven anomaly detection, the system provides real-time monitoring and flagging of suspicious transactions.
 
 <div align="center">
-  <img src="BlockGuardian.bmp" alt="Fraud Detection System for Decentralized Finance (DeFi)" width="100%">
+  <img src="docs/BlockGuardian.bmp" alt="Fraud Detection System for Decentralized Finance (DeFi)" width="100%">
 </div>
 
 > **Note**: BlockGuardian is currently under active development. Features and functionalities are being added and improved continuously to enhance user experience.

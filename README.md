@@ -42,7 +42,7 @@ Ensure you have the following installed on your system:
 
 1.  **Clone the repository (if applicable):**
     ```bash
-    # git clone <repository-url>
+    # git clone https://github.com/abrar2030/BlockGuardian
     # cd BlockGuardian
     ```
 

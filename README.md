@@ -129,13 +129,6 @@ This command will build the images for the services defined in `docker-compose.y
 -   **Kubernetes (`infrastructure/kubernetes/`):** Manifests for deploying the application to a Kubernetes cluster.
 -   **Terraform (`infrastructure/terraform/`):** Configurations for provisioning cloud infrastructure.
 
-## Contributing
-
-(Details on contributing guidelines, code style, pull request process would go here if this were an open project.)
-
 ## License
 
-(Specify project license, e.g., MIT, Apache 2.0. Assuming MIT for now.)
-
-This project is licensed under the MIT License - see the LICENSE file for details (if one is created).
-
+This project is licensed under the MIT License - see the LICENSE file for details.

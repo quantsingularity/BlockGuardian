@@ -183,3 +183,5 @@ secrets.yml
 *.pem
 *.key
 
+# Specific Files
+git-auto-commit.sh

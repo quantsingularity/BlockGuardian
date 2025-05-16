@@ -4,6 +4,12 @@
 
 BlockGuardian is a comprehensive platform aimed at enhancing security and providing analytical insights within the blockchain and decentralized finance (DeFi) space. It integrates backend services, smart contracts, data analysis capabilities, and user-facing frontends (web and mobile) to deliver a robust solution for users and administrators.
 
+<div align="center">
+  <img src="docs/BlockGuardian.bmp" alt="Fraud Detection System for Decentralized Finance (DeFi)" width="100%">
+</div>
+
+> **Note**: BlockGuardian is currently under active development. Features and functionalities are being added and improved continuously to enhance user experience.
+
 ## Project Structure
 
 The project is organized into the following main directories:

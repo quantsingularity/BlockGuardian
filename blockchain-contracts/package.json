@@ -1,0 +1,28 @@
+{
+  "name": "blockguardian-contracts",
+  "version": "1.0.0",
+  "description": "Smart contracts for BlockGuardian",
+  "main": "index.js",
+  "scripts": {
+    "test": "npx hardhat test",
+    "compile": "npx hardhat compile",
+    "deploy:local": "npx hardhat run scripts/deploy.js --network localhost",
+    "node": "npx hardhat node"
+  },
+  "keywords": [
+    "blockchain",
+    "solidity",
+    "hardhat",
+    "smart-contracts"
+  ],
+  "author": "BlockGuardian Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "hardhat": "^2.22.0"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5"
+  }
+}
+

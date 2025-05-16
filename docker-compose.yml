@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: blockguardian_backend
+    ports:
+      - "5001:5001"
+    volumes:
+      - ./backend:/app  # Mounts the backend code into the container for development
+    # environment:
+      # - FLASK_ENV=development # Or production
+      # - DATABASE_URL=your_database_url
+    networks:
+      - blockguardian_net
+
+  web_frontend:
+    build:
+      context: ./web-frontend
+      dockerfile: Dockerfile # Assuming a Dockerfile will be created for web-frontend
+    container_name: blockguardian_web_frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./web-frontend:/app
+      - /app/node_modules # Anonymous volume to prevent host node_modules from overwriting container's
+      - /app/.next # Persist .next folder across restarts for faster builds
+    depends_on:
+      - backend
+    networks:
+      - blockguardian_net
+    # environment:
+      # - NEXT_PUBLIC_API_URL=http://backend:5001/api
+
+  # Placeholder for a local blockchain node (e.g., Hardhat)
+  # hardhat_node:
+  #   build:
+  #     context: ./blockchain-contracts
+  #     # You might need a separate Dockerfile in blockchain-contracts to run `npx hardhat node`
+  #   container_name: blockguardian_hardhat_node
+  #   ports:
+  #     - "8545:8545"
+  #   networks:
+  #     - blockguardian_net
+
+networks:
+  blockguardian_net:
+    driver: bridge
+
+volumes:
+  # Define any named volumes if needed, e.g., for database persistence
+  # postgres_data:
+

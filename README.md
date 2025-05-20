@@ -10,6 +10,9 @@
 
 BlockGuardian is a comprehensive blockchain security and monitoring platform that helps organizations protect their blockchain assets, detect vulnerabilities, and ensure compliance with regulatory requirements.
 
+<div align="center">
+  <img src="docs/images/BlockGuardian_dashboard.bmp" alt="BlockGuardian Dashboard" width="80%">
+</div>
 > **Note**: This project is under active development. Features and functionalities are continuously being enhanced to improve security capabilities and user experience.
 
 ## Table of Contents

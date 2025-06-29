@@ -1,15 +1,166 @@
 ---
-# main.yml - Main playbook that includes all other playbooks
-- name: Configure web servers
+# Enhanced Main Playbook for Financial-Grade Infrastructure
+# This playbook implements comprehensive security hardening and compliance measures
+
+- name: Security Hardening and Compliance Setup
+  hosts: all
+  become: true
+  gather_facts: true
+  vars:
+    compliance_standards:
+      - PCI-DSS
+      - SOC2
+      - ISO27001
+    security_baseline: financial_grade
+    
+  pre_tasks:
+    - name: Verify system requirements
+      assert:
+        that:
+          - ansible_os_family == "RedHat" or ansible_os_family == "Debian"
+          - ansible_architecture == "x86_64"
+        fail_msg: "System does not meet minimum requirements for financial-grade deployment"
+        
+    - name: Create audit log entry for playbook execution
+      lineinfile:
+        path: /var/log/ansible-audit.log
+        line: "{{ ansible_date_time.iso8601 }} - Ansible playbook started by {{ ansible_user_id }} from {{ ansible_env.SSH_CLIENT.split()[0] | default('localhost') }}"
+        create: yes
+        mode: '0600'
+      tags: [audit]
+
+  roles:
+    - role: common
+      tags: [common, security, hardening]
+    - role: security_hardening
+      tags: [security, hardening, compliance]
+    - role: monitoring
+      tags: [monitoring, logging]
+    - role: compliance
+      tags: [compliance, audit]
+
+  post_tasks:
+    - name: Generate compliance report
+      template:
+        src: compliance_report.j2
+        dest: "/var/log/compliance-{{ ansible_date_time.date }}.json"
+        mode: '0600'
+      tags: [compliance, reporting]
+      
+    - name: Create audit log entry for playbook completion
+      lineinfile:
+        path: /var/log/ansible-audit.log
+        line: "{{ ansible_date_time.iso8601 }} - Ansible playbook completed successfully"
+        mode: '0600'
+      tags: [audit]
+
+- name: Configure Web Servers with Enhanced Security
   hosts: webservers
   become: true
+  gather_facts: true
+  vars:
+    web_security_level: maximum
+    enable_waf: true
+    ssl_only: true
+    
   roles:
-    - common
-    - webserver
+    - role: webserver
+      tags: [webserver, nginx, apache]
+    - role: ssl_certificates
+      tags: [ssl, certificates, encryption]
+    - role: web_security
+      tags: [security, waf, firewall]
+    - role: log_shipping
+      tags: [logging, monitoring]
 
-- name: Configure database servers
+- name: Configure Database Servers with Financial-Grade Security
   hosts: databases
   become: true
+  gather_facts: true
+  vars:
+    db_security_level: maximum
+    enable_encryption: true
+    audit_all_queries: true
+    
   roles:
-    - common
-    - database
+    - role: database
+      tags: [database, mysql, postgresql]
+    - role: database_security
+      tags: [security, encryption, audit]
+    - role: backup_encryption
+      tags: [backup, encryption]
+    - role: database_monitoring
+      tags: [monitoring, performance]
+
+- name: Configure Load Balancers
+  hosts: loadbalancers
+  become: true
+  gather_facts: true
+  vars:
+    lb_security_level: maximum
+    enable_ddos_protection: true
+    
+  roles:
+    - role: loadbalancer
+      tags: [loadbalancer, haproxy, nginx]
+    - role: ddos_protection
+      tags: [security, ddos]
+    - role: rate_limiting
+      tags: [security, rate_limit]
+
+- name: Configure Monitoring and Logging Infrastructure
+  hosts: monitoring
+  become: true
+  gather_facts: true
+  vars:
+    log_retention_days: 2555  # 7 years for financial compliance
+    enable_siem: true
+    
+  roles:
+    - role: log_aggregation
+      tags: [logging, elk, splunk]
+    - role: metrics_collection
+      tags: [monitoring, prometheus, grafana]
+    - role: alerting
+      tags: [alerting, notifications]
+    - role: siem_integration
+      tags: [siem, security]
+
+- name: Final Security Validation and Compliance Check
+  hosts: all
+  become: true
+  gather_facts: true
+  
+  tasks:
+    - name: Run security compliance scan
+      include_role:
+        name: compliance_scanner
+      tags: [compliance, validation]
+      
+    - name: Generate final security report
+      template:
+        src: security_report.j2
+        dest: "/var/log/security-report-{{ ansible_date_time.date }}.json"
+        mode: '0600'
+      tags: [reporting, security]
+      
+    - name: Verify all security controls are in place
+      include_role:
+        name: security_verification
+      tags: [verification, security]
+      
+    - name: Send completion notification
+      mail:
+        to: "{{ security_team_email | default('security@company.com') }}"
+        subject: "Infrastructure Security Hardening Completed - {{ inventory_hostname }}"
+        body: |
+          Security hardening playbook has been completed successfully on {{ inventory_hostname }}.
+          
+          Compliance Standards Applied: {{ compliance_standards | join(', ') }}
+          Security Baseline: {{ security_baseline }}
+          Execution Time: {{ ansible_date_time.iso8601 }}
+          
+          Please review the generated compliance and security reports.
+      when: send_notifications | default(false)
+      tags: [notification]
+

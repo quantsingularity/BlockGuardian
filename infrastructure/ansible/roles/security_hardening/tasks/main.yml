@@ -1,0 +1,258 @@
+---
+# Security Hardening Tasks for Financial-Grade Infrastructure
+# Implements comprehensive security controls for PCI DSS, SOC 2, and ISO 27001 compliance
+
+- name: Include OS-specific variables
+  include_vars: "{{ ansible_os_family }}.yml"
+  tags: [security, hardening]
+
+- name: Create security audit log
+  file:
+    path: /var/log/security-hardening.log
+    state: touch
+    mode: '0600'
+    owner: root
+    group: root
+  tags: [audit, logging]
+
+- name: Log security hardening start
+  lineinfile:
+    path: /var/log/security-hardening.log
+    line: "{{ ansible_date_time.iso8601 }} - Security hardening started on {{ inventory_hostname }}"
+  tags: [audit, logging]
+
+# System Updates and Package Management
+- name: Update all packages to latest version
+  package:
+    name: "*"
+    state: latest
+  register: package_updates
+  tags: [updates, security]
+
+- name: Install security packages
+  package:
+    name: "{{ security_packages }}"
+    state: present
+  tags: [packages, security]
+
+- name: Remove unnecessary packages
+  package:
+    name: "{{ unnecessary_packages }}"
+    state: absent
+  tags: [packages, security]
+
+# User and Access Management
+- name: Ensure root account is locked
+  user:
+    name: root
+    password_lock: yes
+  tags: [users, security]
+
+- name: Create security admin group
+  group:
+    name: secadmin
+    state: present
+  tags: [users, security]
+
+- name: Configure sudo with security restrictions
+  template:
+    src: sudoers_security.j2
+    dest: /etc/sudoers.d/security
+    mode: '0440'
+    validate: 'visudo -cf %s'
+  tags: [sudo, security]
+
+- name: Set password policy
+  template:
+    src: pwquality.conf.j2
+    dest: /etc/security/pwquality.conf
+    mode: '0644'
+  tags: [passwords, security]
+
+- name: Configure login definitions
+  template:
+    src: login.defs.j2
+    dest: /etc/login.defs
+    mode: '0644'
+  tags: [login, security]
+
+# SSH Hardening
+- name: Backup original SSH configuration
+  copy:
+    src: /etc/ssh/sshd_config
+    dest: /etc/ssh/sshd_config.backup
+    remote_src: yes
+    mode: '0600'
+  tags: [ssh, backup]
+
+- name: Configure secure SSH settings
+  template:
+    src: sshd_config.j2
+    dest: /etc/ssh/sshd_config
+    mode: '0600'
+    backup: yes
+  notify: restart sshd
+  tags: [ssh, security]
+
+- name: Generate new SSH host keys
+  command: ssh-keygen -A
+  when: regenerate_ssh_keys | default(false)
+  notify: restart sshd
+  tags: [ssh, keys]
+
+- name: Set proper permissions on SSH host keys
+  file:
+    path: "{{ item }}"
+    mode: '0600'
+    owner: root
+    group: root
+  with_fileglob:
+    - /etc/ssh/ssh_host_*_key
+  tags: [ssh, permissions]
+
+- name: Set proper permissions on SSH public keys
+  file:
+    path: "{{ item }}"
+    mode: '0644'
+    owner: root
+    group: root
+  with_fileglob:
+    - /etc/ssh/ssh_host_*_key.pub
+  tags: [ssh, permissions]
+
+# Firewall Configuration
+- name: Install and configure firewall
+  include_tasks: firewall_{{ ansible_os_family | lower }}.yml
+  tags: [firewall, security]
+
+# Kernel and System Hardening
+- name: Configure kernel security parameters
+  template:
+    src: sysctl_security.conf.j2
+    dest: /etc/sysctl.d/99-security.conf
+    mode: '0644'
+  notify: reload sysctl
+  tags: [kernel, security]
+
+- name: Configure system limits
+  template:
+    src: limits.conf.j2
+    dest: /etc/security/limits.d/99-security.conf
+    mode: '0644'
+  tags: [limits, security]
+
+- name: Disable unused filesystems
+  template:
+    src: blacklist_filesystems.conf.j2
+    dest: /etc/modprobe.d/blacklist-filesystems.conf
+    mode: '0644'
+  tags: [filesystems, security]
+
+# Audit System Configuration
+- name: Install and configure auditd
+  include_tasks: auditd.yml
+  tags: [audit, security]
+
+# File System Security
+- name: Set secure permissions on critical files
+  file:
+    path: "{{ item.path }}"
+    mode: "{{ item.mode }}"
+    owner: "{{ item.owner | default('root') }}"
+    group: "{{ item.group | default('root') }}"
+  loop: "{{ critical_files_permissions }}"
+  tags: [permissions, security]
+
+- name: Configure file integrity monitoring
+  include_tasks: file_integrity.yml
+  tags: [integrity, security]
+
+# Network Security
+- name: Configure network security settings
+  template:
+    src: network_security.conf.j2
+    dest: /etc/sysctl.d/10-network-security.conf
+    mode: '0644'
+  notify: reload sysctl
+  tags: [network, security]
+
+- name: Disable unused network protocols
+  template:
+    src: blacklist_protocols.conf.j2
+    dest: /etc/modprobe.d/blacklist-protocols.conf
+    mode: '0644'
+  tags: [network, security]
+
+# Service Hardening
+- name: Disable unnecessary services
+  service:
+    name: "{{ item }}"
+    state: stopped
+    enabled: no
+  loop: "{{ unnecessary_services }}"
+  ignore_errors: yes
+  tags: [services, security]
+
+- name: Configure secure service settings
+  include_tasks: service_hardening.yml
+  tags: [services, security]
+
+# Logging and Monitoring
+- name: Configure rsyslog for security logging
+  template:
+    src: rsyslog_security.conf.j2
+    dest: /etc/rsyslog.d/10-security.conf
+    mode: '0644'
+  notify: restart rsyslog
+  tags: [logging, security]
+
+- name: Configure log rotation for security logs
+  template:
+    src: logrotate_security.j2
+    dest: /etc/logrotate.d/security
+    mode: '0644'
+  tags: [logging, security]
+
+# Intrusion Detection
+- name: Install and configure fail2ban
+  include_tasks: fail2ban.yml
+  tags: [ids, security]
+
+- name: Install and configure AIDE
+  include_tasks: aide.yml
+  tags: [integrity, security]
+
+# Malware Protection
+- name: Install and configure ClamAV
+  include_tasks: clamav.yml
+  when: install_antivirus | default(true)
+  tags: [antivirus, security]
+
+# Time Synchronization
+- name: Configure secure time synchronization
+  include_tasks: time_sync.yml
+  tags: [time, security]
+
+# Compliance Checks
+- name: Run compliance validation
+  include_tasks: compliance_validation.yml
+  tags: [compliance, validation]
+
+# Final Security Verification
+- name: Verify security hardening
+  include_tasks: security_verification.yml
+  tags: [verification, security]
+
+- name: Log security hardening completion
+  lineinfile:
+    path: /var/log/security-hardening.log
+    line: "{{ ansible_date_time.iso8601 }} - Security hardening completed successfully on {{ inventory_hostname }}"
+  tags: [audit, logging]
+
+- name: Generate security hardening report
+  template:
+    src: hardening_report.j2
+    dest: "/var/log/security-hardening-report-{{ ansible_date_time.date }}.json"
+    mode: '0600'
+  tags: [reporting, security]
+

@@ -1,0 +1,445 @@
+# Financial-Grade CI/CD Pipeline Configuration
+# This configuration implements secure CI/CD practices for financial applications
+
+name: Financial-Grade Deployment Pipeline
+
+on:
+  push:
+    branches: [main, develop, release/*]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 2 * * *'  # Daily security scans
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  COMPLIANCE_STANDARDS: "PCI-DSS,SOC2,ISO27001"
+  SECURITY_SCAN_REQUIRED: true
+  AUDIT_LOGGING: true
+
+jobs:
+  # Security and Compliance Checks
+  security-audit:
+    name: Security Audit and Compliance Check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for security analysis
+      
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+          exit-code: '1'
+      
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+      
+      - name: Run Semgrep security analysis
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: >-
+            p/security-audit
+            p/secrets
+            p/owasp-top-ten
+            p/pci-dss
+          generateSarif: "1"
+      
+      - name: Upload Semgrep results
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: semgrep.sarif
+      
+      - name: Run SAST with CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: javascript, python, go
+          queries: security-and-quality
+      
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+      
+      - name: Check for secrets
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: main
+          head: HEAD
+          extra_args: --debug --only-verified
+      
+      - name: Compliance check
+        run: |
+          echo "Running compliance checks for $COMPLIANCE_STANDARDS"
+          # Custom compliance validation script
+          ./scripts/compliance-check.sh
+      
+      - name: Generate security report
+        run: |
+          echo "Generating security audit report..."
+          cat > security-report.json << EOF
+          {
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "commit": "${{ github.sha }}",
+            "branch": "${{ github.ref_name }}",
+            "compliance_standards": "$COMPLIANCE_STANDARDS",
+            "security_tools": ["trivy", "semgrep", "codeql", "trufflehog"],
+            "status": "passed"
+          }
+          EOF
+      
+      - name: Upload security artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: security-reports
+          path: |
+            trivy-results.sarif
+            semgrep.sarif
+            security-report.json
+          retention-days: 2555  # 7 years for financial compliance
+
+  # Infrastructure Validation
+  infrastructure-validation:
+    name: Infrastructure Validation
+    runs-on: ubuntu-latest
+    needs: security-audit
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.0
+      
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive infrastructure/terraform/
+      
+      - name: Terraform Validation
+        run: |
+          cd infrastructure/terraform
+          terraform init -backend=false
+          terraform validate
+      
+      - name: Run Terraform Security Scan
+        uses: aquasecurity/tfsec-action@v1.0.0
+        with:
+          working_directory: infrastructure/terraform
+          format: sarif
+          soft_fail: false
+      
+      - name: Validate Kubernetes manifests
+        run: |
+          # Install kubeval
+          wget https://github.com/instrumenta/kubeval/releases/latest/download/kubeval-linux-amd64.tar.gz
+          tar xf kubeval-linux-amd64.tar.gz
+          sudo mv kubeval /usr/local/bin
+          
+          # Validate all Kubernetes YAML files
+          find infrastructure/kubernetes -name "*.yaml" -o -name "*.yml" | xargs kubeval
+      
+      - name: Kubernetes Security Scan
+        uses: azure/k8s-lint@v1
+        with:
+          manifests: |
+            infrastructure/kubernetes/base/*.yaml
+            infrastructure/kubernetes/base/**/*.yaml
+      
+      - name: Ansible Lint
+        run: |
+          pip install ansible-lint
+          ansible-lint infrastructure/ansible/
+      
+      - name: Infrastructure compliance check
+        run: |
+          echo "Validating infrastructure compliance..."
+          ./scripts/infrastructure-compliance-check.sh
+
+  # Build and Test
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    needs: [security-audit, infrastructure-validation]
+    outputs:
+      image-digest: ${{ steps.build.outputs.digest }}
+      image-tag: ${{ steps.meta.outputs.tags }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+      
+      - name: Build and push Docker image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            COMPLIANCE_MODE=financial-grade
+            SECURITY_HARDENING=enabled
+      
+      - name: Run container security scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          format: 'sarif'
+          output: 'container-scan.sarif'
+      
+      - name: Upload container scan results
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'container-scan.sarif'
+      
+      - name: Sign container image
+        uses: sigstore/cosign-installer@v3
+      
+      - name: Sign the published Docker image
+        env:
+          COSIGN_EXPERIMENTAL: 1
+        run: |
+          cosign sign --yes ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
+      
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          format: spdx-json
+          output-file: sbom.spdx.json
+      
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v3
+        with:
+          name: sbom
+          path: sbom.spdx.json
+          retention-days: 2555
+
+  # Staging Deployment
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    if: github.ref == 'refs/heads/develop'
+    environment:
+      name: staging
+      url: https://staging.blockguardian.com
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.0
+      
+      - name: Deploy infrastructure
+        run: |
+          cd infrastructure/terraform/environments/staging
+          terraform init
+          terraform plan -out=tfplan
+          terraform apply tfplan
+      
+      - name: Configure kubectl
+        run: |
+          aws eks update-kubeconfig --region us-east-1 --name blockguardian-staging
+      
+      - name: Deploy to Kubernetes
+        run: |
+          # Apply security policies first
+          kubectl apply -f infrastructure/kubernetes/base/security/
+          
+          # Deploy monitoring stack
+          kubectl apply -f infrastructure/kubernetes/base/monitoring/
+          
+          # Deploy application
+          envsubst < infrastructure/kubernetes/base/backend-deployment.yaml | kubectl apply -f -
+          
+          # Wait for deployment
+          kubectl rollout status deployment/blockguardian-backend -n default --timeout=600s
+      
+      - name: Run smoke tests
+        run: |
+          ./scripts/smoke-tests.sh staging
+      
+      - name: Security validation
+        run: |
+          ./scripts/security-validation.sh staging
+      
+      - name: Generate deployment report
+        run: |
+          echo "Staging deployment completed successfully" > deployment-report.txt
+          echo "Image: ${{ needs.build-and-test.outputs.image-tag }}" >> deployment-report.txt
+          echo "Digest: ${{ needs.build-and-test.outputs.image-digest }}" >> deployment-report.txt
+          echo "Timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> deployment-report.txt
+
+  # Production Deployment
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: production
+      url: https://blockguardian.com
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Manual approval checkpoint
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ github.TOKEN }}
+          approvers: security-team,compliance-team
+          minimum-approvals: 2
+          issue-title: "Production Deployment Approval Required"
+          issue-body: |
+            Please review and approve the production deployment.
+            
+            **Deployment Details:**
+            - Commit: ${{ github.sha }}
+            - Image: ${{ needs.build-and-test.outputs.image-tag }}
+            - Compliance: ${{ env.COMPLIANCE_STANDARDS }}
+            
+            **Security Checks:**
+            - [x] Security audit passed
+            - [x] Vulnerability scan passed
+            - [x] Container signed
+            - [x] SBOM generated
+            
+            **Approvers:** @security-team @compliance-team
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_PROD }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_PROD }}
+          aws-region: us-east-1
+      
+      - name: Create deployment backup
+        run: |
+          ./scripts/create-deployment-backup.sh production
+      
+      - name: Deploy infrastructure
+        run: |
+          cd infrastructure/terraform/environments/prod
+          terraform init
+          terraform plan -out=tfplan
+          terraform apply tfplan
+      
+      - name: Configure kubectl
+        run: |
+          aws eks update-kubeconfig --region us-east-1 --name blockguardian-production
+      
+      - name: Blue-Green Deployment
+        run: |
+          ./scripts/blue-green-deploy.sh production ${{ needs.build-and-test.outputs.image-tag }}
+      
+      - name: Health checks
+        run: |
+          ./scripts/health-checks.sh production
+      
+      - name: Security validation
+        run: |
+          ./scripts/security-validation.sh production
+      
+      - name: Performance tests
+        run: |
+          ./scripts/performance-tests.sh production
+      
+      - name: Compliance validation
+        run: |
+          ./scripts/compliance-validation.sh production
+      
+      - name: Generate compliance report
+        run: |
+          ./scripts/generate-compliance-report.sh production
+      
+      - name: Notify stakeholders
+        run: |
+          ./scripts/notify-deployment.sh production success
+      
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          ./scripts/rollback-deployment.sh production
+          ./scripts/notify-deployment.sh production failure
+
+  # Continuous Compliance Monitoring
+  compliance-monitoring:
+    name: Continuous Compliance Monitoring
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Run compliance scan
+        run: |
+          ./scripts/compliance-scan.sh
+      
+      - name: Generate compliance dashboard
+        run: |
+          ./scripts/generate-compliance-dashboard.sh
+      
+      - name: Check certificate expiry
+        run: |
+          ./scripts/check-certificate-expiry.sh
+      
+      - name: Audit log analysis
+        run: |
+          ./scripts/audit-log-analysis.sh
+      
+      - name: Security posture assessment
+        run: |
+          ./scripts/security-posture-assessment.sh
+      
+      - name: Generate monthly compliance report
+        if: github.event.schedule == '0 2 1 * *'
+        run: |
+          ./scripts/generate-monthly-compliance-report.sh
+

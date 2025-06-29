@@ -1,0 +1,347 @@
+---
+# Security Hardening Variables for Financial-Grade Infrastructure
+
+# Security packages to install
+security_packages:
+  - aide
+  - audit
+  - fail2ban
+  - rkhunter
+  - chkrootkit
+  - clamav
+  - clamav-update
+  - chrony
+  - rsyslog
+  - logrotate
+  - htop
+  - iotop
+  - tcpdump
+  - strace
+  - lsof
+  - nmap
+  - wireshark
+  - openssl
+  - ca-certificates
+
+# Unnecessary packages to remove
+unnecessary_packages:
+  - telnet
+  - rsh
+  - rsh-server
+  - rlogin
+  - vsftpd
+  - tftp
+  - tftp-server
+  - talk
+  - talk-server
+  - xinetd
+  - chargen-dgram
+  - chargen-stream
+  - daytime-dgram
+  - daytime-stream
+  - echo-dgram
+  - echo-stream
+  - tcpmux-server
+  - avahi-daemon
+  - cups
+
+# Unnecessary services to disable
+unnecessary_services:
+  - telnet
+  - rsh
+  - rlogin
+  - vsftpd
+  - tftp
+  - talk
+  - xinetd
+  - chargen
+  - daytime
+  - echo
+  - tcpmux
+  - avahi-daemon
+  - cups
+  - bluetooth
+  - nfs
+  - rpcbind
+  - postfix
+
+# SSH security configuration
+ssh_config:
+  port: 22
+  protocol: 2
+  permit_root_login: "no"
+  password_authentication: "no"
+  permit_empty_passwords: "no"
+  challenge_response_authentication: "no"
+  use_pam: "yes"
+  x11_forwarding: "no"
+  allow_tcp_forwarding: "no"
+  allow_agent_forwarding: "no"
+  gateway_ports: "no"
+  permit_tunnel: "no"
+  client_alive_interval: 300
+  client_alive_count_max: 2
+  max_auth_tries: 3
+  max_sessions: 2
+  login_grace_time: 60
+  compression: "no"
+  tcp_keep_alive: "yes"
+  use_dns: "no"
+  permit_user_environment: "no"
+  banner: "/etc/issue.net"
+  ciphers: "chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr"
+  macs: "hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha2-256,hmac-sha2-512"
+  kex_algorithms: "curve25519-sha256@libssh.org,diffie-hellman-group16-sha512,diffie-hellman-group18-sha512"
+
+# Password policy settings
+password_policy:
+  min_length: 14
+  min_class: 4
+  max_repeat: 2
+  max_class_repeat: 4
+  min_diff: 8
+  dict_check: 1
+  user_check: 1
+  enforce_for_root: 1
+  retry: 3
+
+# Login settings
+login_settings:
+  pass_max_days: 90
+  pass_min_days: 1
+  pass_warn_age: 14
+  login_retries: 3
+  login_timeout: 60
+  umask: "027"
+  create_home: "yes"
+  usergroups_enab: "yes"
+  encrypt_method: "SHA512"
+  sha_crypt_min_rounds: 10000
+  sha_crypt_max_rounds: 50000
+
+# Kernel security parameters
+kernel_security_params:
+  # Network security
+  net.ipv4.ip_forward: 0
+  net.ipv4.conf.all.send_redirects: 0
+  net.ipv4.conf.default.send_redirects: 0
+  net.ipv4.conf.all.accept_source_route: 0
+  net.ipv4.conf.default.accept_source_route: 0
+  net.ipv4.conf.all.accept_redirects: 0
+  net.ipv4.conf.default.accept_redirects: 0
+  net.ipv4.conf.all.secure_redirects: 0
+  net.ipv4.conf.default.secure_redirects: 0
+  net.ipv4.conf.all.log_martians: 1
+  net.ipv4.conf.default.log_martians: 1
+  net.ipv4.icmp_echo_ignore_broadcasts: 1
+  net.ipv4.icmp_ignore_bogus_error_responses: 1
+  net.ipv4.tcp_syncookies: 1
+  net.ipv4.conf.all.rp_filter: 1
+  net.ipv4.conf.default.rp_filter: 1
+  
+  # IPv6 security (disable if not needed)
+  net.ipv6.conf.all.disable_ipv6: 1
+  net.ipv6.conf.default.disable_ipv6: 1
+  net.ipv6.conf.lo.disable_ipv6: 1
+  net.ipv6.conf.all.accept_ra: 0
+  net.ipv6.conf.default.accept_ra: 0
+  net.ipv6.conf.all.accept_redirects: 0
+  net.ipv6.conf.default.accept_redirects: 0
+  
+  # Memory protection
+  kernel.randomize_va_space: 2
+  kernel.exec-shield: 1
+  kernel.kptr_restrict: 2
+  kernel.dmesg_restrict: 1
+  kernel.printk: "3 3 3 3"
+  kernel.core_uses_pid: 1
+  
+  # File system security
+  fs.suid_dumpable: 0
+  fs.protected_hardlinks: 1
+  fs.protected_symlinks: 1
+
+# System limits
+system_limits:
+  - domain: "*"
+    type: soft
+    item: core
+    value: 0
+  - domain: "*"
+    type: hard
+    item: core
+    value: 0
+  - domain: "*"
+    type: soft
+    item: nproc
+    value: 65536
+  - domain: "*"
+    type: hard
+    item: nproc
+    value: 65536
+  - domain: "*"
+    type: soft
+    item: nofile
+    value: 65536
+  - domain: "*"
+    type: hard
+    item: nofile
+    value: 65536
+
+# Critical files permissions
+critical_files_permissions:
+  - path: /etc/passwd
+    mode: "0644"
+    owner: root
+    group: root
+  - path: /etc/shadow
+    mode: "0600"
+    owner: root
+    group: root
+  - path: /etc/group
+    mode: "0644"
+    owner: root
+    group: root
+  - path: /etc/gshadow
+    mode: "0600"
+    owner: root
+    group: root
+  - path: /etc/ssh/sshd_config
+    mode: "0600"
+    owner: root
+    group: root
+  - path: /etc/sudoers
+    mode: "0440"
+    owner: root
+    group: root
+  - path: /etc/crontab
+    mode: "0600"
+    owner: root
+    group: root
+  - path: /var/log
+    mode: "0755"
+    owner: root
+    group: root
+
+# Firewall rules
+firewall_rules:
+  - port: 22
+    protocol: tcp
+    source: "{{ management_networks | default(['10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16']) }}"
+    comment: "SSH access from management networks"
+  - port: 443
+    protocol: tcp
+    source: "0.0.0.0/0"
+    comment: "HTTPS access"
+  - port: 80
+    protocol: tcp
+    source: "0.0.0.0/0"
+    comment: "HTTP access (redirect to HTTPS)"
+
+# Audit rules
+audit_rules:
+  - "-D"  # Delete all existing rules
+  - "-b 8192"  # Buffer size
+  - "-f 1"  # Failure mode
+  - "-w /var/log/audit/ -p wa -k auditlog"
+  - "-w /etc/passwd -p wa -k passwd_changes"
+  - "-w /etc/group -p wa -k group_changes"
+  - "-w /etc/shadow -p wa -k shadow_changes"
+  - "-w /etc/sudoers -p wa -k sudoers_changes"
+  - "-w /etc/ssh/sshd_config -p wa -k sshd_config_changes"
+  - "-w /var/log/faillog -p wa -k login_failures"
+  - "-w /var/log/lastlog -p wa -k last_login"
+  - "-a always,exit -F arch=b64 -S adjtimex -S settimeofday -k time_change"
+  - "-a always,exit -F arch=b32 -S adjtimex -S settimeofday -S stime -k time_change"
+  - "-a always,exit -F arch=b64 -S clock_settime -k time_change"
+  - "-a always,exit -F arch=b32 -S clock_settime -k time_change"
+  - "-w /etc/localtime -p wa -k time_change"
+  - "-a always,exit -F arch=b64 -S chmod -S fchmod -S fchmodat -F auid>=1000 -F auid!=4294967295 -k perm_mod"
+  - "-a always,exit -F arch=b32 -S chmod -S fchmod -S fchmodat -F auid>=1000 -F auid!=4294967295 -k perm_mod"
+  - "-a always,exit -F arch=b64 -S chown -S fchown -S fchownat -S lchown -F auid>=1000 -F auid!=4294967295 -k perm_mod"
+  - "-a always,exit -F arch=b32 -S chown -S fchown -S fchownat -S lchown -F auid>=1000 -F auid!=4294967295 -k perm_mod"
+  - "-e 2"  # Make configuration immutable
+
+# Fail2ban configuration
+fail2ban_config:
+  bantime: 3600
+  findtime: 600
+  maxretry: 3
+  backend: systemd
+  jails:
+    sshd:
+      enabled: true
+      port: ssh
+      filter: sshd
+      logpath: /var/log/secure
+      maxretry: 3
+      bantime: 3600
+
+# Time synchronization
+ntp_servers:
+  - 0.pool.ntp.org
+  - 1.pool.ntp.org
+  - 2.pool.ntp.org
+  - 3.pool.ntp.org
+
+# Compliance settings
+compliance_mode: financial_grade
+compliance_standards:
+  - PCI-DSS
+  - SOC2
+  - ISO27001
+
+# Security banner
+security_banner: |
+  ***************************************************************************
+                              NOTICE TO USERS
+
+  This computer system is the private property of its owner, whether
+  individual, corporate or government.  It is for authorized use only.
+  Users (authorized or unauthorized) have no explicit or implicit
+  expectation of privacy.
+
+  Any or all uses of this system and all files on this system may be
+  intercepted, monitored, recorded, copied, audited, inspected, and/or
+  disclosed to your employer, to authorized site, government, and law
+  enforcement personnel, as well as authorized officials of government
+  agencies, both domestic and foreign.
+
+  By using this system, the user consents to such interception, monitoring,
+  recording, copying, auditing, inspection, and disclosure at the
+  discretion of such personnel or officials.  Unauthorized or improper use
+  of this system may result in civil and criminal penalties and
+  administrative or disciplinary action, as appropriate. By continuing to
+  use this system you indicate your awareness of and consent to these terms
+  and conditions of use. LOG OFF IMMEDIATELY if you do not agree to the
+  conditions stated in this warning.
+
+  ****************************************************************************
+
+# Logging configuration
+log_retention_days: 2555  # 7 years for financial compliance
+log_max_size: 100M
+log_rotate_count: 52
+
+# Antivirus configuration
+clamav_config:
+  update_frequency: daily
+  scan_frequency: weekly
+  quarantine_infected: true
+  log_infected: true
+
+# File integrity monitoring
+file_integrity_paths:
+  - /etc
+  - /bin
+  - /sbin
+  - /usr/bin
+  - /usr/sbin
+  - /usr/local/bin
+  - /usr/local/sbin
+  - /boot
+  - /lib
+  - /lib64
+  - /usr/lib
+  - /usr/lib64
+

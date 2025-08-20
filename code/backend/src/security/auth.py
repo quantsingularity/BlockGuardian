@@ -1,393 +1,529 @@
 """
-Enterprise-grade authentication and authorization system
-Implements JWT tokens, MFA, role-based access control, and session management
+Enhanced Authentication System for Financial Services
+Implements multi-factor authentication, session management, and advanced security features
 """
 
-import jwt
+import os
+import secrets
+import hashlib
+import hmac
+import base64
 import pyotp
 import qrcode
-import io
-import base64
-from datetime import datetime, timedelta
-from functools import wraps
-from typing import Dict, List, Optional, Tuple, Any
-from flask import request, jsonify, current_app, g
+from datetime import datetime, timezone, timedelta
+from typing import Dict, Any, Optional, List, Tuple
+from decimal import Decimal
+from io import BytesIO
+from flask import current_app, request, session
+from flask_jwt_extended import JWTManager, create_access_token, create_refresh_token, get_jwt_identity, verify_jwt_in_request
 from werkzeug.security import generate_password_hash, check_password_hash
-from cryptography.fernet import Fernet
 import redis
 import json
-from enum import Enum
+import logging
 
-from src.config import current_config
-
-
-class UserRole(Enum):
-    """User roles for role-based access control"""
-    ADMIN = "admin"
-    COMPLIANCE_OFFICER = "compliance_officer"
-    PORTFOLIO_MANAGER = "portfolio_manager"
-    TRADER = "trader"
-    ANALYST = "analyst"
-    USER = "user"
-    READONLY = "readonly"
+from ..models.user import User, UserSession
+from ..models.base import db_manager
 
 
-class Permission(Enum):
-    """Granular permissions for attribute-based access control"""
-    # User management
-    CREATE_USER = "create_user"
-    READ_USER = "read_user"
-    UPDATE_USER = "update_user"
-    DELETE_USER = "delete_user"
+class SecurityLevel:
+    """Security level constants"""
+    LOW = 1
+    MEDIUM = 2
+    HIGH = 3
+    CRITICAL = 4
+
+
+class AuthenticationError(Exception):
+    """Custom authentication exception"""
+    pass
+
+
+class SecurityViolationError(Exception):
+    """Custom security violation exception"""
+    pass
+
+
+class EnhancedAuthManager:
+    """Enhanced authentication manager with financial-grade security"""
     
-    # Portfolio management
-    CREATE_PORTFOLIO = "create_portfolio"
-    READ_PORTFOLIO = "read_portfolio"
-    UPDATE_PORTFOLIO = "update_portfolio"
-    DELETE_PORTFOLIO = "delete_portfolio"
-    
-    # Trading operations
-    EXECUTE_TRADE = "execute_trade"
-    APPROVE_TRADE = "approve_trade"
-    CANCEL_TRADE = "cancel_trade"
-    
-    # Financial data
-    READ_MARKET_DATA = "read_market_data"
-    READ_FINANCIAL_REPORTS = "read_financial_reports"
-    
-    # AI/ML operations
-    RUN_AI_MODELS = "run_ai_models"
-    MANAGE_AI_MODELS = "manage_ai_models"
-    
-    # Blockchain operations
-    DEPLOY_CONTRACTS = "deploy_contracts"
-    EXECUTE_BLOCKCHAIN_TX = "execute_blockchain_tx"
-    
-    # Compliance and audit
-    READ_AUDIT_LOGS = "read_audit_logs"
-    GENERATE_COMPLIANCE_REPORTS = "generate_compliance_reports"
-    MANAGE_KYC = "manage_kyc"
-    
-    # System administration
-    MANAGE_SYSTEM = "manage_system"
-    VIEW_SYSTEM_METRICS = "view_system_metrics"
-
-
-# Role-permission mapping
-ROLE_PERMISSIONS = {
-    UserRole.ADMIN: [p for p in Permission],  # All permissions
-    UserRole.COMPLIANCE_OFFICER: [
-        Permission.READ_USER, Permission.READ_AUDIT_LOGS,
-        Permission.GENERATE_COMPLIANCE_REPORTS, Permission.MANAGE_KYC,
-        Permission.READ_FINANCIAL_REPORTS
-    ],
-    UserRole.PORTFOLIO_MANAGER: [
-        Permission.CREATE_PORTFOLIO, Permission.READ_PORTFOLIO,
-        Permission.UPDATE_PORTFOLIO, Permission.DELETE_PORTFOLIO,
-        Permission.READ_MARKET_DATA, Permission.RUN_AI_MODELS,
-        Permission.READ_FINANCIAL_REPORTS
-    ],
-    UserRole.TRADER: [
-        Permission.EXECUTE_TRADE, Permission.READ_PORTFOLIO,
-        Permission.READ_MARKET_DATA, Permission.EXECUTE_BLOCKCHAIN_TX
-    ],
-    UserRole.ANALYST: [
-        Permission.READ_PORTFOLIO, Permission.READ_MARKET_DATA,
-        Permission.READ_FINANCIAL_REPORTS, Permission.RUN_AI_MODELS
-    ],
-    UserRole.USER: [
-        Permission.READ_PORTFOLIO, Permission.UPDATE_PORTFOLIO,
-        Permission.READ_MARKET_DATA
-    ],
-    UserRole.READONLY: [
-        Permission.READ_PORTFOLIO, Permission.READ_MARKET_DATA
-    ]
-}
-
-
-class AuthManager:
-    """Enterprise authentication and authorization manager"""
-    
-    def __init__(self, app=None):
-        self.app = app
+    def __init__(self):
+        self.jwt_manager = JWTManager()
         self.redis_client = None
-        self.encryption = None
+        self.logger = logging.getLogger(__name__)
         
-        if app is not None:
-            self.init_app(app)
+        # Security configuration
+        self.max_login_attempts = 5
+        self.lockout_duration = timedelta(minutes=30)
+        self.session_timeout = timedelta(hours=8)
+        self.password_min_length = 12
+        self.password_complexity_rules = {
+            'min_uppercase': 1,
+            'min_lowercase': 1,
+            'min_digits': 1,
+            'min_special': 1,
+            'forbidden_patterns': ['123', 'abc', 'password', 'admin']
+        }
+        
+        # MFA configuration
+        self.mfa_issuer = "BlockGuardian"
+        self.backup_codes_count = 10
+        
+        # Device fingerprinting
+        self.device_fingerprint_fields = [
+            'user_agent', 'accept_language', 'accept_encoding',
+            'screen_resolution', 'timezone', 'platform'
+        ]
     
     def init_app(self, app):
-        """Initialize authentication manager with Flask app"""
-        self.app = app
+        """Initialize with Flask app"""
+        self.jwt_manager.init_app(app)
         
         # Initialize Redis for session management
         try:
-            self.redis_client = redis.from_url(
-                current_config.redis.url,
-                max_connections=current_config.redis.max_connections,
-                socket_timeout=current_config.redis.socket_timeout,
-                socket_connect_timeout=current_config.redis.socket_connect_timeout
-            )
+            redis_url = app.config.get('REDIS_URL', 'redis://localhost:6379/0')
+            self.redis_client = redis.Redis.from_url(redis_url, decode_responses=True)
+            self.redis_client.ping()
         except Exception as e:
-            app.logger.error(f"Failed to initialize Redis: {e}")
+            self.logger.warning(f"Redis connection failed: {e}")
             self.redis_client = None
         
-        # Initialize encryption
-        self.encryption = Fernet(current_config.security.encryption_key)
+        # JWT configuration
+        app.config['JWT_SECRET_KEY'] = app.config.get('JWT_SECRET_KEY', secrets.token_urlsafe(32))
+        app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
+        app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(days=30)
+        app.config['JWT_BLACKLIST_ENABLED'] = True
+        app.config['JWT_BLACKLIST_TOKEN_CHECKS'] = ['access', 'refresh']
+        
+        # JWT callbacks
+        @self.jwt_manager.token_in_blocklist_loader
+        def check_if_token_revoked(jwt_header, jwt_payload):
+            return self.is_token_revoked(jwt_payload['jti'])
+        
+        @self.jwt_manager.user_identity_loader
+        def user_identity_lookup(user):
+            return str(user.id) if hasattr(user, 'id') else str(user)
+        
+        @self.jwt_manager.user_lookup_loader
+        def user_lookup_callback(_jwt_header, jwt_data):
+            identity = jwt_data["sub"]
+            return self.get_user_by_id(identity)
     
     def hash_password(self, password: str) -> str:
-        """Hash password using bcrypt with configurable rounds"""
-        return generate_password_hash(
-            password, 
-            method='pbkdf2:sha256',
-            salt_length=16
-        )
+        """Hash password with secure algorithm"""
+        return generate_password_hash(password, method='pbkdf2:sha256:100000')
     
     def verify_password(self, password: str, password_hash: str) -> bool:
         """Verify password against hash"""
         return check_password_hash(password_hash, password)
     
-    def generate_tokens(self, user_id: int, user_role: str, permissions: List[str] = None) -> Dict[str, str]:
-        """Generate JWT access and refresh tokens"""
-        now = datetime.utcnow()
+    def validate_password_strength(self, password: str) -> Tuple[bool, List[str]]:
+        """Validate password strength according to financial industry standards"""
+        errors = []
         
-        # Access token payload
-        access_payload = {
-            'user_id': user_id,
-            'role': user_role,
-            'permissions': permissions or [],
-            'type': 'access',
-            'iat': now,
-            'exp': now + current_config.security.jwt_access_token_expires,
-            'jti': self._generate_jti()
-        }
+        # Length check
+        if len(password) < self.password_min_length:
+            errors.append(f"Password must be at least {self.password_min_length} characters long")
         
-        # Refresh token payload
-        refresh_payload = {
-            'user_id': user_id,
-            'type': 'refresh',
-            'iat': now,
-            'exp': now + current_config.security.jwt_refresh_token_expires,
-            'jti': self._generate_jti()
-        }
+        # Character type checks
+        if sum(1 for c in password if c.isupper()) < self.password_complexity_rules['min_uppercase']:
+            errors.append("Password must contain at least 1 uppercase letter")
         
-        # Generate tokens
-        access_token = jwt.encode(
-            access_payload,
-            current_config.security.jwt_secret_key,
-            algorithm='HS256'
-        )
+        if sum(1 for c in password if c.islower()) < self.password_complexity_rules['min_lowercase']:
+            errors.append("Password must contain at least 1 lowercase letter")
         
-        refresh_token = jwt.encode(
-            refresh_payload,
-            current_config.security.jwt_secret_key,
-            algorithm='HS256'
-        )
+        if sum(1 for c in password if c.isdigit()) < self.password_complexity_rules['min_digits']:
+            errors.append("Password must contain at least 1 digit")
         
-        # Store refresh token in Redis
-        if self.redis_client:
-            self.redis_client.setex(
-                f"refresh_token:{refresh_payload['jti']}",
-                current_config.security.jwt_refresh_token_expires,
-                json.dumps({
-                    'user_id': user_id,
-                    'created_at': now.isoformat()
-                })
-            )
+        special_chars = "!@#$%^&*()_+-=[]{}|;:,.<>?"
+        if sum(1 for c in password if c in special_chars) < self.password_complexity_rules['min_special']:
+            errors.append("Password must contain at least 1 special character")
         
-        return {
-            'access_token': access_token,
-            'refresh_token': refresh_token,
-            'token_type': 'Bearer',
-            'expires_in': int(current_config.security.jwt_access_token_expires.total_seconds())
-        }
+        # Forbidden patterns
+        password_lower = password.lower()
+        for pattern in self.password_complexity_rules['forbidden_patterns']:
+            if pattern in password_lower:
+                errors.append(f"Password cannot contain common pattern: {pattern}")
+        
+        # Sequential characters check
+        for i in range(len(password) - 2):
+            if (ord(password[i]) + 1 == ord(password[i+1]) and 
+                ord(password[i+1]) + 1 == ord(password[i+2])):
+                errors.append("Password cannot contain sequential characters")
+                break
+        
+        return len(errors) == 0, errors
     
-    def verify_token(self, token: str) -> Optional[Dict[str, Any]]:
-        """Verify and decode JWT token"""
+    def authenticate_user(self, email: str, password: str, ip_address: str = None, 
+                         user_agent: str = None) -> Tuple[Optional[User], Dict[str, Any]]:
+        """Authenticate user with comprehensive security checks"""
+        
+        # Get user
+        session = db_manager.get_session()
         try:
-            payload = jwt.decode(
-                token,
-                current_config.security.jwt_secret_key,
-                algorithms=['HS256']
-            )
+            user = session.query(User).filter_by(email=email.lower()).first()
             
-            # Check if token is blacklisted
-            if self.redis_client and self._is_token_blacklisted(payload.get('jti')):
-                return None
+            if not user:
+                self.logger.warning(f"Login attempt with non-existent email: {email}")
+                return None, {'error': 'Invalid credentials', 'code': 'INVALID_CREDENTIALS'}
             
-            return payload
-        except jwt.ExpiredSignatureError:
-            return None
-        except jwt.InvalidTokenError:
-            return None
+            # Check if account is locked
+            if user.is_locked():
+                self.logger.warning(f"Login attempt on locked account: {email}")
+                return None, {'error': 'Account is locked', 'code': 'ACCOUNT_LOCKED'}
+            
+            # Check if account is active
+            if not user.is_active():
+                self.logger.warning(f"Login attempt on inactive account: {email}")
+                return None, {'error': 'Account is not active', 'code': 'ACCOUNT_INACTIVE'}
+            
+            # Verify password
+            if not user.verify_password(password):
+                user.record_login_attempt(False, ip_address, user_agent)
+                session.commit()
+                
+                self.logger.warning(f"Failed login attempt for user: {email}")
+                return None, {'error': 'Invalid credentials', 'code': 'INVALID_CREDENTIALS'}
+            
+            # Check for suspicious activity
+            risk_score = self.calculate_login_risk(user, ip_address, user_agent)
+            
+            # Record successful login attempt
+            user.record_login_attempt(True, ip_address, user_agent)
+            session.commit()
+            
+            return user, {
+                'success': True,
+                'risk_score': risk_score,
+                'requires_mfa': user.mfa_enabled,
+                'requires_additional_verification': risk_score > 70
+            }
+            
+        except Exception as e:
+            session.rollback()
+            self.logger.error(f"Authentication error: {e}")
+            return None, {'error': 'Authentication failed', 'code': 'AUTH_ERROR'}
+        finally:
+            session.close()
     
-    def refresh_access_token(self, refresh_token: str) -> Optional[Dict[str, str]]:
-        """Generate new access token using refresh token"""
-        payload = self.verify_token(refresh_token)
+    def calculate_login_risk(self, user: User, ip_address: str = None, 
+                           user_agent: str = None) -> int:
+        """Calculate login risk score (0-100)"""
+        risk_score = 0
         
-        if not payload or payload.get('type') != 'refresh':
-            return None
+        # Check login history from metadata
+        if user.metadata and 'login_history' in user.metadata:
+            login_history = user.metadata['login_history']
+            
+            # Check for new IP address
+            recent_ips = [entry.get('ip_address') for entry in login_history[-5:]]
+            if ip_address and ip_address not in recent_ips:
+                risk_score += 30
+            
+            # Check for new user agent
+            recent_agents = [entry.get('user_agent') for entry in login_history[-5:]]
+            if user_agent and user_agent not in recent_agents:
+                risk_score += 20
+            
+            # Check for unusual timing
+            if login_history:
+                last_login = datetime.fromisoformat(login_history[-1]['timestamp'].replace('Z', '+00:00'))
+                time_since_last = datetime.now(timezone.utc) - last_login
+                
+                # Unusual if more than 30 days since last login
+                if time_since_last > timedelta(days=30):
+                    risk_score += 25
         
-        # Verify refresh token exists in Redis
-        if self.redis_client:
-            stored_data = self.redis_client.get(f"refresh_token:{payload['jti']}")
-            if not stored_data:
-                return None
+        # Check account age
+        account_age = datetime.now(timezone.utc) - user.created_at
+        if account_age < timedelta(days=7):
+            risk_score += 15
         
-        # Get user data to generate new access token
-        from src.models.user import User
-        user = User.query.get(payload['user_id'])
-        if not user or not user.is_active:
-            return None
+        # Check for recent password changes
+        if user.password_changed_at:
+            time_since_password_change = datetime.now(timezone.utc) - user.password_changed_at
+            if time_since_password_change < timedelta(hours=24):
+                risk_score += 10
         
-        # Generate new access token
-        permissions = self.get_user_permissions(user.role)
-        return self.generate_tokens(user.id, user.role.value, permissions)
+        return min(risk_score, 100)
     
-    def revoke_token(self, token: str) -> bool:
-        """Revoke (blacklist) a token"""
-        payload = self.verify_token(token)
-        if not payload:
-            return False
+    def setup_mfa(self, user: User) -> Dict[str, Any]:
+        """Set up multi-factor authentication for user"""
         
-        if self.redis_client:
-            # Blacklist token until its expiration
-            ttl = payload['exp'] - datetime.utcnow().timestamp()
-            if ttl > 0:
-                self.redis_client.setex(
-                    f"blacklist:{payload['jti']}",
-                    int(ttl),
-                    "revoked"
-                )
-        
-        return True
-    
-    def generate_mfa_secret(self, user_email: str) -> Tuple[str, str]:
-        """Generate MFA secret and QR code"""
+        # Generate TOTP secret
         secret = pyotp.random_base32()
         
-        # Generate QR code
+        # Create TOTP URI
         totp_uri = pyotp.totp.TOTP(secret).provisioning_uri(
-            name=user_email,
-            issuer_name="BlockGuardian"
+            name=user.email,
+            issuer_name=self.mfa_issuer
         )
         
+        # Generate QR code
         qr = qrcode.QRCode(version=1, box_size=10, border=5)
         qr.add_data(totp_uri)
         qr.make(fit=True)
         
-        img = qr.make_image(fill_color="black", back_color="white")
-        img_buffer = io.BytesIO()
-        img.save(img_buffer, format='PNG')
-        img_buffer.seek(0)
+        qr_image = qr.make_image(fill_color="black", back_color="white")
+        qr_buffer = BytesIO()
+        qr_image.save(qr_buffer, format='PNG')
+        qr_code_base64 = base64.b64encode(qr_buffer.getvalue()).decode()
         
-        qr_code_data = base64.b64encode(img_buffer.getvalue()).decode()
+        # Generate backup codes
+        backup_codes = [secrets.token_hex(4).upper() for _ in range(self.backup_codes_count)]
         
-        return secret, qr_code_data
-    
-    def verify_mfa_token(self, secret: str, token: str) -> bool:
-        """Verify MFA token"""
-        totp = pyotp.TOTP(secret)
-        return totp.verify(token, valid_window=1)
-    
-    def get_user_permissions(self, role: UserRole) -> List[str]:
-        """Get permissions for a user role"""
-        permissions = ROLE_PERMISSIONS.get(role, [])
-        return [p.value for p in permissions]
-    
-    def has_permission(self, user_permissions: List[str], required_permission: Permission) -> bool:
-        """Check if user has required permission"""
-        return required_permission.value in user_permissions
-    
-    def encrypt_sensitive_data(self, data: str) -> str:
-        """Encrypt sensitive data"""
-        if self.encryption:
-            return self.encryption.encrypt(data.encode()).decode()
-        return data
-    
-    def decrypt_sensitive_data(self, encrypted_data: str) -> str:
-        """Decrypt sensitive data"""
-        if self.encryption:
-            return self.encryption.decrypt(encrypted_data.encode()).decode()
-        return encrypted_data
-    
-    def _generate_jti(self) -> str:
-        """Generate unique token identifier"""
-        import uuid
-        return str(uuid.uuid4())
-    
-    def _is_token_blacklisted(self, jti: str) -> bool:
-        """Check if token is blacklisted"""
-        if self.redis_client:
-            return self.redis_client.exists(f"blacklist:{jti}")
-        return False
-
-
-# Global auth manager instance
-auth_manager = AuthManager()
-
-
-def jwt_required(f):
-    """Decorator to require valid JWT token"""
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        token = None
-        auth_header = request.headers.get('Authorization')
+        # Store encrypted secret and backup codes (would need encryption implementation)
+        user.mfa_secret = secret  # Should be encrypted
+        user.backup_codes = json.dumps(backup_codes)  # Should be encrypted
         
-        if auth_header:
+        return {
+            'secret': secret,
+            'qr_code': qr_code_base64,
+            'backup_codes': backup_codes,
+            'totp_uri': totp_uri
+        }
+    
+    def verify_mfa_token(self, user: User, token: str) -> bool:
+        """Verify MFA token (TOTP or backup code)"""
+        
+        if not user.mfa_enabled or not user.mfa_secret:
+            return False
+        
+        # Try TOTP verification
+        totp = pyotp.TOTP(user.mfa_secret)
+        if totp.verify(token, valid_window=1):
+            return True
+        
+        # Try backup codes
+        if user.backup_codes:
             try:
-                token = auth_header.split(' ')[1]
-            except IndexError:
-                return jsonify({'error': 'Invalid authorization header format'}), 401
+                backup_codes = json.loads(user.backup_codes)
+                if token.upper() in backup_codes:
+                    # Remove used backup code
+                    backup_codes.remove(token.upper())
+                    user.backup_codes = json.dumps(backup_codes)
+                    return True
+            except (json.JSONDecodeError, ValueError):
+                pass
         
-        if not token:
-            return jsonify({'error': 'Token is missing'}), 401
-        
-        payload = auth_manager.verify_token(token)
-        if not payload:
-            return jsonify({'error': 'Token is invalid or expired'}), 401
-        
-        # Store user info in Flask's g object
-        g.current_user_id = payload['user_id']
-        g.current_user_role = payload['role']
-        g.current_user_permissions = payload.get('permissions', [])
-        
-        return f(*args, **kwargs)
+        return False
     
-    return decorated_function
-
-
-def role_required(*required_roles):
-    """Decorator to require specific user roles"""
-    def decorator(f):
-        @wraps(f)
-        @jwt_required
-        def decorated_function(*args, **kwargs):
-            user_role = g.current_user_role
-            
-            if user_role not in [role.value for role in required_roles]:
-                return jsonify({'error': 'Insufficient privileges'}), 403
-            
-            return f(*args, **kwargs)
+    def create_session(self, user: User, ip_address: str = None, 
+                      user_agent: str = None) -> Dict[str, Any]:
+        """Create authenticated session with tokens"""
         
-        return decorated_function
-    return decorator
-
-
-def permission_required(*required_permissions):
-    """Decorator to require specific permissions"""
-    def decorator(f):
-        @wraps(f)
-        @jwt_required
-        def decorated_function(*args, **kwargs):
-            user_permissions = g.current_user_permissions
-            
-            for permission in required_permissions:
-                if permission.value not in user_permissions:
-                    return jsonify({'error': f'Missing permission: {permission.value}'}), 403
-            
-            return f(*args, **kwargs)
+        # Create JWT tokens
+        access_token = create_access_token(identity=user)
+        refresh_token = create_refresh_token(identity=user)
         
-        return decorated_function
-    return decorator
+        # Create session record
+        session_token = secrets.token_urlsafe(32)
+        expires_at = datetime.now(timezone.utc) + self.session_timeout
+        
+        user_session = UserSession(
+            user_id=user.id,
+            session_token=session_token,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            expires_at=expires_at
+        )
+        
+        # Store session in database
+        db_session = db_manager.get_session()
+        try:
+            db_session.add(user_session)
+            db_session.commit()
+            
+            # Store session in Redis if available
+            if self.redis_client:
+                session_data = {
+                    'user_id': str(user.id),
+                    'ip_address': ip_address,
+                    'user_agent': user_agent,
+                    'created_at': datetime.now(timezone.utc).isoformat()
+                }
+                self.redis_client.setex(
+                    f"session:{session_token}",
+                    int(self.session_timeout.total_seconds()),
+                    json.dumps(session_data)
+                )
+            
+            return {
+                'access_token': access_token,
+                'refresh_token': refresh_token,
+                'session_token': session_token,
+                'expires_at': expires_at.isoformat(),
+                'user': user.to_dict()
+            }
+            
+        except Exception as e:
+            db_session.rollback()
+            self.logger.error(f"Session creation error: {e}")
+            raise AuthenticationError("Failed to create session")
+        finally:
+            db_session.close()
+    
+    def validate_session(self, session_token: str) -> Optional[User]:
+        """Validate session token and return user"""
+        
+        # Check Redis first
+        if self.redis_client:
+            session_data = self.redis_client.get(f"session:{session_token}")
+            if session_data:
+                try:
+                    data = json.loads(session_data)
+                    user_id = data['user_id']
+                    return self.get_user_by_id(user_id)
+                except (json.JSONDecodeError, KeyError):
+                    pass
+        
+        # Check database
+        db_session = db_manager.get_session()
+        try:
+            user_session = db_session.query(UserSession).filter_by(
+                session_token=session_token,
+                is_active=True
+            ).first()
+            
+            if user_session and not user_session.is_expired():
+                # Extend session
+                user_session.extend_session()
+                db_session.commit()
+                return user_session.user
+            
+            return None
+            
+        except Exception as e:
+            self.logger.error(f"Session validation error: {e}")
+            return None
+        finally:
+            db_session.close()
+    
+    def revoke_session(self, session_token: str):
+        """Revoke session token"""
+        
+        # Remove from Redis
+        if self.redis_client:
+            self.redis_client.delete(f"session:{session_token}")
+        
+        # Update database
+        db_session = db_manager.get_session()
+        try:
+            user_session = db_session.query(UserSession).filter_by(
+                session_token=session_token
+            ).first()
+            
+            if user_session:
+                user_session.is_active = False
+                db_session.commit()
+                
+        except Exception as e:
+            self.logger.error(f"Session revocation error: {e}")
+        finally:
+            db_session.close()
+    
+    def revoke_all_user_sessions(self, user_id: str):
+        """Revoke all sessions for a user"""
+        
+        db_session = db_manager.get_session()
+        try:
+            sessions = db_session.query(UserSession).filter_by(
+                user_id=user_id,
+                is_active=True
+            ).all()
+            
+            for session in sessions:
+                session.is_active = False
+                
+                # Remove from Redis
+                if self.redis_client:
+                    self.redis_client.delete(f"session:{session.session_token}")
+            
+            db_session.commit()
+            
+        except Exception as e:
+            self.logger.error(f"Bulk session revocation error: {e}")
+        finally:
+            db_session.close()
+    
+    def is_token_revoked(self, jti: str) -> bool:
+        """Check if JWT token is revoked"""
+        if self.redis_client:
+            return self.redis_client.get(f"revoked_token:{jti}") is not None
+        return False
+    
+    def revoke_token(self, jti: str, expires_in: int = None):
+        """Revoke JWT token"""
+        if self.redis_client:
+            if expires_in:
+                self.redis_client.setex(f"revoked_token:{jti}", expires_in, "revoked")
+            else:
+                self.redis_client.set(f"revoked_token:{jti}", "revoked")
+    
+    def get_user_by_id(self, user_id: str) -> Optional[User]:
+        """Get user by ID"""
+        db_session = db_manager.get_session()
+        try:
+            return db_session.query(User).filter_by(id=user_id).first()
+        except Exception as e:
+            self.logger.error(f"User lookup error: {e}")
+            return None
+        finally:
+            db_session.close()
+    
+    def generate_device_fingerprint(self, request_data: Dict[str, Any]) -> str:
+        """Generate device fingerprint from request data"""
+        fingerprint_data = []
+        
+        for field in self.device_fingerprint_fields:
+            value = request_data.get(field, '')
+            fingerprint_data.append(f"{field}:{value}")
+        
+        fingerprint_string = '|'.join(fingerprint_data)
+        return hashlib.sha256(fingerprint_string.encode()).hexdigest()
+    
+    def check_security_violations(self, user: User, request_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Check for security violations"""
+        violations = []
+        
+        # Check for multiple concurrent sessions
+        if user.active_sessions > user.max_sessions:
+            violations.append({
+                'type': 'excessive_sessions',
+                'severity': 'medium',
+                'message': f'User has {user.active_sessions} active sessions (max: {user.max_sessions})'
+            })
+        
+        # Check for suspicious IP patterns
+        ip_address = request_data.get('ip_address')
+        if ip_address and user.metadata and 'login_history' in user.metadata:
+            recent_ips = [entry.get('ip_address') for entry in user.metadata['login_history'][-10:]]
+            unique_ips = set(filter(None, recent_ips))
+            
+            if len(unique_ips) > 5:  # More than 5 different IPs in recent history
+                violations.append({
+                    'type': 'multiple_ip_addresses',
+                    'severity': 'high',
+                    'message': f'User accessed from {len(unique_ips)} different IP addresses recently'
+                })
+        
+        # Check for rapid login attempts
+        if user.metadata and 'login_history' in user.metadata:
+            recent_attempts = [
+                entry for entry in user.metadata['login_history'][-5:]
+                if datetime.fromisoformat(entry['timestamp'].replace('Z', '+00:00')) > 
+                   datetime.now(timezone.utc) - timedelta(minutes=5)
+            ]
+            
+            if len(recent_attempts) > 3:
+                violations.append({
+                    'type': 'rapid_login_attempts',
+                    'severity': 'high',
+                    'message': f'{len(recent_attempts)} login attempts in the last 5 minutes'
+                })
+        
+        return violations
+
+
+# Global instance
+enhanced_auth_manager = EnhancedAuthManager()
 

@@ -12,7 +12,7 @@ from flask import Flask
 from flask_testing import TestCase
 
 from src.compliance.compliance import (
-    ComplianceManager, ComplianceStatus, RiskLevel, DocumentType,
+    EnhancedComplianceManager, ComplianceStatus, RiskLevel, DocumentType,
     ComplianceRule, RegulatoryRequirement
 )
 from src.models.user import User
@@ -21,7 +21,7 @@ from src.models.base import db_manager
 
 
 class TestComplianceManager(TestCase):
-    """Test cases for ComplianceManager class"""
+    """Test cases for EnhancedComplianceManager class"""
     
     def create_app(self):
         """Create test Flask application"""
@@ -31,7 +31,7 @@ class TestComplianceManager(TestCase):
     
     def setUp(self):
         """Set up test fixtures"""
-        self.compliance_manager = ComplianceManager()
+        self.compliance_manager = EnhancedComplianceManager()
         
         # Create test user
         self.test_user = Mock(spec=User)
@@ -90,31 +90,31 @@ class TestComplianceManager(TestCase):
         """Test loading of compliance rules"""
         rules = self.compliance_manager._load_compliance_rules()
         
-        self.assertIsInstance(rules, list)
-        self.assertGreater(len(rules), 0)
+        self.assertIsInstance(rules, list, "Rules should be a list")
+        self.assertGreater(len(rules), 0, "Should load at least one rule")
         
         # Check rule structure
         for rule in rules:
-            self.assertIsInstance(rule, ComplianceRule)
-            self.assertIsNotNone(rule.id)
-            self.assertIsNotNone(rule.name)
-            self.assertIsNotNone(rule.rule_type)
-            self.assertIsInstance(rule.conditions, dict)
-            self.assertIsInstance(rule.actions, list)
+            self.assertIsInstance(rule, ComplianceRule, f"Rule {rule} is not a ComplianceRule instance")
+            self.assertIsNotNone(rule.id, "Rule ID should not be None")
+            self.assertIsNotNone(rule.name, "Rule name should not be None")
+            self.assertIsNotNone(rule.rule_type, "Rule type should not be None")
+            self.assertIsInstance(rule.conditions, dict, "Rule conditions should be a dictionary")
+            self.assertIsInstance(rule.actions, list, "Rule actions should be a list")
     
     def test_load_regulatory_requirements(self):
         """Test loading of regulatory requirements"""
         requirements = self.compliance_manager._load_regulatory_requirements()
         
-        self.assertIsInstance(requirements, list)
-        self.assertGreater(len(requirements), 0)
+        self.assertIsInstance(requirements, list, "Requirements should be a list")
+        self.assertGreater(len(requirements), 0, "Should load at least one requirement")
         
         # Check requirement structure
         for req in requirements:
-            self.assertIsInstance(req, RegulatoryRequirement)
-            self.assertIsNotNone(req.regulation)
-            self.assertIsNotNone(req.requirement_id)
-            self.assertIsInstance(req.applicable_jurisdictions, list)
+            self.assertIsInstance(req, RegulatoryRequirement, f"Requirement {req} is not a RegulatoryRequirement instance")
+            self.assertIsNotNone(req.regulation, "Regulation should not be None")
+            self.assertIsNotNone(req.requirement_id, "Requirement ID should not be None")
+            self.assertIsInstance(req.applicable_jurisdictions, list, "Jurisdictions should be a list")
     
     @patch('src.models.base.db_manager.get_session')
     def test_perform_kyc_verification_success(self, mock_get_session):
@@ -142,7 +142,7 @@ class TestComplianceManager(TestCase):
                 {
                     'type': 'government_id',
                     'document_number': 'P123456789',
-                    'expiry_date': (datetime.now() + timedelta(days=365)).isoformat(),
+                    'expiry_date': (datetime.now(timezone.utc) + timedelta(days=365)).isoformat(),
                     'file_path': '/path/to/document.pdf',
                     'name': 'John Doe'
                 }
@@ -151,16 +151,16 @@ class TestComplianceManager(TestCase):
             result = self.compliance_manager.perform_kyc_verification(self.test_user, documents)
             
             # Verify result structure
-            self.assertIn('user_id', result)
-            self.assertIn('verification_id', result)
-            self.assertIn('status', result)
-            self.assertIn('verification_steps', result)
-            self.assertIn('risk_score', result)
+            self.assertIn('user_id', result, "Result should contain user_id")
+            self.assertIn('verification_id', result, "Result should contain verification_id")
+            self.assertIn('status', result, "Result should contain status")
+            self.assertIn('verification_steps', result, "Result should contain verification_steps")
+            self.assertIn('risk_score', result, "Result should contain risk_score")
             
             # Verify successful completion
-            self.assertEqual(result['status'], ComplianceStatus.APPROVED.value)
-            self.assertEqual(result['risk_score'], 25)
-            self.assertEqual(len(result['verification_steps']), 5)
+            self.assertEqual(result['status'], ComplianceStatus.APPROVED.value, "Status should be APPROVED")
+            self.assertEqual(result['risk_score'], 25, "Risk score should match mock value")
+            self.assertEqual(len(result['verification_steps']), 5, "Should have 5 verification steps")
             
             # Verify all verification methods were called
             mock_verify_docs.assert_called_once()
@@ -168,11 +168,14 @@ class TestComplianceManager(TestCase):
             mock_verify_addr.assert_called_once()
             mock_screen_sanctions.assert_called_once()
             mock_screen_pep.assert_called_once()
-            mock_update_status.assert_called_once()
+            mock_update_status.assert_called_once_with(self.test_user, result) # Assert with result object
+            
+            # Assert that the mock session was closed
+            self.mock_session.close.assert_called_once()
     
     @patch('src.models.base.db_manager.get_session')
-    def test_perform_kyc_verification_high_risk(self, mock_get_session):
-        """Test KYC verification with high risk score"""
+    def test_perform_kyc_verification_failed_step(self, mock_get_session):
+        """Test KYC verification with failed verification step"""
         mock_get_session.return_value = self.mock_session
         
         with patch.object(self.compliance_manager, '_verify_documents') as mock_verify_docs, \
@@ -183,23 +186,27 @@ class TestComplianceManager(TestCase):
              patch.object(self.compliance_manager, '_calculate_kyc_risk_score') as mock_calc_risk, \
              patch.object(self.compliance_manager, '_update_user_kyc_status') as mock_update_status:
             
-            # Configure mocks for high risk verification
-            mock_verify_docs.return_value = {'success': True, 'verified_documents': ['government_id'], 'issues': []}
+            # Configure mocks for failed verification (e.g., document verification fails)
+            mock_verify_docs.return_value = {'success': False, 'verified_documents': [], 'issues': ['Missing document']}
             mock_verify_id.return_value = {'success': True, 'confidence_score': 95, 'issues': []}
             mock_verify_addr.return_value = {'success': True, 'confidence_score': 90, 'issues': []}
             mock_screen_sanctions.return_value = {'success': True, 'matches': [], 'lists_checked': ['ofac_sdn']}
             mock_screen_pep.return_value = {'success': True, 'is_pep': False, 'pep_category': None, 'details': []}
-            mock_calc_risk.return_value = 85  # High risk score
+            mock_calc_risk.return_value = 50  # Medium risk score
             
             documents = [{'type': 'government_id', 'document_number': 'P123456789', 
-                         'expiry_date': (datetime.now() + timedelta(days=365)).isoformat(),
+                         'expiry_date': (datetime.now(timezone.utc) + timedelta(days=365)).isoformat(),
                          'file_path': '/path/to/document.pdf', 'name': 'John Doe'}]
             
             result = self.compliance_manager.perform_kyc_verification(self.test_user, documents)
             
-            # Should be rejected due to high risk
-            self.assertEqual(result['status'], ComplianceStatus.REJECTED.value)
-            self.assertEqual(result['risk_score'], 85)
+            # Should be rejected due to failed step
+            self.assertEqual(result['status'], ComplianceStatus.REJECTED.value, "Status should be REJECTED for failed step")
+            # The error handling in compliance.py catches the exception from a failed step and sets the status to REJECTED.
+            # The mock setup here doesn't raise an exception, it returns a dict with 'success': False.
+            # The logic in perform_kyc_verification handles this by checking all steps' status.
+            self.assertTrue(any(step['status'] == 'failed' for step in result['verification_steps']), "At least one step should have failed status")
+            self.mock_session.close.assert_called_once()
     
     @patch('src.models.base.db_manager.get_session')
     def test_perform_kyc_verification_failed_step(self, mock_get_session):

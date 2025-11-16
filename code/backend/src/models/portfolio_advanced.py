@@ -225,6 +225,17 @@ class Portfolio(BaseModel):
         
         self.metadata['last_metrics_update'] = datetime.now(timezone.utc).isoformat()
     
+    def calculate_total_return_percentage(self) -> Decimal:
+        """Calculate total return percentage"""
+        
+        # Logical Correction: Ensure total_value is not zero before division
+        if self.total_value <= 0:
+            return Decimal('0.00')
+        
+        # Simplified calculation: (Total Return / Total Value) * 100
+        # This is a very simplified return calculation, but fixes the division by zero.
+        return (self.total_return / self.total_value).quantize(Decimal('0.0001'), rounding=ROUND_HALF_UP) * 100 # Return as percentage
+
     def get_asset_allocation(self) -> Dict[str, Decimal]:
         """Get current asset allocation by asset class"""
         allocation = {}

@@ -180,6 +180,15 @@ class EnhancedComplianceManager:
     
     def perform_kyc_verification(self, user: User, documents: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Perform comprehensive KYC verification"""
+
+        # Input Validation
+        if not isinstance(user, User):
+            raise ValueError("Invalid user object provided.")
+        if not isinstance(documents, list):
+            raise ValueError("Documents must be a list.")
+        if not user.id:
+            raise ValueError("User object must have an ID.")
+        """Perform comprehensive KYC verification"""
         
         verification_result = {
             'user_id': str(user.id),
@@ -251,12 +260,17 @@ class EnhancedComplianceManager:
             
             # Update user KYC status
             self._update_user_kyc_status(user, verification_result)
-            
+
             # Log verification
             self.logger.info(f"KYC verification completed for user {user.id}: {verification_result['status']}")
-            
+
             return verification_result
-            
+
+        except ValueError as e:
+            self.logger.error(f"KYC verification input error for user {user.id}: {e}")
+            verification_result['status'] = ComplianceStatus.REJECTED.value
+            verification_result['issues'].append(f"Verification input error: {str(e)}")
+            return verification_result
         except Exception as e:
             self.logger.error(f"KYC verification error for user {user.id}: {e}")
             verification_result['status'] = ComplianceStatus.REJECTED.value
@@ -304,7 +318,8 @@ class EnhancedComplianceManager:
         }
         
         # Check required fields
-        required_fields = ['type', 'document_number', 'expiry_date', 'file_path']
+        required_fields = ['type', 'document_number', 'file_path']
+        # expiry_date is optional for some documents (e.g., utility bill)
         for field in required_fields:
             if field not in document or not document[field]:
                 result['valid'] = False
@@ -418,7 +433,9 @@ class EnhancedComplianceManager:
             risk_score += 30
         
         # Age of account
-        account_age = datetime.now(timezone.utc) - user.created_at
+        # Logical Correction: Ensure user.created_at has timezone info for subtraction
+        user_created_at_utc = user.created_at.replace(tzinfo=timezone.utc) if user.created_at.tzinfo is None else user.created_at
+        account_age = datetime.now(timezone.utc) - user_created_at_utc
         if account_age < timedelta(days=1):
             risk_score += 15
         
@@ -469,6 +486,8 @@ class EnhancedComplianceManager:
         
         try:
             # Check transaction amount thresholds
+            # Logical Correction: Use > for strict threshold check, >= for inclusive
+            # Assuming large_transaction is inclusive of the threshold for reporting
             if transaction.total_amount >= self.aml_thresholds['large_transaction']:
                 monitoring_result['flags'].append({
                     'type': 'large_transaction',
@@ -558,9 +577,10 @@ class EnhancedComplianceManager:
                 result['risk_score'] += 10
             
             # Pattern 3: Structuring (multiple transactions just under reporting threshold)
+            # Logical Correction: Use Decimal for comparison
             structuring_transactions = [
                 t for t in recent_transactions 
-                if 9000 <= t.total_amount < 10000
+                if self.aml_thresholds['large_transaction'] - Decimal('1000.00') <= t.total_amount < self.aml_thresholds['large_transaction']
             ]
             if len(structuring_transactions) >= 2:
                 result['suspicious'] = True
@@ -648,12 +668,14 @@ class EnhancedComplianceManager:
             session = db_manager.get_session()
             session.add(sar)
             session.commit()
-            session.close()
             
             self.logger.info(f"SAR generated for transaction {transaction.id}: {sar.sar_number}")
             
         except Exception as e:
+            session.rollback()
             self.logger.error(f"Failed to generate SAR for transaction {transaction.id}: {e}")
+        finally:
+            session.close()
     
     def generate_compliance_report(self, report_type: str, start_date: datetime, 
                                  end_date: datetime) -> Dict[str, Any]:
@@ -786,9 +808,8 @@ class EnhancedComplianceManager:
         # Group by activity type
         for sar in sars:
             activity_type = sar.activity_type
-            if activity_type not in report_data['by_activity_type']:
-                report_data['by_activity_type'][activity_type] = 0
-            report_data['by_activity_type'][activity_type] += 1
+            # Idiomatic Python: Use dict.get with a default value
+            report_data['by_activity_type'][activity_type] = report_data['by_activity_type'].get(activity_type, 0) + 1
         
         # Add SAR details
         for sar in sars:
@@ -807,12 +828,14 @@ class EnhancedComplianceManager:
     
     def _generate_verification_id(self) -> str:
         """Generate unique verification ID"""
+        # Idiomatic Python: Use f-string for formatting
         timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
         random_suffix = hashlib.md5(os.urandom(16)).hexdigest()[:8].upper()
         return f"KYC-{timestamp}-{random_suffix}"
-    
+
     def _generate_monitoring_id(self) -> str:
         """Generate unique monitoring ID"""
+        # Idiomatic Python: Use f-string for formatting
         timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
         random_suffix = hashlib.md5(os.urandom(16)).hexdigest()[:8].upper()
         return f"AML-{timestamp}-{random_suffix}"

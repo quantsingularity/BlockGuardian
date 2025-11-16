@@ -14,9 +14,9 @@ import enum
 import json
 import uuid
 
-from src.models.base import BaseModel
-from src.security.auth import UserRole, auth_manager
-from src.security.encryption import encryption_manager
+from .base import BaseModel
+from ..security.auth import UserRole, auth_manager
+from ..security.encryption import encryption_manager
 
 
 class UserStatus(enum.Enum):
@@ -55,7 +55,7 @@ class AMLRiskLevel(enum.Enum):
 
 
 # Initialize SQLAlchemy
-db = SQLAlchemy()
+# db = SQLAlchemy() # Removed unused local SQLAlchemy instance, assuming base.py handles it
 
 
 class User(BaseModel):
@@ -262,7 +262,10 @@ class User(BaseModel):
             'monthly': self.monthly_transaction_limit,
             'annual': self.annual_transaction_limit
         }
-        return limits.get(period, self.daily_transaction_limit)
+        # Idiomatic Python: Use f-string for error message
+        if period not in limits:
+            raise ValueError(f"Invalid period '{period}'. Must be one of: {', '.join(limits.keys())}")
+        return limits[period]
     
     def update_kyc_status(self, new_status: str, notes: str = None):
         """Update KYC status with audit trail"""

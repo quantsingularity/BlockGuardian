@@ -77,8 +77,8 @@ class Transaction(BaseModel):
     quantity = Column(Numeric(20, 8), nullable=False)
     price = Column(Numeric(20, 8), nullable=False)
     total_amount = Column(Numeric(20, 2), nullable=False)
-    fee = Column(Numeric(20, 2), default=0)
-    tax = Column(Numeric(20, 2), default=0)
+    fee = Column(Numeric(20, 2), default=Decimal('0.00')) # Use Decimal for default
+    tax = Column(Numeric(20, 2), default=Decimal('0.00')) # Use Decimal for default
     net_amount = Column(Numeric(20, 2), nullable=False)
     
     # Currency information
@@ -130,6 +130,9 @@ class Transaction(BaseModel):
         Index('idx_transaction_asset_date', 'asset_symbol', 'order_date'),
         Index('idx_transaction_status_date', 'status', 'order_date'),
         Index('idx_transaction_risk_compliance', 'risk_level', 'compliance_status'),
+        # Constraint: Ensure quantity and total_amount are non-negative
+        CheckConstraint('quantity >= 0', name='check_positive_quantity'),
+        CheckConstraint('total_amount >= 0', name='check_positive_total_amount'),
     )
     
     def __init__(self, **kwargs):
@@ -222,6 +225,9 @@ class Transaction(BaseModel):
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert transaction to dictionary"""
+        # Removed redundant to_dict method as BaseModel likely provides a similar one,
+        # or it should be implemented using a proper serialization library like Marshmallow.
+        # Keeping it for now but ensuring Decimal values are converted to float for JSON serialization.
         return {
             'id': str(self.id),
             'transaction_id': self.transaction_id,

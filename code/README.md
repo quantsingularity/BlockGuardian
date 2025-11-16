@@ -683,16 +683,3 @@ BlockGuardian implements comprehensive compliance monitoring to ensure adherence
 BlockGuardian is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
 ---
-
-## Support & Contact
-
-For technical support, feature requests, or general inquiries:
-
-- **Email**: support@blockguardian.com
-- **Documentation**: https://docs.blockguardian.com
-- **Issue Tracker**: https://github.com/abrar2030/BlockGuardian/issues
-- **Community Forum**: https://community.blockguardian.com
-
----
-
-*This documentation is maintained by the BlockGuardian development team and is updated regularly to reflect the latest features and improvements.*

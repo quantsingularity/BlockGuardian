@@ -1,42 +1,48 @@
+
+# General
+*.log
+*.tmp
+*.swp
+*~
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
 
-# Virtual environment
-.venv/
-env/
+# Python Virtual Environment
 venv/
 ENV/
+env/
+*/venv/
+*/ENV/
+*/env/
+.venv
 
-# Distribution / packaging
+# Python Distribution / Installation
 .Python
 build/
-develop-eggs/
 dist/
 downloads/
 eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
 MANIFEST
 
 # PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
 
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
+# Jupyter Notebook
+.ipynb_checkpoints
 
 # Unit test / coverage reports
 htmlcov/
@@ -45,143 +51,151 @@ htmlcov/
 .coverage
 .coverage.*
 .cache
-osetests.xml
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
 .pytest_cache/
-pytestdebug.log
 
-# Translations
-*.mo
-*.pot
-
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
-
-# Flask stuff:
+# Flask specific
 instance/
 .webassets-cache
 
-# Scrapy stuff:
-.scrapy
-
-# Sphinx documentation
-_build/
-
-# PyBuilder
-target/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# IPython
-profile_default/
-ipython_config.py
-
-# PEP 582; __pypackages__ directory
-__pypackages__/
-
 # Celery stuff
-celerybeat-schedule
-celerybeat.pid
+celerybeat-schedule.*
 
 # SageMath files
 *.sage.py
 
-# Environments
-.env
-.venv
-env/
-venv/
-ENV/
+# Scrapy files
+.scrapy
 
-# dotenv
-.env.*
-!.env.example
-
-# Spyder project settings
-.spyderproject
-.spyderworkspace
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Pyre type checker
-.pyre/
-
-# Node.js / JavaScript
+# Node.js / React / Webpack
 node_modules/
-dist/
-coverage/
-.nyc_output/
-
-# Yarn
+npm-debug.log
+yarn-debug.log
 yarn-error.log
-.pnp/
-.pnp.js
-
-# pnpm
-pnpm-lock.yaml
+# It is generally recommended to commit lock files
+# package-lock.json
+# yarn.lock
 
 # Frontend build artifacts
-.next/
-out/
-build/
+/code/frontend/build/
+/code/frontend/dist/
+.cache/
 
-# IDE / Editor specific
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
+# Jest cache
+/code/frontend/.jest-cache
 
-# OS generated files
-.DS_Store
-Thumbs.db
+# Webpack cache
+.webpack/
+
+# Blockchain / Solidity / Truffle / Hardhat
+build/contracts/
+contracts/build/
+artifacts/
+cache/
+typechain-types/
+
+# Docker
+*.dockerignore
+# If you store built images or context tarballs locally:
+# *.tar
+# *.tar.gz
 
 # Terraform
 .terraform/
 *.tfstate
-*.tfstate.backup
+*.tfstate.*
 crash.log
+*.tfvars
+*.tfvars.json
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+
+# Kubernetes
+# Secrets should ideally be managed outside git, e.g., using Sealed Secrets or Vault.
+# If storing unencrypted secrets, uncomment the line below, but this is NOT recommended.
+# *-secrets.yaml
 
 # Ansible
 *.retry
+# Vault password files (should be kept secure and out of git)
+*.vault
+*.vault_pass
+*.vault_password
 
-# Docker
-docker-compose.yml.override # if you have local overrides
+# IDEs and Editors
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+.project
+.classpath
+.settings/
+*.tmproj
 
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+# Large data files (consider Git LFS if needed)
+/resources/datasets/*.csv
 
-# Other
+# Specific project files
+git-auto-commit.sh
+
+
+# Additional IDE/Editor Metadata
+*.iml
+.project
+.classpath
+.settings/
+.idea/workspace.xml
+.idea/modules.xml
+.idea/vcs.xml
+.idea/misc.xml
+.idea/*.iml
+
+# More Logs and Caches
+*.cache
+*.pid
+*.sock
+*.sqlite
+*.sqlite3
+/tmp/
+/temp/
+.sass-cache/
+.npm/
+.bower/
+.grunt/
+.nyc_output/
+.serverless/
+.terraform/
+.terraform.lock.hcl
+
+# OS generated files
 .DS_Store
-.AppleDouble
-.LSOverride
+.Trashes
+ehthumbs.db
+Desktop.ini
 
-# Temporary files:
-*.tmp
-*.bak
-*.swo
-*.swp
+# Compiled/Build files
+/build/
+/dist/
+/out/
+/target/
+/bin/
+/obj/
+*.o
+*.a
+*.so
+*.dll
+*.class
+*.pyc
+*.whl
+*.egg
 
-# Sensitive files
-secrets.yml
-*.pem
-*.key
-
-# Specific Files
+# Specific project files
 git-auto-commit.sh

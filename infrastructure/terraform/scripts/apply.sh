@@ -32,4 +32,3 @@ cd .. # Go up to infrastructure/terraform/
 terraform apply "$PLAN_FILE"
 
 echo "Terraform apply completed for $ENVIRONMENT."
-

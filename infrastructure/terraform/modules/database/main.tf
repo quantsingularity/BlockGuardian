@@ -175,7 +175,7 @@ resource "aws_db_instance" "main" {
   # Monitoring and logging
   monitoring_interval = var.monitoring_interval
   monitoring_role_arn = var.monitoring_interval > 0 ? aws_iam_role.rds_enhanced_monitoring[0].arn : null
-  
+
   enabled_cloudwatch_logs_exports = var.enabled_cloudwatch_logs_exports
   performance_insights_enabled    = var.performance_insights_enabled
   performance_insights_kms_key_id = var.performance_insights_enabled ? (var.kms_key_id != null ? var.kms_key_id : aws_kms_key.db_encryption[0].arn) : null
@@ -183,7 +183,7 @@ resource "aws_db_instance" "main" {
 
   # Security
   deletion_protection = var.deletion_protection
-  
+
   # CA certificate
   ca_cert_identifier = var.ca_cert_identifier
 
@@ -206,25 +206,25 @@ resource "aws_db_instance" "read_replica" {
   count = var.create_read_replica ? 1 : 0
 
   identifier = "${var.db_name}-${var.environment}-read-replica"
-  
+
   # Replica configuration
   replicate_source_db = aws_db_instance.main.identifier
   instance_class      = var.read_replica_instance_class
-  
+
   # Network configuration
   publicly_accessible    = false
   vpc_security_group_ids = var.security_group_ids
-  
+
   # Monitoring
   monitoring_interval = var.monitoring_interval
   monitoring_role_arn = var.monitoring_interval > 0 ? aws_iam_role.rds_enhanced_monitoring[0].arn : null
-  
+
   performance_insights_enabled = var.performance_insights_enabled
   performance_insights_kms_key_id = var.performance_insights_enabled ? (var.kms_key_id != null ? var.kms_key_id : aws_kms_key.db_encryption[0].arn) : null
-  
+
   # Security
   deletion_protection = var.deletion_protection
-  
+
   tags = merge(var.default_tags, {
     Name        = "${var.db_name}-${var.environment}-read-replica"
     Environment = var.environment
@@ -268,7 +268,7 @@ resource "aws_iam_role_policy_attachment" "rds_enhanced_monitoring" {
 # CloudWatch Log Groups for database logs
 resource "aws_cloudwatch_log_group" "db_logs" {
   for_each = toset(var.enabled_cloudwatch_logs_exports)
-  
+
   name              = "/aws/rds/instance/${var.db_name}-${var.environment}/${each.value}"
   retention_in_days = var.log_retention_days
   kms_key_id        = var.kms_key_id != null ? var.kms_key_id : aws_kms_key.db_encryption[0].arn
@@ -369,4 +369,3 @@ resource "aws_cloudwatch_metric_alarm" "database_freeable_memory" {
     Compliance  = "PCI-DSS,SOC2,ISO27001"
   })
 }
-

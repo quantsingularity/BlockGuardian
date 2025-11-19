@@ -577,4 +577,3 @@ log "Instance hardening completed successfully for $APP_NAME in $ENVIRONMENT env
 /opt/aws/bin/cfn-signal -e $? --stack $APP_NAME-$ENVIRONMENT --resource AutoScalingGroup --region $(curl -s http://169.254.169.254/latest/meta-data/placement/region) || true
 
 log "User data script execution completed"
-

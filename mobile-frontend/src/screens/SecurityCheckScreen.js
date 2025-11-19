@@ -56,7 +56,7 @@ const SecurityCheckScreen = ({ navigation }) => {
       default: return 'text-gray-400';
     }
   };
-  
+
   const getRiskIcon = (risk) => {
      switch (risk?.toLowerCase()) {
       case 'low': return 'checkmark-circle-outline';
@@ -90,7 +90,7 @@ const SecurityCheckScreen = ({ navigation }) => {
         </StyledView>
 
         {/* Check Button */}
-        <StyledTouchableOpacity 
+        <StyledTouchableOpacity
           className={`w-full rounded-lg py-4 mb-8 shadow-md flex-row justify-center items-center ${isLoading ? 'bg-gray-500' : 'bg-indigo-600 active:bg-indigo-700'}`}
           onPress={handleCheckAddress}
           disabled={isLoading}
@@ -123,4 +123,3 @@ const SecurityCheckScreen = ({ navigation }) => {
 };
 
 export default SecurityCheckScreen;
-

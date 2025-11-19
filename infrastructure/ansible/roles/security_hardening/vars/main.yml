@@ -138,7 +138,7 @@ kernel_security_params:
   net.ipv4.tcp_syncookies: 1
   net.ipv4.conf.all.rp_filter: 1
   net.ipv4.conf.default.rp_filter: 1
-  
+
   # IPv6 security (disable if not needed)
   net.ipv6.conf.all.disable_ipv6: 1
   net.ipv6.conf.default.disable_ipv6: 1
@@ -147,7 +147,7 @@ kernel_security_params:
   net.ipv6.conf.default.accept_ra: 0
   net.ipv6.conf.all.accept_redirects: 0
   net.ipv6.conf.default.accept_redirects: 0
-  
+
   # Memory protection
   kernel.randomize_va_space: 2
   kernel.exec-shield: 1
@@ -155,7 +155,7 @@ kernel_security_params:
   kernel.dmesg_restrict: 1
   kernel.printk: "3 3 3 3"
   kernel.core_uses_pid: 1
-  
+
   # File system security
   fs.suid_dumpable: 0
   fs.protected_hardlinks: 1
@@ -344,4 +344,3 @@ file_integrity_paths:
   - /lib64
   - /usr/lib
   - /usr/lib64
-

@@ -319,7 +319,7 @@ data:
         annotations:
           summary: "Backup job failed"
           description: "Backup job {{ $labels.job }} has failed"
-      
+
       - alert: BackupDelayed
         expr: time() - backup_job_last_success_time > 86400
         for: 0m
@@ -329,7 +329,7 @@ data:
         annotations:
           summary: "Backup is overdue"
           description: "Backup job {{ $labels.job }} hasn't run successfully in 24 hours"
-      
+
       - alert: RPOViolation
         expr: time() - backup_job_last_success_time > 900
         for: 0m
@@ -466,4 +466,3 @@ This comprehensive disaster recovery and backup strategy ensures:
 - **Regular testing and validation**
 - **Complete audit trails**
 - **RTO/RPO objectives met**
-

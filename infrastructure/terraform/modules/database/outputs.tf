@@ -193,4 +193,3 @@ output "compliance_tags" {
   description = "Compliance tags applied to resources"
   value       = var.compliance_tags
 }
-

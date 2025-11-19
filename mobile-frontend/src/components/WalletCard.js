@@ -9,7 +9,7 @@ const StyledTouchableOpacity = styled(TouchableOpacity);
 
 /**
  * WalletCard component for displaying wallet information
- * 
+ *
  * @param {Object} props - Component props
  * @param {string} props.address - Wallet address
  * @param {string} props.balance - Wallet balance
@@ -41,7 +41,7 @@ const WalletCard = ({
           </StyledView>
           <StyledText className="text-white font-bold text-lg">My Wallet</StyledText>
         </StyledView>
-        
+
         <StyledTouchableOpacity
           onPress={onDisconnect}
           className="bg-red-600/20 px-3 py-1 rounded-full"
@@ -50,17 +50,17 @@ const WalletCard = ({
           <StyledText className="text-red-400 font-medium text-sm">Disconnect</StyledText>
         </StyledTouchableOpacity>
       </StyledView>
-      
+
       <StyledView className="bg-gray-700/50 p-3 rounded-lg mb-4">
         <StyledText className="text-gray-400 text-sm mb-1">Address</StyledText>
         <StyledText className="text-white font-medium">{formatAddress(address)}</StyledText>
       </StyledView>
-      
+
       <StyledView className="bg-gray-700/50 p-3 rounded-lg mb-4">
         <StyledText className="text-gray-400 text-sm mb-1">Balance</StyledText>
         <StyledText className="text-white font-bold text-xl">{balance} <StyledText className="text-indigo-400">{currency}</StyledText></StyledText>
       </StyledView>
-      
+
       <StyledTouchableOpacity
         onPress={onViewDetails}
         className="bg-indigo-600 py-2 rounded-lg items-center"

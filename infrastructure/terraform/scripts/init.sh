@@ -35,4 +35,3 @@ terraform init -reconfigure -backend-config="$ENV_DIR/terraform.tfvars"
 # or ensure your backend.tf is configured to use a path that includes the environment name, potentially set via tfvars.
 
 echo "Terraform init completed for $ENVIRONMENT."
-

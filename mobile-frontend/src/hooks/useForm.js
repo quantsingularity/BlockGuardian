@@ -2,7 +2,7 @@ import { useState } from 'react';
 
 /**
  * Custom hook for form handling with validation
- * 
+ *
  * @param {Object} initialValues - Initial form values
  * @param {Function} validate - Validation function
  * @param {Function} onSubmit - Submit handler
@@ -20,7 +20,7 @@ const useForm = (initialValues = {}, validate = () => ({}), onSubmit = () => {})
       ...prevValues,
       [name]: value
     }));
-    
+
     // Clear error when field is changed
     if (errors[name]) {
       setErrors(prevErrors => ({
@@ -36,7 +36,7 @@ const useForm = (initialValues = {}, validate = () => ({}), onSubmit = () => {})
       ...prevTouched,
       [name]: true
     }));
-    
+
     // Validate field on blur
     const fieldErrors = validate({ [name]: values[name] });
     if (fieldErrors[name]) {
@@ -52,14 +52,14 @@ const useForm = (initialValues = {}, validate = () => ({}), onSubmit = () => {})
     // Validate all fields
     const formErrors = validate(values);
     setErrors(formErrors);
-    
+
     // Mark all fields as touched
     const allTouched = Object.keys(values).reduce((acc, key) => {
       acc[key] = true;
       return acc;
     }, {});
     setTouched(allTouched);
-    
+
     // If no errors, submit form
     if (Object.keys(formErrors).length === 0) {
       setIsSubmitting(true);

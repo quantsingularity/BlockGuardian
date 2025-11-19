@@ -38,7 +38,7 @@ const MarketAnalysisScreen = ({ navigation }) => {
           </StyledView>
           <StyledText className="text-gray-400">Analysis of current market trends, potential opportunities, and risks.</StyledText>
         </StyledView>
-        
+
         {/* Top Movers Card */}
         <StyledView className="bg-gray-700 rounded-lg p-5 shadow-md border border-gray-600">
           <StyledView className="flex-row items-center mb-3">
@@ -66,4 +66,3 @@ const MarketAnalysisScreen = ({ navigation }) => {
 };
 
 export default MarketAnalysisScreen;
-

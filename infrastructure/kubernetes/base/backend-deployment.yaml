@@ -48,20 +48,20 @@ spec:
         seccompProfile:
           type: RuntimeDefault
         supplementalGroups: [10001]
-      
+
       # Service Account with minimal permissions
       serviceAccountName: {{ .Values.appName }}-backend-sa
       automountServiceAccountToken: false
-      
+
       # Image Pull Secrets
       imagePullSecrets:
       - name: {{ .Values.imagePullSecrets }}
-      
+
       # Node Selection and Affinity
       nodeSelector:
         kubernetes.io/arch: amd64
         node.kubernetes.io/instance-type: {{ .Values.backend.nodeType | default "compute-optimized" }}
-      
+
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -82,14 +82,14 @@ spec:
                 operator: NotIn
                 values:
                 - spot
-      
+
       # Tolerations
       tolerations:
       - key: "dedicated"
         operator: "Equal"
         value: "application"
         effect: "NoSchedule"
-      
+
       # Init Containers for security and setup
       initContainers:
       - name: security-init
@@ -116,12 +116,12 @@ spec:
           mountPath: /app
         - name: tmp-volume
           mountPath: /tmp
-      
+
       containers:
       - name: {{ .Values.appName }}-backend
         image: {{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}
         imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
-        
+
         # Security Context for Container
         securityContext:
           runAsNonRoot: true
@@ -136,7 +136,7 @@ spec:
             - NET_BIND_SERVICE
           seccompProfile:
             type: RuntimeDefault
-        
+
         # Ports
         ports:
         - name: http
@@ -145,7 +145,7 @@ spec:
         - name: metrics
           containerPort: {{ .Values.backend.metricsPort | default "9090" }}
           protocol: TCP
-        
+
         # Resource Limits and Requests
         resources:
           limits:
@@ -156,7 +156,7 @@ spec:
             cpu: {{ .Values.backend.resources.requests.cpu }}
             memory: {{ .Values.backend.resources.requests.memory }}
             ephemeral-storage: {{ .Values.backend.resources.requests.ephemeralStorage | default "100Mi" }}
-        
+
         # Environment Variables
         env:
         - name: NODE_ENV
@@ -177,14 +177,14 @@ spec:
           value: "true"
         - name: COMPLIANCE_MODE
           value: "financial-grade"
-        
+
         # Secrets from External Secret Manager
         envFrom:
         - secretRef:
             name: {{ .Values.appName }}-secrets
         - configMapRef:
             name: {{ .Values.appName }}-config
-        
+
         # Volume Mounts
         volumeMounts:
         - name: app-volume
@@ -199,7 +199,7 @@ spec:
         - name: ssl-certs
           mountPath: /etc/ssl/certs
           readOnly: true
-        
+
         # Health Checks
         livenessProbe:
           httpGet:
@@ -214,7 +214,7 @@ spec:
           timeoutSeconds: 10
           failureThreshold: 3
           successThreshold: 1
-        
+
         readinessProbe:
           httpGet:
             path: /health/ready
@@ -228,7 +228,7 @@ spec:
           timeoutSeconds: 5
           failureThreshold: 3
           successThreshold: 1
-        
+
         startupProbe:
           httpGet:
             path: /health/startup
@@ -239,7 +239,7 @@ spec:
           timeoutSeconds: 3
           failureThreshold: 30
           successThreshold: 1
-        
+
         # Lifecycle hooks
         lifecycle:
           preStop:
@@ -251,7 +251,7 @@ spec:
                 echo "Graceful shutdown initiated..."
                 sleep 15
                 echo "Shutdown complete"
-      
+
       # Sidecar container for log shipping
       - name: log-shipper
         image: {{ .Values.logging.fluentbit.image | default "fluent/fluent-bit:2.1" }}
@@ -280,7 +280,7 @@ spec:
           readOnly: true
         - name: tmp-volume
           mountPath: /tmp
-      
+
       # Security and monitoring sidecar
       - name: security-monitor
         image: {{ .Values.security.monitor.image | default "falcosecurity/falco:0.35.1" }}
@@ -306,7 +306,7 @@ spec:
           readOnly: true
         - name: tmp-volume
           mountPath: /tmp
-      
+
       # Volumes
       volumes:
       - name: app-volume
@@ -332,7 +332,7 @@ spec:
       - name: security-config
         configMap:
           name: {{ .Values.appName }}-security-config
-      
+
       # DNS Configuration
       dnsPolicy: ClusterFirst
       dnsConfig:
@@ -340,13 +340,12 @@ spec:
         - name: ndots
           value: "2"
         - name: edns0
-      
+
       # Termination Grace Period
       terminationGracePeriodSeconds: 30
-      
+
       # Priority Class for critical workloads
       priorityClassName: {{ .Values.backend.priorityClass | default "high-priority" }}
-      
+
       # Restart Policy
       restartPolicy: Always
-

@@ -10,7 +10,7 @@ const StyledTouchableOpacity = styled(TouchableOpacity);
 
 /**
  * Card component for displaying content in a contained, styled box
- * 
+ *
  * @param {Object} props - Component props
  * @param {string} props.title - Card title
  * @param {string} props.subtitle - Optional subtitle
@@ -30,7 +30,7 @@ const Card = ({
   className = '',
 }) => {
   const CardContainer = onPress ? StyledTouchableOpacity : StyledView;
-  
+
   return (
     <CardContainer
       className={`bg-gray-800 rounded-xl overflow-hidden border border-gray-700 shadow-md mb-4 ${className}`}
@@ -44,24 +44,24 @@ const Card = ({
           resizeMode="cover"
         />
       )}
-      
+
       <StyledView className="p-4">
         <StyledView className="flex-row items-center mb-2">
           {icon && (
-            <Ionicons 
-              name={icon} 
-              size={20} 
-              color="#4f46e5" 
-              style={{ marginRight: 8 }} 
+            <Ionicons
+              name={icon}
+              size={20}
+              color="#4f46e5"
+              style={{ marginRight: 8 }}
             />
           )}
           <StyledText className="text-white font-bold text-lg">{title}</StyledText>
         </StyledView>
-        
+
         {subtitle && (
           <StyledText className="text-gray-400 text-sm mb-3">{subtitle}</StyledText>
         )}
-        
+
         {children}
       </StyledView>
     </CardContainer>

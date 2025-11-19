@@ -42,20 +42,20 @@ run_component_tests() {
   local component_dir="${PROJECT_ROOT}/${component}"
   local test_command="$2"
   local test_result_file="${TEST_RESULTS_DIR}/${component}_test_results.xml"
-  
+
   log_message "Running tests for ${component}..." "INFO"
-  
+
   if [ ! -d "$component_dir" ]; then
     log_message "Component directory not found: $component_dir" "ERROR"
     return 1
   fi
-  
+
   cd "$component_dir" || { log_message "Failed to change to directory: $component_dir" "ERROR"; return 1; }
-  
+
   # Execute the test command
   log_message "Executing: $test_command" "DEBUG"
   eval "$test_command" > "${TEST_RESULTS_DIR}/${component}_test_output.log" 2>&1
-  
+
   local exit_code=$?
   if [ $exit_code -eq 0 ]; then
     log_message "Tests for ${component} completed successfully" "SUCCESS"
@@ -64,7 +64,7 @@ run_component_tests() {
     log_message "Tests for ${component} failed with exit code $exit_code" "ERROR"
     echo -e "${RED}✗ ${component} tests failed${NC}"
   fi
-  
+
   return $exit_code
 }
 
@@ -72,12 +72,12 @@ run_component_tests() {
 run_all_tests() {
   log_message "Starting unified test run for BlockGuardian" "INFO"
   echo -e "${BLUE}========== BlockGuardian Unified Testing ==========${NC}"
-  
+
   # Initialize counters
   local passed=0
   local failed=0
   local skipped=0
-  
+
   # Create test summary header
   echo "# BlockGuardian Test Summary" > "$SUMMARY_FILE"
   echo "Generated on: $(date)" >> "$SUMMARY_FILE"
@@ -86,7 +86,7 @@ run_all_tests() {
   echo "" >> "$SUMMARY_FILE"
   echo "| Component | Status | Details |" >> "$SUMMARY_FILE"
   echo "|-----------|--------|---------|" >> "$SUMMARY_FILE"
-  
+
   # Backend tests
   if [ -d "${PROJECT_ROOT}/backend" ]; then
     # Check if Python virtual environment exists
@@ -109,7 +109,7 @@ run_all_tests() {
     echo "| Backend | ⚠️ Skipped | Directory not found |" >> "$SUMMARY_FILE"
     ((skipped++))
   fi
-  
+
   # Blockchain contracts tests
   if [ -d "${PROJECT_ROOT}/blockchain-contracts" ]; then
     if command_exists npx; then
@@ -131,7 +131,7 @@ run_all_tests() {
     echo "| Blockchain Contracts | ⚠️ Skipped | Directory not found |" >> "$SUMMARY_FILE"
     ((skipped++))
   fi
-  
+
   # Web frontend tests
   if [ -d "${PROJECT_ROOT}/web-frontend" ]; then
     if command_exists npm; then
@@ -153,7 +153,7 @@ run_all_tests() {
     echo "| Web Frontend | ⚠️ Skipped | Directory not found |" >> "$SUMMARY_FILE"
     ((skipped++))
   fi
-  
+
   # Mobile frontend tests
   if [ -d "${PROJECT_ROOT}/mobile-frontend" ]; then
     if command_exists npm; then
@@ -175,7 +175,7 @@ run_all_tests() {
     echo "| Mobile Frontend | ⚠️ Skipped | Directory not found |" >> "$SUMMARY_FILE"
     ((skipped++))
   fi
-  
+
   # Data analysis tests
   if [ -d "${PROJECT_ROOT}/data-analysis" ]; then
     if [ -d "${PROJECT_ROOT}/data-analysis/venv" ]; then
@@ -197,7 +197,7 @@ run_all_tests() {
     echo "| Data Analysis | ⚠️ Skipped | Directory not found |" >> "$SUMMARY_FILE"
     ((skipped++))
   fi
-  
+
   # Add summary statistics
   echo "" >> "$SUMMARY_FILE"
   echo "## Summary Statistics" >> "$SUMMARY_FILE"
@@ -206,16 +206,16 @@ run_all_tests() {
   echo "- **Failed:** $failed" >> "$SUMMARY_FILE"
   echo "- **Skipped:** $skipped" >> "$SUMMARY_FILE"
   echo "- **Total:** $((passed + failed + skipped))" >> "$SUMMARY_FILE"
-  
+
   # Print summary to console
   echo -e "${BLUE}========== Test Summary ==========${NC}"
   echo -e "${GREEN}Passed: $passed${NC}"
   echo -e "${RED}Failed: $failed${NC}"
   echo -e "${YELLOW}Skipped: $skipped${NC}"
   echo -e "${BLUE}Total: $((passed + failed + skipped))${NC}"
-  
+
   log_message "Test run completed. Results saved to $SUMMARY_FILE" "INFO"
-  
+
   # Return non-zero exit code if any tests failed
   if [ $failed -gt 0 ]; then
     return 1

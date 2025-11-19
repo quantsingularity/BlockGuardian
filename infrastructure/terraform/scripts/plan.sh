@@ -27,4 +27,3 @@ cd .. # Go up to infrastructure/terraform/
 terraform plan -var-file="$ENV_DIR/terraform.tfvars" -out="$PLAN_FILE"
 
 echo "Terraform plan completed for $ENVIRONMENT. Plan saved to $PLAN_FILE."
-

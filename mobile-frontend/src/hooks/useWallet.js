@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 
 /**
  * Custom hook for handling wallet connection state
- * 
+ *
  * @param {Object} provider - WalletConnect provider
  * @returns {Object} - Wallet connection state and methods
  */
@@ -20,7 +20,7 @@ const useWallet = (provider) => {
       setIsConnected(provider.isConnected || false);
       setAddress(provider.address || null);
       setChainId(provider.chainId || null);
-      
+
       // Fetch balance if connected
       if (provider.isConnected && provider.address) {
         fetchBalance();
@@ -38,20 +38,20 @@ const useWallet = (provider) => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       // Use provider's connect method
       await provider.open();
-      
+
       // Update state after connection
       setIsConnected(provider.isConnected || false);
       setAddress(provider.address || null);
       setChainId(provider.chainId || null);
-      
+
       // Fetch balance if connected
       if (provider.isConnected && provider.address) {
         await fetchBalance();
       }
-      
+
       return { success: true, address: provider.address };
     } catch (err) {
       console.error('Wallet connection error:', err);
@@ -72,16 +72,16 @@ const useWallet = (provider) => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       // Use provider's disconnect method
       await provider.disconnect();
-      
+
       // Reset state after disconnection
       setIsConnected(false);
       setAddress(null);
       setChainId(null);
       setBalance('0');
-      
+
       return { success: true };
     } catch (err) {
       console.error('Wallet disconnection error:', err);
@@ -102,11 +102,11 @@ const useWallet = (provider) => {
       // This is a placeholder for actual balance fetching logic
       // In a real implementation, you would use ethers.js or web3.js to fetch the balance
       // For example: const balanceWei = await provider.request({ method: 'eth_getBalance', params: [address, 'latest'] });
-      
+
       // Simulate balance fetch with timeout
       const mockBalance = '1.234'; // This would be replaced with actual balance conversion
       setBalance(mockBalance);
-      
+
       return mockBalance;
     } catch (err) {
       console.error('Balance fetch error:', err);

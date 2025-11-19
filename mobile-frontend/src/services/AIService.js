@@ -7,7 +7,7 @@ import { API_ENDPOINTS } from '../lib/constants';
 class AIService {
   /**
    * Get AI-powered investment recommendations
-   * 
+   *
    * @param {Object} params - Query parameters (risk level, investment horizon, etc.)
    * @param {string} token - Authentication token
    * @returns {Promise} - Resolved with recommendation data
@@ -20,10 +20,10 @@ class AIService {
       throw error;
     }
   }
-  
+
   /**
    * Get risk analysis for a portfolio or asset
-   * 
+   *
    * @param {string} portfolioId - Portfolio ID (optional)
    * @param {string} assetId - Asset ID (optional)
    * @param {string} token - Authentication token
@@ -34,17 +34,17 @@ class AIService {
       const params = {};
       if (portfolioId) params.portfolioId = portfolioId;
       if (assetId) params.assetId = assetId;
-      
+
       return await api.get(API_ENDPOINTS.AI.RISK_ANALYSIS, params, token);
     } catch (error) {
       console.error('Get risk analysis error:', error);
       throw error;
     }
   }
-  
+
   /**
    * Get sentiment analysis for a cryptocurrency or the market
-   * 
+   *
    * @param {string} coinId - Cryptocurrency ID (optional)
    * @param {string} token - Authentication token (optional)
    * @returns {Promise} - Resolved with sentiment analysis data
@@ -58,10 +58,10 @@ class AIService {
       throw error;
     }
   }
-  
+
   /**
    * Get personalized portfolio optimization suggestions
-   * 
+   *
    * @param {string} portfolioId - Portfolio ID
    * @param {Object} params - Optimization parameters
    * @param {string} token - Authentication token
@@ -78,10 +78,10 @@ class AIService {
       throw error;
     }
   }
-  
+
   /**
    * Get market trend predictions
-   * 
+   *
    * @param {string} timeframe - Prediction timeframe
    * @param {Array} assets - List of assets to predict (optional)
    * @param {string} token - Authentication token (optional)

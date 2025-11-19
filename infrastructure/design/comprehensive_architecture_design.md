@@ -82,4 +82,3 @@ This document outlines the proposed enhancements to the BlockGuardian infrastruc
     *   Introduce `ingress.yaml` enhancements for WAF integration and stricter TLS configurations.
 
 This design provides a roadmap for transforming the existing infrastructure into a robust, secure, and compliant environment suitable for financial operations. The next phases will involve the detailed implementation of these enhancements.
-

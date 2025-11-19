@@ -255,4 +255,3 @@
     dest: "/var/log/security-hardening-report-{{ ansible_date_time.date }}.json"
     mode: '0600'
   tags: [reporting, security]
-

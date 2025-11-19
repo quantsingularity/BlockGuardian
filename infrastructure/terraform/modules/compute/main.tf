@@ -40,14 +40,14 @@ locals {
 resource "aws_launch_template" "app" {
   name_prefix   = "${var.app_name}-${var.environment}-"
   description   = "Launch template for ${var.app_name} in ${var.environment} - Financial Grade"
-  
+
   image_id      = var.custom_ami_id != null ? var.custom_ami_id : data.aws_ami.hardened_ami.id
   instance_type = var.instance_type
   key_name      = var.key_name
 
   # Security configurations
   vpc_security_group_ids = var.security_group_ids
-  
+
   # IAM instance profile for secure access
   iam_instance_profile {
     name = var.instance_profile_name
@@ -146,15 +146,15 @@ resource "aws_launch_template" "app" {
 resource "aws_autoscaling_group" "app" {
   name                = "${var.app_name}-${var.environment}-asg"
   vpc_zone_identifier = var.private_subnet_ids
-  
+
   min_size         = var.min_size
   max_size         = var.max_size
   desired_capacity = var.desired_capacity
-  
+
   health_check_type         = "ELB"
   health_check_grace_period = var.health_check_grace_period
   default_cooldown         = var.default_cooldown
-  
+
   # Launch template configuration
   launch_template {
     id      = aws_launch_template.app.id
@@ -397,4 +397,3 @@ resource "aws_wafv2_web_acl_association" "app" {
   resource_arn = aws_lb.app.arn
   web_acl_arn  = var.waf_web_acl_arn
 }
-

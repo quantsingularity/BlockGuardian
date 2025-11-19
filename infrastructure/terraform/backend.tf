@@ -11,4 +11,3 @@ terraform {
   # No configuration needed here, Terraform will create a local terraform.tfstate file.
   # It's highly recommended to use a remote backend for collaborative projects.
 }
-

@@ -40,4 +40,3 @@ ENV NODE_ENV production
 # The default command for Next.js is `next start` but package.json might have `npm run start`
 # Check your package.json scripts. Assuming `npm run start` is `next start`.
 CMD ["npm", "run", "start"]
-

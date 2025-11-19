@@ -23,21 +23,21 @@ const LoginScreen = ({ navigation }) => {
   };
 
   return (
-    <StyledKeyboardAvoidingView 
+    <StyledKeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       className="flex-1"
     >
-      <StyledScrollView 
+      <StyledScrollView
         contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
         className="bg-gradient-to-b from-gray-900 to-gray-800"
         keyboardShouldPersistTaps='handled'
       >
         <StyledView className="items-center p-8">
           {/* App Logo/Icon Placeholder */}
-          <Ionicons name="shield-checkmark" size={80} color="#4f46e5" style={{ marginBottom: 30 }} /> 
-          
+          <Ionicons name="shield-checkmark" size={80} color="#4f46e5" style={{ marginBottom: 30 }} />
+
           <StyledText className="text-4xl font-bold mb-8 text-white text-center">BlockGuardian</StyledText>
-          
+
           {/* Username Input */}
           <StyledView className="w-full flex-row items-center bg-gray-700 rounded-lg px-4 mb-4 border border-gray-600">
             <Ionicons name="person-outline" size={20} color="#9ca3af" style={{ marginRight: 10 }} />
@@ -66,7 +66,7 @@ const LoginScreen = ({ navigation }) => {
           </StyledView>
 
           {/* Login Button */}
-          <StyledTouchableOpacity 
+          <StyledTouchableOpacity
             className="w-full bg-indigo-600 rounded-lg py-4 mb-6 shadow-md active:bg-indigo-700"
             onPress={handleLogin}
           >
@@ -90,4 +90,3 @@ const LoginScreen = ({ navigation }) => {
 };
 
 export default LoginScreen;
-

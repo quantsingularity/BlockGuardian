@@ -58,7 +58,7 @@ show_usage() {
 parse_arguments() {
   SKIP_TESTS=false
   COMPONENT="all"
-  
+
   while [[ $# -gt 0 ]]; do
     case "$1" in
       -e|--environment)
@@ -84,19 +84,19 @@ parse_arguments() {
         ;;
     esac
   done
-  
+
   # Validate environment
   if [[ ! "$ENVIRONMENT" =~ ^(development|staging|production)$ ]]; then
     log_message "Invalid environment: $ENVIRONMENT. Must be one of: development, staging, production" "ERROR"
     exit 1
   fi
-  
+
   # Validate component
   if [[ ! "$COMPONENT" =~ ^(all|backend|web-frontend|mobile-frontend|blockchain)$ ]]; then
     log_message "Invalid component: $COMPONENT. Must be one of: all, backend, web-frontend, mobile-frontend, blockchain" "ERROR"
     exit 1
   fi
-  
+
   log_message "Deployment configuration:" "INFO"
   log_message "- Environment: $ENVIRONMENT" "INFO"
   log_message "- Component: $COMPONENT" "INFO"
@@ -107,21 +107,21 @@ parse_arguments() {
 run_tests() {
   local component="$1"
   local component_dir="${PROJECT_ROOT}/${component}"
-  
+
   if [ "$SKIP_TESTS" = true ]; then
     log_message "Skipping tests for $component as requested" "INFO"
     return 0
   fi
-  
+
   log_message "Running tests for $component..." "INFO"
-  
+
   if [ ! -d "$component_dir" ]; then
     log_message "Component directory not found: $component_dir" "ERROR"
     return 1
   fi
-  
+
   cd "$component_dir" || { log_message "Failed to change to directory: $component_dir" "ERROR"; return 1; }
-  
+
   case "$component" in
     backend)
       if [ -d "venv" ]; then
@@ -166,7 +166,7 @@ run_tests() {
       return 1
       ;;
   esac
-  
+
   if [ $exit_code -eq 0 ]; then
     log_message "Tests for $component passed" "SUCCESS"
     echo "| $component | ✅ Tests Passed | [View Logs](${DEPLOY_LOG_DIR}/${component}_tests.log) |" >> "$SUMMARY_FILE"
@@ -182,16 +182,16 @@ run_tests() {
 build_component() {
   local component="$1"
   local component_dir="${PROJECT_ROOT}/${component}"
-  
+
   log_message "Building $component for $ENVIRONMENT environment..." "INFO"
-  
+
   if [ ! -d "$component_dir" ]; then
     log_message "Component directory not found: $component_dir" "ERROR"
     return 1
   fi
-  
+
   cd "$component_dir" || { log_message "Failed to change to directory: $component_dir" "ERROR"; return 1; }
-  
+
   case "$component" in
     backend)
       # For backend, we might just need to collect static files or compile some resources
@@ -218,11 +218,11 @@ build_component() {
         elif [ "$ENVIRONMENT" = "staging" ]; then
           export REACT_APP_API_URL="https://api-staging.blockguardian.com"
         fi
-        
+
         # Build the application
         npm run build > "${DEPLOY_LOG_DIR}/${component}_build.log" 2>&1
         local exit_code=$?
-        
+
         if [ $exit_code -eq 0 ]; then
           log_message "Web frontend build successful" "SUCCESS"
           echo "| $component | ✅ Build Successful | [View Logs](${DEPLOY_LOG_DIR}/${component}_build.log) |" >> "$SUMMARY_FILE"
@@ -248,11 +248,11 @@ build_component() {
         elif [ "$ENVIRONMENT" = "staging" ]; then
           export REACT_NATIVE_API_URL="https://api-staging.blockguardian.com"
         fi
-        
+
         # Build the application
         npm run build > "${DEPLOY_LOG_DIR}/${component}_build.log" 2>&1
         local exit_code=$?
-        
+
         if [ $exit_code -eq 0 ]; then
           log_message "Mobile frontend build successful" "SUCCESS"
           echo "| $component | ✅ Build Successful | [View Logs](${DEPLOY_LOG_DIR}/${component}_build.log) |" >> "$SUMMARY_FILE"
@@ -273,7 +273,7 @@ build_component() {
         # Compile smart contracts
         npx hardhat compile > "${DEPLOY_LOG_DIR}/${component}_build.log" 2>&1
         local exit_code=$?
-        
+
         if [ $exit_code -eq 0 ]; then
           log_message "Blockchain contracts compilation successful" "SUCCESS"
           echo "| $component | ✅ Build Successful | [View Logs](${DEPLOY_LOG_DIR}/${component}_build.log) |" >> "$SUMMARY_FILE"
@@ -301,16 +301,16 @@ build_component() {
 deploy_component() {
   local component="$1"
   local component_dir="${PROJECT_ROOT}/${component}"
-  
+
   log_message "Deploying $component to $ENVIRONMENT environment..." "INFO"
-  
+
   if [ ! -d "$component_dir" ]; then
     log_message "Component directory not found: $component_dir" "ERROR"
     return 1
   fi
-  
+
   cd "$component_dir" || { log_message "Failed to change to directory: $component_dir" "ERROR"; return 1; }
-  
+
   case "$component" in
     backend)
       # Example deployment steps for backend
@@ -377,7 +377,7 @@ deploy_component() {
       return 1
       ;;
   esac
-  
+
   log_message "Deployment of $component to $ENVIRONMENT completed successfully" "SUCCESS"
   return 0
 }
@@ -386,7 +386,7 @@ deploy_component() {
 deploy() {
   log_message "Starting deployment process for BlockGuardian" "INFO"
   echo -e "${BLUE}========== BlockGuardian Deployment ==========${NC}"
-  
+
   # Create summary file header
   echo "# BlockGuardian Deployment Summary" > "$SUMMARY_FILE"
   echo "Generated on: $(date)" >> "$SUMMARY_FILE"
@@ -401,32 +401,32 @@ deploy() {
   echo "" >> "$SUMMARY_FILE"
   echo "| Component | Status | Details |" >> "$SUMMARY_FILE"
   echo "|-----------|--------|---------|" >> "$SUMMARY_FILE"
-  
+
   # Initialize counters
   local success_count=0
   local failure_count=0
-  
+
   # Deploy specific component or all components
   if [ "$COMPONENT" = "all" ]; then
     components=("backend" "web-frontend" "mobile-frontend" "blockchain")
-    
+
     for component in "${components[@]}"; do
       echo -e "${BLUE}Processing $component...${NC}"
-      
+
       # Run tests
       if ! run_tests "$component"; then
         log_message "Tests failed for $component, skipping deployment" "ERROR"
         ((failure_count++))
         continue
       fi
-      
+
       # Build component
       if ! build_component "$component"; then
         log_message "Build failed for $component, skipping deployment" "ERROR"
         ((failure_count++))
         continue
       fi
-      
+
       # Deploy component
       if deploy_component "$component"; then
         ((success_count++))
@@ -436,7 +436,7 @@ deploy() {
     done
   else
     echo -e "${BLUE}Processing $COMPONENT...${NC}"
-    
+
     # Run tests
     if ! run_tests "$COMPONENT"; then
       log_message "Tests failed for $COMPONENT, skipping deployment" "ERROR"
@@ -456,7 +456,7 @@ deploy() {
       fi
     fi
   fi
-  
+
   # Add summary statistics
   echo "" >> "$SUMMARY_FILE"
   echo "## Summary Statistics" >> "$SUMMARY_FILE"
@@ -465,15 +465,15 @@ deploy() {
   echo "- **Failed Deployments:** $failure_count" >> "$SUMMARY_FILE"
   echo "- **Total Components:** $((success_count + failure_count))" >> "$SUMMARY_FILE"
   echo "- **Deployment Log:** $LOG_FILE" >> "$SUMMARY_FILE"
-  
+
   # Print summary to console
   echo -e "${BLUE}========== Deployment Summary ==========${NC}"
   echo -e "${GREEN}Successful Deployments: $success_count${NC}"
   echo -e "${RED}Failed Deployments: $failure_count${NC}"
   echo -e "${BLUE}Total Components: $((success_count + failure_count))${NC}"
-  
+
   log_message "Deployment process completed. Results saved to $SUMMARY_FILE" "INFO"
-  
+
   # Return non-zero exit code if any deployments failed
   if [ $failure_count -gt 0 ]; then
     return 1

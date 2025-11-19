@@ -9,7 +9,7 @@ const StyledTextInput = styled(TextInput);
 
 /**
  * Custom Input component with various styles and states
- * 
+ *
  * @param {Object} props - Component props
  * @param {string} props.label - Input label
  * @param {string} props.placeholder - Input placeholder
@@ -37,17 +37,17 @@ const Input = ({
       {label && (
         <StyledText className="text-gray-300 mb-1 font-medium">{label}</StyledText>
       )}
-      
+
       <StyledView className={`flex-row items-center bg-gray-700 rounded-lg border ${error ? 'border-red-500' : 'border-gray-600'} px-3 py-2`}>
         {icon && (
-          <Ionicons 
-            name={icon} 
-            size={20} 
-            color="#9ca3af" 
-            style={{ marginRight: 8 }} 
+          <Ionicons
+            name={icon}
+            size={20}
+            color="#9ca3af"
+            style={{ marginRight: 8 }}
           />
         )}
-        
+
         <StyledTextInput
           value={value}
           onChangeText={onChangeText}
@@ -58,7 +58,7 @@ const Input = ({
           className="flex-1 text-white text-base"
         />
       </StyledView>
-      
+
       {error && (
         <StyledText className="text-red-500 text-sm mt-1">{error}</StyledText>
       )}

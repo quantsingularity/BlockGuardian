@@ -129,4 +129,3 @@ describe('DashboardScreen', () => {
     expect(screen.getByText(/Summary details will appear here.../)).toBeTruthy();
   });
 });
-

@@ -19,13 +19,16 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 # Import configuration
 from src.config import current_config, get_config
+
 # Import database
 from src.models.base import db_manager
 from src.models.user import db
+
 # Import routes
 from src.routes.auth import auth_bp
 from src.routes.portfolio import portfolio_bp
 from src.security.audit import audit_logger
+
 # Import security components
 from src.security.auth import auth_manager, jwt_required
 from src.security.rate_limiting import rate_limiter

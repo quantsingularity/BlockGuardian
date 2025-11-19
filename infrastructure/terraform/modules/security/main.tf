@@ -6,7 +6,7 @@ resource "aws_kms_key" "main" {
   description             = "${var.app_name}-${var.environment}-encryption-key"
   deletion_window_in_days = 7
   enable_key_rotation     = true
-  
+
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -639,4 +639,3 @@ resource "aws_iam_role_policy" "flow_log_policy" {
     ]
   })
 }
-

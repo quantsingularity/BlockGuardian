@@ -1,6 +1,6 @@
 // Component Test: /home/ubuntu/BlockGuardian_Tests/BlockGuardian_tests/mobile-frontend/__tests__/components/ExampleComponent.test.js
 import React from 'react';
-import { Text, View } from 'react-native'; 
+import { Text, View } from 'react-native';
 import { render, screen } from '@testing-library/react-native';
 
 // Note: The directory /home/ubuntu/BlockGuardian_Project/mobile-frontend/src/components was found to be empty.
@@ -22,4 +22,3 @@ describe('Placeholder Component Test', () => {
 
   // Add tests here if components are added to src/components later.
 });
-

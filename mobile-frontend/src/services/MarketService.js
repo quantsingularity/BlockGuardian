@@ -7,7 +7,7 @@ import { API_ENDPOINTS } from '../lib/constants';
 class MarketService {
   /**
    * Get current market prices for cryptocurrencies
-   * 
+   *
    * @param {Object} params - Query parameters (limit, page, etc.)
    * @param {string} token - Authentication token (optional)
    * @returns {Promise} - Resolved with market price data
@@ -20,10 +20,10 @@ class MarketService {
       throw error;
     }
   }
-  
+
   /**
    * Get market trends and analysis
-   * 
+   *
    * @param {string} timeframe - Timeframe for trends (e.g., '1d', '1w', '1m', '1y')
    * @param {string} token - Authentication token (optional)
    * @returns {Promise} - Resolved with market trend data
@@ -36,10 +36,10 @@ class MarketService {
       throw error;
     }
   }
-  
+
   /**
    * Get detailed information for a specific cryptocurrency
-   * 
+   *
    * @param {string} coinId - Cryptocurrency ID or symbol
    * @param {string} token - Authentication token (optional)
    * @returns {Promise} - Resolved with detailed coin data
@@ -52,10 +52,10 @@ class MarketService {
       throw error;
     }
   }
-  
+
   /**
    * Get price history for a specific cryptocurrency
-   * 
+   *
    * @param {string} coinId - Cryptocurrency ID or symbol
    * @param {string} timeframe - Timeframe for history (e.g., '1d', '1w', '1m', '1y')
    * @param {string} token - Authentication token (optional)
@@ -69,10 +69,10 @@ class MarketService {
       throw error;
     }
   }
-  
+
   /**
    * Search for cryptocurrencies by name or symbol
-   * 
+   *
    * @param {string} query - Search query
    * @param {string} token - Authentication token (optional)
    * @returns {Promise} - Resolved with search results
@@ -85,10 +85,10 @@ class MarketService {
       throw error;
     }
   }
-  
+
   /**
    * Get market sentiment analysis
-   * 
+   *
    * @param {string} coinId - Cryptocurrency ID or symbol (optional)
    * @param {string} token - Authentication token (optional)
    * @returns {Promise} - Resolved with sentiment data

@@ -43,7 +43,7 @@ const PortfolioScreen = ({ navigation }) => {
     <StyledScrollView className="flex-1 bg-gradient-to-b from-gray-900 to-gray-800">
       <StyledView className="p-6 pt-12">
         <StyledText className="text-3xl font-bold text-white mb-4">Portfolio</StyledText>
-        
+
         {/* Total Portfolio Value */}
         <StyledView className="bg-indigo-600 p-5 rounded-lg mb-8 shadow-md">
           <StyledText className="text-white text-lg mb-1">Total Value</StyledText>
@@ -66,4 +66,3 @@ const PortfolioScreen = ({ navigation }) => {
 };
 
 export default PortfolioScreen;
-

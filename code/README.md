@@ -220,10 +220,10 @@ Before installing BlockGuardian, ensure you have the following prerequisites:
    ```bash
    # Create database
    createdb blockguardian
-   
+
    # Run migrations
    python manage.py db upgrade
-   
+
    # Seed initial data
    python manage.py seed
    ```

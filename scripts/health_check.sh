@@ -40,7 +40,7 @@ log_message() {
 check_port() {
   local port="$1"
   local service_name="$2"
-  
+
   if command_exists nc; then
     nc -z localhost "$port" > /dev/null 2>&1
     return $?
@@ -59,23 +59,23 @@ check_service() {
   local check_command="$2"
   local service_dir="${3:-}"
   local expected_output="${4:-}"
-  
+
   log_message "Checking service: $service_name" "INFO"
-  
+
   # Change to service directory if provided
   if [ -n "$service_dir" ] && [ -d "$service_dir" ]; then
     cd "$service_dir" || { log_message "Failed to change to directory: $service_dir" "ERROR"; return 1; }
   fi
-  
+
   # Execute the check command
   log_message "Executing: $check_command" "DEBUG"
   local output
   output=$(eval "$check_command" 2>&1)
   local exit_code=$?
-  
+
   # Save output to file
   echo "$output" > "${HEALTH_CHECK_DIR}/${service_name}_health.log"
-  
+
   # Check if command was successful
   if [ $exit_code -eq 0 ]; then
     # If expected output is provided, check if it's in the actual output
@@ -105,13 +105,13 @@ check_service() {
 check_backend() {
   local backend_dir="${PROJECT_ROOT}/backend"
   local backend_port=8000  # Default FastAPI port
-  
+
   if [ ! -d "$backend_dir" ]; then
     log_message "Backend directory not found: $backend_dir" "ERROR"
     echo "| Backend | ⚠️ Not Found | Directory not found |" >> "$SUMMARY_FILE"
     return 2
   fi
-  
+
   # Check if backend service is running on expected port
   if check_port "$backend_port" "backend"; then
     # Try to access health endpoint if it exists
@@ -146,13 +146,13 @@ check_backend() {
 check_blockchain_node() {
   local blockchain_dir="${PROJECT_ROOT}/blockchain"
   local blockchain_port=8545  # Default Ethereum node port
-  
+
   if [ ! -d "$blockchain_dir" ]; then
     log_message "Blockchain directory not found: $blockchain_dir" "ERROR"
     echo "| Blockchain Node | ⚠️ Not Found | Directory not found |" >> "$SUMMARY_FILE"
     return 2
   fi
-  
+
   # Check if blockchain node is running on expected port
   if check_port "$blockchain_port" "blockchain"; then
     # Try to access JSON-RPC endpoint
@@ -175,13 +175,13 @@ check_blockchain_node() {
 check_web_frontend() {
   local web_frontend_dir="${PROJECT_ROOT}/web-frontend"
   local web_frontend_port=3000  # Default React port
-  
+
   if [ ! -d "$web_frontend_dir" ]; then
     log_message "Web frontend directory not found: $web_frontend_dir" "ERROR"
     echo "| Web Frontend | ⚠️ Not Found | Directory not found |" >> "$SUMMARY_FILE"
     return 2
   fi
-  
+
   # Check if web frontend is running on expected port
   if check_port "$web_frontend_port" "web-frontend"; then
     check_service "web-frontend" "curl -s http://localhost:${web_frontend_port}"
@@ -202,7 +202,7 @@ check_web_frontend() {
 # Function to check database
 check_database() {
   local db_port=5432  # Default PostgreSQL port
-  
+
   # Check if PostgreSQL is running
   if check_port "$db_port" "database"; then
     if command_exists psql; then
@@ -248,7 +248,7 @@ check_database() {
 # Function to check Redis cache
 check_redis() {
   local redis_port=6379  # Default Redis port
-  
+
   # Check if Redis is running
   if check_port "$redis_port" "redis"; then
     if command_exists redis-cli; then
@@ -280,7 +280,7 @@ check_docker_containers() {
       # Get list of running containers related to BlockGuardian
       local containers
       containers=$(docker ps --filter "name=blockguardian" --format "{{.Names}}")
-      
+
       if [ -z "$containers" ]; then
         log_message "No BlockGuardian Docker containers running" "WARNING"
         echo "| Docker Containers | ⚠️ Not Running | No BlockGuardian containers found |" >> "$SUMMARY_FILE"
@@ -290,7 +290,7 @@ check_docker_containers() {
         container_count=$(echo "$containers" | wc -l)
         log_message "$container_count BlockGuardian Docker containers running" "INFO"
         echo "| Docker Containers | ✅ Running | $container_count containers active |" >> "$SUMMARY_FILE"
-        
+
         # Add container details to log
         docker ps --filter "name=blockguardian" > "${HEALTH_CHECK_DIR}/docker_containers.log"
         return 0
@@ -310,11 +310,11 @@ check_docker_containers() {
 # Function to check disk space
 check_disk_space() {
   local threshold=90  # Warning threshold percentage
-  
+
   # Get disk usage percentage
   local disk_usage
   disk_usage=$(df -h . | awk 'NR==2 {print $5}' | sed 's/%//')
-  
+
   if [ "$disk_usage" -lt "$threshold" ]; then
     log_message "Disk space usage: $disk_usage% (below threshold of $threshold%)" "INFO"
     echo "| Disk Space | ✅ OK | $disk_usage% used (threshold: $threshold%) |" >> "$SUMMARY_FILE"
@@ -330,12 +330,12 @@ check_disk_space() {
 run_health_checks() {
   log_message "Starting health checks for BlockGuardian" "INFO"
   echo -e "${BLUE}========== BlockGuardian Health Check ==========${NC}"
-  
+
   # Initialize counters
   local healthy=0
   local unhealthy=0
   local warnings=0
-  
+
   # Create health summary header
   echo "# BlockGuardian Health Check Summary" > "$SUMMARY_FILE"
   echo "Generated on: $(date)" >> "$SUMMARY_FILE"
@@ -344,7 +344,7 @@ run_health_checks() {
   echo "" >> "$SUMMARY_FILE"
   echo "| Service | Status | Details |" >> "$SUMMARY_FILE"
   echo "|---------|--------|---------|" >> "$SUMMARY_FILE"
-  
+
   # Run individual health checks
   echo -e "${BLUE}Checking backend service...${NC}"
   check_backend
@@ -353,7 +353,7 @@ run_health_checks() {
     1) ((unhealthy++)) ;;
     2) ((warnings++)) ;;
   esac
-  
+
   echo -e "${BLUE}Checking blockchain node...${NC}"
   check_blockchain_node
   case $? in
@@ -361,7 +361,7 @@ run_health_checks() {
     1) ((unhealthy++)) ;;
     2) ((warnings++)) ;;
   esac
-  
+
   echo -e "${BLUE}Checking web frontend...${NC}"
   check_web_frontend
   case $? in
@@ -369,7 +369,7 @@ run_health_checks() {
     1) ((unhealthy++)) ;;
     2) ((warnings++)) ;;
   esac
-  
+
   echo -e "${BLUE}Checking database...${NC}"
   check_database
   case $? in
@@ -377,7 +377,7 @@ run_health_checks() {
     1) ((unhealthy++)) ;;
     2) ((warnings++)) ;;
   esac
-  
+
   echo -e "${BLUE}Checking Redis cache...${NC}"
   check_redis
   case $? in
@@ -385,7 +385,7 @@ run_health_checks() {
     1) ((unhealthy++)) ;;
     2) ((warnings++)) ;;
   esac
-  
+
   echo -e "${BLUE}Checking Docker containers...${NC}"
   check_docker_containers
   case $? in
@@ -393,7 +393,7 @@ run_health_checks() {
     1) ((unhealthy++)) ;;
     2) ((warnings++)) ;;
   esac
-  
+
   echo -e "${BLUE}Checking disk space...${NC}"
   check_disk_space
   case $? in
@@ -401,7 +401,7 @@ run_health_checks() {
     1) ((unhealthy++)) ;;
     2) ((warnings++)) ;;
   esac
-  
+
   # Add summary statistics
   echo "" >> "$SUMMARY_FILE"
   echo "## Summary Statistics" >> "$SUMMARY_FILE"
@@ -410,16 +410,16 @@ run_health_checks() {
   echo "- **Unhealthy Services:** $unhealthy" >> "$SUMMARY_FILE"
   echo "- **Warnings:** $warnings" >> "$SUMMARY_FILE"
   echo "- **Total Checks:** $((healthy + unhealthy + warnings))" >> "$SUMMARY_FILE"
-  
+
   # Print summary to console
   echo -e "${BLUE}========== Health Check Summary ==========${NC}"
   echo -e "${GREEN}Healthy Services: $healthy${NC}"
   echo -e "${RED}Unhealthy Services: $unhealthy${NC}"
   echo -e "${YELLOW}Warnings: $warnings${NC}"
   echo -e "${BLUE}Total Checks: $((healthy + unhealthy + warnings))${NC}"
-  
+
   log_message "Health check completed. Results saved to $SUMMARY_FILE" "INFO"
-  
+
   # Return non-zero exit code if any services are unhealthy
   if [ $unhealthy -gt 0 ]; then
     return 1

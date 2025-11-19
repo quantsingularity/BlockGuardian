@@ -17,8 +17,8 @@ const Stack = createNativeStackNavigator();
 const AppNavigator = () => {
   return (
     <NavigationContainer>
-      <Stack.Navigator 
-        initialRouteName="Login" 
+      <Stack.Navigator
+        initialRouteName="Login"
         screenOptions={{
           // Use a darker, more modern header style consistent with the screens
           headerStyle: {
@@ -32,12 +32,12 @@ const AppNavigator = () => {
         }}
       >
         <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="Dashboard" component={DashboardScreen} options={{ headerShown: false }} /> {/* Hide header for dashboard too */} 
+        <Stack.Screen name="Dashboard" component={DashboardScreen} options={{ headerShown: false }} /> {/* Hide header for dashboard too */}
         <Stack.Screen name="Portfolio" component={PortfolioScreen} />
         <Stack.Screen name="MarketAnalysis" component={MarketAnalysisScreen} options={{ title: 'Market Analysis' }}/>
         <Stack.Screen name="BlockchainExplorer" component={BlockchainExplorerScreen} options={{ title: 'Blockchain Explorer' }}/>
         <Stack.Screen name="AIRecommendations" component={AIRecommendationsScreen} options={{ title: 'AI Recommendations' }}/>
-        <Stack.Screen name="SecurityCheck" component={SecurityCheckScreen} options={{ title: 'Security Check' }}/> {/* Add the new screen */} 
+        <Stack.Screen name="SecurityCheck" component={SecurityCheckScreen} options={{ title: 'Security Check' }}/> {/* Add the new screen */}
         <Stack.Screen name="Admin" component={AdminScreen} options={{ title: 'Admin Panel' }}/>
       </Stack.Navigator>
     </NavigationContainer>
@@ -45,4 +45,3 @@ const AppNavigator = () => {
 };
 
 export default AppNavigator;
-

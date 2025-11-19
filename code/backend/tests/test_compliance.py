@@ -11,9 +11,14 @@ from unittest.mock import MagicMock, Mock, patch
 import pytest
 from flask import Flask
 from flask_testing import TestCase
-from src.compliance.compliance import (ComplianceRule, ComplianceStatus,
-                                       DocumentType, EnhancedComplianceManager,
-                                       RegulatoryRequirement, RiskLevel)
+from src.compliance.compliance import (
+    ComplianceRule,
+    ComplianceStatus,
+    DocumentType,
+    EnhancedComplianceManager,
+    RegulatoryRequirement,
+    RiskLevel,
+)
 from src.models.base import db_manager
 from src.models.transaction import SuspiciousActivity, Transaction
 from src.models.user import User

@@ -23,4 +23,3 @@ const AdminScreen = ({ navigation }) => {
 };
 
 export default AdminScreen;
-

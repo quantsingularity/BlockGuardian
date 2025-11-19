@@ -43,4 +43,3 @@ ISO 27001 provides a framework for an Information Security Management System (IS
 12. **Information Security Incident Management:** Establish procedures for managing information security incidents.
 13. **Information Security Aspects of Business Continuity Management:** Plan for business continuity and disaster recovery.
 14. **Compliance:** Identify and comply with legal, statutory, regulatory, and contractual requirements related to information security.
-

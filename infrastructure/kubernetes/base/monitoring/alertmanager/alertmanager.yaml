@@ -14,10 +14,10 @@ data:
       smtp_auth_username: '{{ .Values.smtp.username }}'
       smtp_auth_password: '{{ .Values.smtp.password }}'
       smtp_require_tls: true
-      
+
     templates:
     - '/etc/alertmanager/templates/*.tmpl'
-    
+
     route:
       group_by: ['alertname', 'cluster', 'service']
       group_wait: 10s
@@ -34,35 +34,35 @@ data:
         group_wait: 0s
         group_interval: 0s
         repeat_interval: 5m
-        
+
       # PCI DSS compliance alerts
       - match_re:
           compliance: .*pci-dss.*
         receiver: 'compliance-team'
         group_wait: 5s
         repeat_interval: 30m
-        
+
       # Database alerts
       - match:
           category: database
         receiver: 'database-team'
         group_wait: 30s
         repeat_interval: 1h
-        
+
       # Application alerts
       - match:
           category: application
         receiver: 'application-team'
         group_wait: 1m
         repeat_interval: 2h
-        
+
       # Infrastructure alerts
       - match:
           category: infrastructure
         receiver: 'infrastructure-team'
         group_wait: 2m
         repeat_interval: 4h
-    
+
     receivers:
     - name: 'default'
       email_configs:
@@ -77,24 +77,24 @@ data:
         headers:
           Priority: 'High'
           X-Compliance: 'Financial-Grade'
-    
+
     - name: 'security-team'
       email_configs:
       - to: 'security-team@{{ .Values.domain }}'
         subject: '[SECURITY ALERT] {{ .GroupLabels.alertname }} - IMMEDIATE ACTION REQUIRED'
         body: |
           🚨 CRITICAL SECURITY ALERT 🚨
-          
+
           {{ range .Alerts }}
           Alert: {{ .Annotations.summary }}
           Description: {{ .Annotations.description }}
           Severity: {{ .Labels.severity }}
           Compliance Impact: {{ .Labels.compliance }}
           Time: {{ .StartsAt.Format "2006-01-02 15:04:05 UTC" }}
-          
+
           Labels: {{ range .Labels.SortedPairs }}{{ .Name }}={{ .Value }} {{ end }}
           {{ end }}
-          
+
           This alert requires immediate investigation and response according to our incident response procedures.
         headers:
           Priority: 'Urgent'
@@ -120,21 +120,21 @@ data:
         details:
           compliance: '{{ .Labels.compliance }}'
           category: '{{ .Labels.category }}'
-    
+
     - name: 'compliance-team'
       email_configs:
       - to: 'compliance-team@{{ .Values.domain }}'
         subject: '[COMPLIANCE ALERT] {{ .GroupLabels.alertname }} - {{ .Labels.compliance }}'
         body: |
           📋 COMPLIANCE ALERT
-          
+
           {{ range .Alerts }}
           Alert: {{ .Annotations.summary }}
           Description: {{ .Annotations.description }}
           Compliance Standard: {{ .Labels.compliance }}
           Severity: {{ .Labels.severity }}
           Time: {{ .StartsAt.Format "2006-01-02 15:04:05 UTC" }}
-          
+
           This alert may impact our compliance with {{ .Labels.compliance }} standards.
           Please review and take appropriate action.
           {{ end }}
@@ -152,14 +152,14 @@ data:
           *Alert:* {{ .Annotations.summary }}
           *Description:* {{ .Annotations.description }}
           {{ end }}
-    
+
     - name: 'database-team'
       email_configs:
       - to: 'database-team@{{ .Values.domain }}'
         subject: '[DATABASE ALERT] {{ .GroupLabels.alertname }}'
         body: |
           🗄️ DATABASE ALERT
-          
+
           {{ range .Alerts }}
           Alert: {{ .Annotations.summary }}
           Description: {{ .Annotations.description }}
@@ -171,14 +171,14 @@ data:
         channel: '#database-alerts'
         color: 'warning'
         title: '🗄️ Database Alert'
-    
+
     - name: 'application-team'
       email_configs:
       - to: 'application-team@{{ .Values.domain }}'
         subject: '[APPLICATION ALERT] {{ .GroupLabels.alertname }}'
         body: |
           🔧 APPLICATION ALERT
-          
+
           {{ range .Alerts }}
           Alert: {{ .Annotations.summary }}
           Description: {{ .Annotations.description }}
@@ -190,14 +190,14 @@ data:
         channel: '#application-alerts'
         color: 'warning'
         title: '🔧 Application Alert'
-    
+
     - name: 'infrastructure-team'
       email_configs:
       - to: 'infrastructure-team@{{ .Values.domain }}'
         subject: '[INFRASTRUCTURE ALERT] {{ .GroupLabels.alertname }}'
         body: |
           🏗️ INFRASTRUCTURE ALERT
-          
+
           {{ range .Alerts }}
           Alert: {{ .Annotations.summary }}
           Description: {{ .Annotations.description }}
@@ -209,25 +209,25 @@ data:
         channel: '#infrastructure-alerts'
         color: 'warning'
         title: '🏗️ Infrastructure Alert'
-    
+
     inhibit_rules:
     - source_match:
         severity: 'critical'
       target_match:
         severity: 'warning'
       equal: ['alertname', 'cluster', 'service']
-    
+
     - source_match:
         alertname: 'ApplicationDown'
       target_match_re:
         alertname: 'HighErrorRate|SlowResponseTime'
       equal: ['job']
-  
+
   notification.tmpl: |
     {{ define "email.subject" }}
     [{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] {{ .GroupLabels.alertname }} - Financial System Alert
     {{ end }}
-    
+
     {{ define "email.html" }}
     <!DOCTYPE html>
     <html>
@@ -255,7 +255,7 @@ data:
             <p><strong>Environment:</strong> {{ .CommonLabels.environment | default "unknown" }}</p>
             <p><strong>Cluster:</strong> {{ .CommonLabels.cluster | default "unknown" }}</p>
         </div>
-        
+
         {{ if .CommonLabels.compliance }}
         <div class="compliance">
             <h3>📋 Compliance Impact</h3>
@@ -263,7 +263,7 @@ data:
             <p>This alert may impact compliance with the above standards. Please review and document any actions taken.</p>
         </div>
         {{ end }}
-        
+
         <h3>Alert Details</h3>
         {{ range .Alerts }}
         <div class="alert {{ if eq .Labels.severity "critical" }}critical{{ else }}warning-alert{{ end }}">
@@ -274,7 +274,7 @@ data:
             {{ if .EndsAt }}
             <p><strong>Ended:</strong> {{ .EndsAt.Format "2006-01-02 15:04:05 UTC" }}</p>
             {{ end }}
-            
+
             <div class="labels">
                 <h5>Labels:</h5>
                 {{ range .Labels.SortedPairs }}
@@ -283,7 +283,7 @@ data:
             </div>
         </div>
         {{ end }}
-        
+
         <hr>
         <p><small>This alert was generated by the Financial-Grade Monitoring System. For support, contact the operations team.</small></p>
     </body>
@@ -409,4 +409,3 @@ spec:
     requests:
       storage: 10Gi
   storageClassName: fast-ssd
-

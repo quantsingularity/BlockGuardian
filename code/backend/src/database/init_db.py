@@ -15,10 +15,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 from src.config import get_config
 from src.models.ai_models import AIModel, ModelStatus, ModelType
 from src.models.base import Base, db_manager
-from src.models.portfolio import (Asset, AssetType, Portfolio, PortfolioType,
-                                  RiskLevel)
-from src.models.user import (AMLRiskLevel, KYCStatus, User, UserStatus,
-                             UserTier, db)
+from src.models.portfolio import Asset, AssetType, Portfolio, PortfolioType, RiskLevel
+from src.models.user import AMLRiskLevel, KYCStatus, User, UserStatus, UserTier, db
 from src.security.auth import UserRole, auth_manager
 from src.security.encryption import encryption_manager
 

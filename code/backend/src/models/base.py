@@ -7,8 +7,7 @@ from datetime import datetime
 from typing import Any, Dict, Optional
 
 from flask import g, has_request_context
-from sqlalchemy import (Boolean, Column, DateTime, Integer, String, Text,
-                        create_engine)
+from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text, create_engine
 from sqlalchemy.event import listens_for
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.orm import scoped_session, sessionmaker

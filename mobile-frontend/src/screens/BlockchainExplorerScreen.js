@@ -84,4 +84,3 @@ const BlockchainExplorerScreen = ({ navigation }) => {
 };
 
 export default BlockchainExplorerScreen;
-

@@ -7,7 +7,7 @@ import { API_ENDPOINTS } from '../lib/constants';
 class SecurityService {
   /**
    * Scan an address or contract for security issues
-   * 
+   *
    * @param {string} address - Blockchain address or contract
    * @param {number} networkId - Blockchain network ID
    * @param {string} token - Authentication token (optional)
@@ -24,10 +24,10 @@ class SecurityService {
       throw error;
     }
   }
-  
+
   /**
    * Get security alerts for user's addresses
-   * 
+   *
    * @param {string} token - Authentication token
    * @returns {Promise} - Resolved with security alerts
    */
@@ -39,10 +39,10 @@ class SecurityService {
       throw error;
     }
   }
-  
+
   /**
    * Generate a security report for an address
-   * 
+   *
    * @param {string} address - Blockchain address
    * @param {number} networkId - Blockchain network ID
    * @param {string} token - Authentication token (optional)
@@ -59,10 +59,10 @@ class SecurityService {
       throw error;
     }
   }
-  
+
   /**
    * Verify a smart contract
-   * 
+   *
    * @param {string} contractAddress - Smart contract address
    * @param {number} networkId - Blockchain network ID
    * @param {Object} contractData - Contract verification data
@@ -81,10 +81,10 @@ class SecurityService {
       throw error;
     }
   }
-  
+
   /**
    * Check transaction for potential fraud or scams
-   * 
+   *
    * @param {string} txHash - Transaction hash
    * @param {number} networkId - Blockchain network ID
    * @param {string} token - Authentication token (optional)

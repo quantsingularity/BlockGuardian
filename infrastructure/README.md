@@ -349,4 +349,3 @@ This infrastructure code is proprietary and confidential. Unauthorized access, u
 ---
 
 **Security Notice**: This infrastructure contains financial-grade security controls. All access is logged and monitored. Unauthorized access attempts will be reported to appropriate authorities.
-

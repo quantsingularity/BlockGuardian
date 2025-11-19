@@ -7,4 +7,3 @@ module.exports = {
   setupFilesAfterEnv: ["<rootDir>/setupTests.js"],
   // Add more configuration options as needed
 };
-

@@ -210,4 +210,3 @@ chmod +x ./setup_blockguardian_env.sh
 echo "Made the script executable: ./setup_blockguardian_env.sh"
 
 echo "Setup script created at ./setup_blockguardian_env.sh"
-

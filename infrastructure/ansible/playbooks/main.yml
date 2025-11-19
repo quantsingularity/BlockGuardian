@@ -12,7 +12,7 @@
       - SOC2
       - ISO27001
     security_baseline: financial_grade
-    
+
   pre_tasks:
     - name: Verify system requirements
       assert:
@@ -20,7 +20,7 @@
           - ansible_os_family == "RedHat" or ansible_os_family == "Debian"
           - ansible_architecture == "x86_64"
         fail_msg: "System does not meet minimum requirements for financial-grade deployment"
-        
+
     - name: Create audit log entry for playbook execution
       lineinfile:
         path: /var/log/ansible-audit.log
@@ -46,7 +46,7 @@
         dest: "/var/log/compliance-{{ ansible_date_time.date }}.json"
         mode: '0600'
       tags: [compliance, reporting]
-      
+
     - name: Create audit log entry for playbook completion
       lineinfile:
         path: /var/log/ansible-audit.log
@@ -62,7 +62,7 @@
     web_security_level: maximum
     enable_waf: true
     ssl_only: true
-    
+
   roles:
     - role: webserver
       tags: [webserver, nginx, apache]
@@ -81,7 +81,7 @@
     db_security_level: maximum
     enable_encryption: true
     audit_all_queries: true
-    
+
   roles:
     - role: database
       tags: [database, mysql, postgresql]
@@ -99,7 +99,7 @@
   vars:
     lb_security_level: maximum
     enable_ddos_protection: true
-    
+
   roles:
     - role: loadbalancer
       tags: [loadbalancer, haproxy, nginx]
@@ -115,7 +115,7 @@
   vars:
     log_retention_days: 2555  # 7 years for financial compliance
     enable_siem: true
-    
+
   roles:
     - role: log_aggregation
       tags: [logging, elk, splunk]
@@ -130,37 +130,36 @@
   hosts: all
   become: true
   gather_facts: true
-  
+
   tasks:
     - name: Run security compliance scan
       include_role:
         name: compliance_scanner
       tags: [compliance, validation]
-      
+
     - name: Generate final security report
       template:
         src: security_report.j2
         dest: "/var/log/security-report-{{ ansible_date_time.date }}.json"
         mode: '0600'
       tags: [reporting, security]
-      
+
     - name: Verify all security controls are in place
       include_role:
         name: security_verification
       tags: [verification, security]
-      
+
     - name: Send completion notification
       mail:
         to: "{{ security_team_email | default('security@company.com') }}"
         subject: "Infrastructure Security Hardening Completed - {{ inventory_hostname }}"
         body: |
           Security hardening playbook has been completed successfully on {{ inventory_hostname }}.
-          
+
           Compliance Standards Applied: {{ compliance_standards | join(', ') }}
           Security Baseline: {{ security_baseline }}
           Execution Time: {{ ansible_date_time.iso8601 }}
-          
+
           Please review the generated compliance and security reports.
       when: send_notifications | default(false)
       tags: [notification]
-

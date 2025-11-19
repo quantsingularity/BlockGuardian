@@ -29,8 +29,8 @@ const AIRecommendationsScreen = ({ navigation }) => {
   };
 
   const renderRecommendation = (item) => (
-    <StyledTouchableOpacity 
-      key={item.id} 
+    <StyledTouchableOpacity
+      key={item.id}
       className="bg-gray-700 rounded-lg p-4 mb-4 shadow-md border border-gray-600 active:bg-gray-600"
       onPress={() => console.log('Recommendation pressed:', item.title)} // Placeholder action
     >
@@ -57,7 +57,7 @@ const AIRecommendationsScreen = ({ navigation }) => {
         {/* Placeholder for overall risk score or summary */}
         <StyledView className="bg-gray-700 rounded-lg p-5 shadow-md border border-gray-600 items-center">
           <StyledText className="text-xl font-semibold text-white mb-2">Overall Portfolio Risk</StyledText>
-          <StyledText className="text-3xl font-bold text-yellow-400">Medium</StyledText> 
+          <StyledText className="text-3xl font-bold text-yellow-400">Medium</StyledText>
           <StyledText className="text-gray-400 mt-1 text-center">Based on current holdings and market volatility.</StyledText>
         </StyledView>
 
@@ -67,4 +67,3 @@ const AIRecommendationsScreen = ({ navigation }) => {
 };
 
 export default AIRecommendationsScreen;
-

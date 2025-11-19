@@ -3,9 +3,9 @@ import AppNavigator from './src/navigation/AppNavigator';
 import { WalletConnectModal, IProviderMetadata, SessionParams } from '@walletconnect/modal-react-native';
 
 // --- WalletConnect Configuration ---
-// IMPORTANT: You need to replace '<YOUR_PROJECT_ID>' with your actual Project ID 
+// IMPORTANT: You need to replace '<YOUR_PROJECT_ID>' with your actual Project ID
 // obtained from WalletConnect Cloud (https://cloud.walletconnect.com/)
-const projectId = '<YOUR_PROJECT_ID>'; 
+const projectId = '<YOUR_PROJECT_ID>';
 
 const providerMetadata: IProviderMetadata = {
   name: 'BlockGuardian Mobile',
@@ -43,4 +43,3 @@ export default function App() {
     </>
   );
 }
-

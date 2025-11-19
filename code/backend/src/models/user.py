@@ -11,8 +11,18 @@ from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import (Boolean, Column, DateTime, Enum, ForeignKey, Index,
-                        Integer, Numeric, String, Text)
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Index,
+    Integer,
+    Numeric,
+    String,
+    Text,
+)
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 

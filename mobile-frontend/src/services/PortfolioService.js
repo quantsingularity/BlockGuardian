@@ -7,7 +7,7 @@ import { API_ENDPOINTS } from '../lib/constants';
 class PortfolioService {
   /**
    * Get user's portfolio summary
-   * 
+   *
    * @param {string} token - Authentication token
    * @returns {Promise} - Resolved with portfolio summary data
    */
@@ -19,10 +19,10 @@ class PortfolioService {
       throw error;
     }
   }
-  
+
   /**
    * Get detailed portfolio information
-   * 
+   *
    * @param {string} token - Authentication token
    * @param {string} portfolioId - Portfolio ID (optional)
    * @returns {Promise} - Resolved with detailed portfolio data
@@ -36,10 +36,10 @@ class PortfolioService {
       throw error;
     }
   }
-  
+
   /**
    * Add asset to portfolio
-   * 
+   *
    * @param {Object} assetData - Asset data to add
    * @param {string} token - Authentication token
    * @returns {Promise} - Resolved with updated portfolio
@@ -52,10 +52,10 @@ class PortfolioService {
       throw error;
     }
   }
-  
+
   /**
    * Update portfolio asset
-   * 
+   *
    * @param {string} assetId - Asset ID to update
    * @param {Object} assetData - Updated asset data
    * @param {string} token - Authentication token
@@ -69,10 +69,10 @@ class PortfolioService {
       throw error;
     }
   }
-  
+
   /**
    * Remove asset from portfolio
-   * 
+   *
    * @param {string} assetId - Asset ID to remove
    * @param {string} token - Authentication token
    * @returns {Promise} - Resolved with updated portfolio
@@ -85,10 +85,10 @@ class PortfolioService {
       throw error;
     }
   }
-  
+
   /**
    * Get portfolio performance history
-   * 
+   *
    * @param {string} token - Authentication token
    * @param {string} timeframe - Timeframe for history (e.g., '1d', '1w', '1m', '1y')
    * @returns {Promise} - Resolved with performance history data
@@ -101,10 +101,10 @@ class PortfolioService {
       throw error;
     }
   }
-  
+
   /**
    * Get portfolio risk assessment
-   * 
+   *
    * @param {string} token - Authentication token
    * @returns {Promise} - Resolved with risk assessment data
    */

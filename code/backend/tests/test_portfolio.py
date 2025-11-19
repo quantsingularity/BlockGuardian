@@ -5,6 +5,7 @@ Tests portfolio creation, asset management, and trading functionality
 
 import json
 import os
+
 # Test configuration
 import sys
 from datetime import datetime, timedelta
@@ -17,9 +18,16 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from src.main import create_app
 from src.models.base import db_manager
-from src.models.portfolio import (Asset, AssetType, Portfolio,
-                                  PortfolioHolding, PortfolioType, Transaction,
-                                  TransactionStatus, TransactionType)
+from src.models.portfolio import (
+    Asset,
+    AssetType,
+    Portfolio,
+    PortfolioHolding,
+    PortfolioType,
+    Transaction,
+    TransactionStatus,
+    TransactionType,
+)
 from src.models.user import User, db
 
 

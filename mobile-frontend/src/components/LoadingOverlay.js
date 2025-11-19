@@ -7,7 +7,7 @@ const StyledText = styled(Text);
 
 /**
  * Loading overlay component to display during async operations
- * 
+ *
  * @param {Object} props - Component props
  * @param {boolean} props.visible - Whether the loading overlay is visible
  * @param {string} props.message - Optional message to display

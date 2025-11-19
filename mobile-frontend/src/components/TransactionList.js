@@ -9,7 +9,7 @@ const StyledTouchableOpacity = styled(TouchableOpacity);
 
 /**
  * TransactionList component for displaying blockchain transactions
- * 
+ *
  * @param {Object} props - Component props
  * @param {Array} props.transactions - Array of transaction objects
  * @param {Function} props.onTransactionPress - Handler for transaction press
@@ -27,12 +27,12 @@ const TransactionList = ({
     const isPositive = type === 'received';
     return (
       <StyledView className="flex-row items-center">
-        <Ionicons 
-          name={isPositive ? 'arrow-down-outline' : 'arrow-up-outline'} 
-          size={16} 
-          color={isPositive ? '#10b981' : '#ef4444'} 
+        <Ionicons
+          name={isPositive ? 'arrow-down-outline' : 'arrow-up-outline'}
+          size={16}
+          color={isPositive ? '#10b981' : '#ef4444'}
         />
-        <StyledText 
+        <StyledText
           className={`ml-1 font-medium ${isPositive ? 'text-green-500' : 'text-red-500'}`}
         >
           {isPositive ? '+' : '-'}{amount}
@@ -62,10 +62,10 @@ const TransactionList = ({
       <StyledView className="flex-row justify-between items-center mb-2">
         <StyledView className="flex-row items-center">
           <StyledView className={`w-10 h-10 rounded-full items-center justify-center ${item.type === 'received' ? 'bg-green-900/30' : 'bg-red-900/30'}`}>
-            <Ionicons 
-              name={item.type === 'received' ? 'arrow-down-outline' : 'arrow-up-outline'} 
-              size={20} 
-              color={item.type === 'received' ? '#10b981' : '#ef4444'} 
+            <Ionicons
+              name={item.type === 'received' ? 'arrow-down-outline' : 'arrow-up-outline'}
+              size={20}
+              color={item.type === 'received' ? '#10b981' : '#ef4444'}
             />
           </StyledView>
           <StyledView className="ml-3">
@@ -75,7 +75,7 @@ const TransactionList = ({
         </StyledView>
         {formatAmount(item.amount, item.type)}
       </StyledView>
-      
+
       <StyledView className="bg-gray-700/50 p-2 rounded">
         <StyledText className="text-gray-300 text-xs">Tx: {truncateHash(item.hash)}</StyledText>
       </StyledView>

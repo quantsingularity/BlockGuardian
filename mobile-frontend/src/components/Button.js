@@ -8,7 +8,7 @@ const StyledText = styled(Text);
 
 /**
  * Custom Button component with various styles and states
- * 
+ *
  * @param {Object} props - Component props
  * @param {string} props.title - Button text
  * @param {string} props.variant - Button style variant ('primary', 'secondary', 'danger', 'success', 'outline')
@@ -63,11 +63,11 @@ const Button = ({
       ) : (
         <>
           {icon && (
-            <Ionicons 
-              name={icon} 
-              size={size === 'sm' ? 16 : size === 'md' ? 18 : 22} 
-              color="white" 
-              style={{ marginRight: 8 }} 
+            <Ionicons
+              name={icon}
+              size={size === 'sm' ? 16 : size === 'md' ? 18 : 22}
+              color="white"
+              style={{ marginRight: 8 }}
             />
           )}
           <StyledText className={`font-semibold ${textColor}`}>{title}</StyledText>

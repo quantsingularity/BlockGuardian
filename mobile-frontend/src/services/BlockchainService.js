@@ -7,7 +7,7 @@ import { API_ENDPOINTS } from '../lib/constants';
 class BlockchainService {
   /**
    * Get transaction history for an address
-   * 
+   *
    * @param {string} address - Blockchain address
    * @param {number} networkId - Blockchain network ID
    * @param {Object} params - Query parameters (limit, page, etc.)
@@ -26,10 +26,10 @@ class BlockchainService {
       throw error;
     }
   }
-  
+
   /**
    * Get balance for an address
-   * 
+   *
    * @param {string} address - Blockchain address
    * @param {number} networkId - Blockchain network ID
    * @param {string} token - Authentication token (optional)
@@ -46,10 +46,10 @@ class BlockchainService {
       throw error;
     }
   }
-  
+
   /**
    * Get transaction details
-   * 
+   *
    * @param {string} txHash - Transaction hash
    * @param {number} networkId - Blockchain network ID
    * @param {string} token - Authentication token (optional)
@@ -65,10 +65,10 @@ class BlockchainService {
       throw error;
     }
   }
-  
+
   /**
    * Get token balances for an address
-   * 
+   *
    * @param {string} address - Blockchain address
    * @param {number} networkId - Blockchain network ID
    * @param {string} token - Authentication token (optional)
@@ -85,10 +85,10 @@ class BlockchainService {
       throw error;
     }
   }
-  
+
   /**
    * Get NFT balances for an address
-   * 
+   *
    * @param {string} address - Blockchain address
    * @param {number} networkId - Blockchain network ID
    * @param {string} token - Authentication token (optional)
@@ -105,10 +105,10 @@ class BlockchainService {
       throw error;
     }
   }
-  
+
   /**
    * Explore blockchain data (blocks, transactions, etc.)
-   * 
+   *
    * @param {Object} params - Query parameters
    * @param {number} networkId - Blockchain network ID
    * @param {string} token - Authentication token (optional)

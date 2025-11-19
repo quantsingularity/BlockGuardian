@@ -72,4 +72,3 @@ describe('Index Page (Home)', () => {
   // (besides the dark mode toggle which is assumed to be in Layout/Navbar)
   // So, no fireEvent tests needed here unless more interactivity is added to index.js
 });
-

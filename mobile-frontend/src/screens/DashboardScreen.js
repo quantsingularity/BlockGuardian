@@ -46,7 +46,7 @@ const DashboardScreen = ({ navigation }) => {
         <StyledView className="flex-row justify-between items-center mb-8">
           <StyledText className="text-3xl font-bold text-white">Dashboard</StyledText>
           {/* Wallet Connect Button */}
-          <StyledTouchableOpacity 
+          <StyledTouchableOpacity
             className={`px-4 py-2 rounded-lg flex-row items-center ${isConnected ? 'bg-red-600' : 'bg-indigo-600'} active:opacity-80`}
             onPress={handleConnectDisconnect}
           >
@@ -63,7 +63,7 @@ const DashboardScreen = ({ navigation }) => {
             <StyledText className="text-green-400 font-semibold">Connected: {formatAddress(address)}</StyledText>
           </StyledView>
         )}
-        
+
         {/* Grid layout for navigation items */}
         <StyledView className="flex-row flex-wrap justify-between">
           {dashboardItems.map((item) => (
@@ -90,4 +90,3 @@ const DashboardScreen = ({ navigation }) => {
 };
 
 export default DashboardScreen;
-

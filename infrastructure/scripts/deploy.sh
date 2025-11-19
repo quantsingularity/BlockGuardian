@@ -50,7 +50,7 @@ validate_environment() {
 
 validate_prerequisites() {
     log "Validating prerequisites..."
-    
+
     # Check required tools
     local required_tools=("terraform" "kubectl" "aws" "docker" "helm" "ansible")
     for tool in "${required_tools[@]}"; do
@@ -58,25 +58,25 @@ validate_prerequisites() {
             error "$tool is required but not installed"
         fi
     done
-    
+
     # Check AWS credentials
     if ! aws sts get-caller-identity &> /dev/null; then
         error "AWS credentials not configured or invalid"
     fi
-    
+
     # Check Terraform version
     local tf_version=$(terraform version -json | jq -r '.terraform_version')
     if [[ $(echo "$tf_version 1.5.0" | tr " " "\n" | sort -V | head -n1) != "1.5.0" ]]; then
         error "Terraform version 1.5.0 or higher required. Found: $tf_version"
     fi
-    
+
     log "Prerequisites validation completed"
 }
 
 # Security validation
 security_scan() {
     log "Running security scans..."
-    
+
     # Terraform security scan
     info "Scanning Terraform configurations..."
     cd "$PROJECT_ROOT/terraform"
@@ -87,14 +87,14 @@ security_scan() {
             jq '.results[] | .description' /tmp/tfsec-results.json
         fi
     fi
-    
+
     # Kubernetes security scan
     info "Scanning Kubernetes manifests..."
     cd "$PROJECT_ROOT/kubernetes"
     if command -v kubesec &> /dev/null; then
         find . -name "*.yaml" -o -name "*.yml" | xargs kubesec scan
     fi
-    
+
     # Container image scan
     if [[ -n "${DOCKER_IMAGE:-}" ]]; then
         info "Scanning container image..."
@@ -102,32 +102,32 @@ security_scan() {
             trivy image --severity HIGH,CRITICAL "$DOCKER_IMAGE"
         fi
     fi
-    
+
     log "Security scans completed"
 }
 
 # Compliance validation
 compliance_check() {
     log "Running compliance checks for $COMPLIANCE_MODE..."
-    
+
     # Check encryption settings
     info "Validating encryption configurations..."
-    
+
     # Check Terraform encryption
     if ! grep -r "encrypted.*=.*true" "$PROJECT_ROOT/terraform/" &> /dev/null; then
         warn "Encryption not explicitly enabled in Terraform configurations"
     fi
-    
+
     # Check Kubernetes security contexts
     if ! grep -r "securityContext" "$PROJECT_ROOT/kubernetes/" &> /dev/null; then
         warn "Security contexts not found in Kubernetes manifests"
     fi
-    
+
     # Check audit logging
     if ! grep -r "audit" "$PROJECT_ROOT/" &> /dev/null; then
         warn "Audit logging configuration not found"
     fi
-    
+
     log "Compliance checks completed"
 }
 
@@ -135,28 +135,28 @@ compliance_check() {
 deploy_infrastructure() {
     local env="$1"
     log "Deploying infrastructure for environment: $env"
-    
+
     cd "$PROJECT_ROOT/terraform/environments/$env"
-    
+
     # Initialize Terraform
     info "Initializing Terraform..."
     terraform init -upgrade
-    
+
     # Validate configuration
     info "Validating Terraform configuration..."
     terraform validate
-    
+
     # Plan deployment
     info "Planning infrastructure deployment..."
     terraform plan -out=tfplan -var="environment=$env" -var="compliance_mode=$COMPLIANCE_MODE"
-    
+
     # Apply deployment
     info "Applying infrastructure deployment..."
     terraform apply tfplan
-    
+
     # Save outputs
     terraform output -json > "/tmp/terraform-outputs-$env.json"
-    
+
     log "Infrastructure deployment completed for $env"
 }
 
@@ -164,13 +164,13 @@ deploy_infrastructure() {
 deploy_kubernetes() {
     local env="$1"
     log "Deploying Kubernetes resources for environment: $env"
-    
+
     # Get cluster credentials
     info "Configuring kubectl..."
     local cluster_name=$(jq -r '.cluster_name.value' "/tmp/terraform-outputs-$env.json")
     local region=$(jq -r '.region.value' "/tmp/terraform-outputs-$env.json")
     aws eks update-kubeconfig --region "$region" --name "$cluster_name"
-    
+
     # Create namespaces
     info "Creating namespaces..."
     kubectl apply -f - <<EOF
@@ -190,27 +190,27 @@ metadata:
     purpose: monitoring
     compliance: pci-dss,soc2,iso27001
 EOF
-    
+
     # Deploy security policies
     info "Deploying security policies..."
     kubectl apply -f "$PROJECT_ROOT/kubernetes/base/security/" -n "$env"
-    
+
     # Deploy monitoring stack
     info "Deploying monitoring stack..."
     kubectl apply -f "$PROJECT_ROOT/kubernetes/base/monitoring/" -n monitoring
-    
+
     # Wait for monitoring to be ready
     kubectl wait --for=condition=available --timeout=600s deployment/prometheus -n monitoring
     kubectl wait --for=condition=available --timeout=600s deployment/grafana -n monitoring
-    
+
     # Deploy application
     info "Deploying application..."
     envsubst < "$PROJECT_ROOT/kubernetes/base/backend-deployment.yaml" | kubectl apply -f - -n "$env"
     envsubst < "$PROJECT_ROOT/kubernetes/base/backend-service.yaml" | kubectl apply -f - -n "$env"
-    
+
     # Wait for application to be ready
     kubectl wait --for=condition=available --timeout=600s deployment/blockguardian-backend -n "$env"
-    
+
     log "Kubernetes deployment completed for $env"
 }
 
@@ -218,20 +218,20 @@ EOF
 deploy_configuration() {
     local env="$1"
     log "Deploying configuration with Ansible for environment: $env"
-    
+
     cd "$PROJECT_ROOT/ansible"
-    
+
     # Update inventory
     info "Updating Ansible inventory..."
     ./scripts/update-inventory.sh "$env"
-    
+
     # Run security hardening playbook
     info "Running security hardening playbook..."
     ansible-playbook -i "inventory/hosts-$env.yml" \
                      playbooks/main.yml \
                      --extra-vars "environment=$env compliance_mode=$COMPLIANCE_MODE" \
                      --vault-password-file ~/.ansible-vault-pass
-    
+
     log "Configuration deployment completed for $env"
 }
 
@@ -239,10 +239,10 @@ deploy_configuration() {
 run_health_checks() {
     local env="$1"
     log "Running health checks for environment: $env"
-    
+
     # Get application URL
     local app_url=$(kubectl get service blockguardian-backend -n "$env" -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-    
+
     # Wait for load balancer to be ready
     local max_attempts=30
     local attempt=1
@@ -252,17 +252,17 @@ run_health_checks() {
         app_url=$(kubectl get service blockguardian-backend -n "$env" -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
         ((attempt++))
     done
-    
+
     if [[ -z "$app_url" ]]; then
         error "Load balancer not ready after $max_attempts attempts"
     fi
-    
+
     # Health check endpoint
     info "Checking application health..."
     local health_url="https://$app_url/health"
     local max_health_attempts=20
     local health_attempt=1
-    
+
     while [[ $health_attempt -le $max_health_attempts ]]; do
         if curl -f -s "$health_url" > /dev/null; then
             log "Application health check passed"
@@ -273,21 +273,21 @@ run_health_checks() {
             ((health_attempt++))
         fi
     done
-    
+
     if [[ $health_attempt -gt $max_health_attempts ]]; then
         error "Application health check failed after $max_health_attempts attempts"
     fi
-    
+
     # Database connectivity check
     info "Checking database connectivity..."
     kubectl exec -n "$env" deployment/blockguardian-backend -- \
         sh -c 'curl -f http://localhost:8080/health/db' || error "Database connectivity check failed"
-    
+
     # Security check
     info "Running security validation..."
     curl -I "https://$app_url" | grep -i "strict-transport-security" || warn "HSTS header not found"
     curl -I "https://$app_url" | grep -i "x-content-type-options" || warn "X-Content-Type-Options header not found"
-    
+
     log "Health checks completed for $env"
 }
 
@@ -295,21 +295,21 @@ run_health_checks() {
 run_performance_tests() {
     local env="$1"
     log "Running performance tests for environment: $env"
-    
+
     local app_url=$(kubectl get service blockguardian-backend -n "$env" -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-    
+
     # Basic load test
     if command -v ab &> /dev/null; then
         info "Running Apache Bench load test..."
         ab -n 1000 -c 10 "https://$app_url/health" > "/tmp/performance-test-$env.txt"
-        
+
         # Check response time
         local avg_response_time=$(grep "Time per request" "/tmp/performance-test-$env.txt" | head -1 | awk '{print $4}')
         if (( $(echo "$avg_response_time > 2000" | bc -l) )); then
             warn "Average response time is high: ${avg_response_time}ms"
         fi
     fi
-    
+
     log "Performance tests completed for $env"
 }
 
@@ -317,23 +317,23 @@ run_performance_tests() {
 rollback_deployment() {
     local env="$1"
     local rollback_version="${2:-previous}"
-    
+
     error "Deployment failed. Initiating rollback for environment: $env"
-    
+
     # Rollback Kubernetes deployment
     info "Rolling back Kubernetes deployment..."
     kubectl rollout undo deployment/blockguardian-backend -n "$env"
     kubectl rollout status deployment/blockguardian-backend -n "$env" --timeout=300s
-    
+
     # Rollback database if needed
     if [[ -f "/tmp/db-backup-pre-deployment-$env.sql" ]]; then
         info "Rolling back database..."
         # Database rollback logic would go here
     fi
-    
+
     # Notify about rollback
     info "Rollback completed for environment: $env"
-    
+
     # Send notification
     send_notification "ROLLBACK" "$env" "Deployment rolled back due to failure"
 }
@@ -343,14 +343,14 @@ send_notification() {
     local status="$1"
     local env="$2"
     local message="$3"
-    
+
     # Send Slack notification if webhook is configured
     if [[ -n "${SLACK_WEBHOOK_URL:-}" ]]; then
         curl -X POST -H 'Content-type: application/json' \
              --data "{\"text\":\"[$status] BlockGuardian $env deployment: $message\"}" \
              "$SLACK_WEBHOOK_URL"
     fi
-    
+
     # Send email notification if configured
     if [[ -n "${NOTIFICATION_EMAIL:-}" ]]; then
         echo "$message" | mail -s "[$status] BlockGuardian $env Deployment" "$NOTIFICATION_EMAIL"
@@ -361,9 +361,9 @@ send_notification() {
 generate_report() {
     local env="$1"
     local status="$2"
-    
+
     local report_file="/tmp/deployment-report-$env-$(date +%Y%m%d_%H%M%S).json"
-    
+
     cat > "$report_file" << EOF
 {
   "deployment": {
@@ -391,9 +391,9 @@ generate_report() {
   }
 }
 EOF
-    
+
     info "Deployment report generated: $report_file"
-    
+
     # Upload report to S3 if bucket is configured
     if [[ -n "${DEPLOYMENT_REPORTS_BUCKET:-}" ]]; then
         aws s3 cp "$report_file" "s3://$DEPLOYMENT_REPORTS_BUCKET/reports/"
@@ -404,15 +404,15 @@ EOF
 main() {
     local env="$1"
     local action="$2"
-    
+
     log "Starting BlockGuardian deployment"
     log "Environment: $env"
     log "Action: $action"
     log "Compliance Mode: $COMPLIANCE_MODE"
-    
+
     # Trap for cleanup on exit
     trap 'rollback_deployment "$env"' ERR
-    
+
     case "$action" in
         "deploy")
             validate_environment "$env"
@@ -449,7 +449,7 @@ main() {
             error "Invalid action: $action. Must be one of: deploy, destroy, validate"
             ;;
     esac
-    
+
     log "BlockGuardian deployment completed successfully"
 }
 
@@ -490,4 +490,3 @@ fi
 
 # Run main function
 main "$1" "$2"
-

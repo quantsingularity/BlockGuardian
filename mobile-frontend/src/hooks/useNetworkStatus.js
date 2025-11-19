@@ -3,7 +3,7 @@ import NetInfo from '@react-native-community/netinfo';
 
 /**
  * Custom hook for monitoring network connectivity
- * 
+ *
  * @returns {Object} - Network state information
  */
 const useNetworkStatus = () => {

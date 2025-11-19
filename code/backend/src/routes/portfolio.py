@@ -10,9 +10,15 @@ from typing import Any, Dict, List
 
 from flask import Blueprint, g, jsonify, request
 from src.models.base import db_manager, paginate_query
-from src.models.portfolio import (Asset, AssetType, Portfolio,
-                                  PortfolioHolding, Transaction,
-                                  TransactionStatus, TransactionType)
+from src.models.portfolio import (
+    Asset,
+    AssetType,
+    Portfolio,
+    PortfolioHolding,
+    Transaction,
+    TransactionStatus,
+    TransactionType,
+)
 from src.models.user import User
 from src.security.audit import audit_logger
 from src.security.auth import Permission, jwt_required, permission_required

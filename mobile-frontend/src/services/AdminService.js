@@ -7,7 +7,7 @@ import { API_ENDPOINTS } from '../lib/constants';
 class AdminService {
   /**
    * Get list of users
-   * 
+   *
    * @param {Object} params - Query parameters (limit, page, etc.)
    * @param {string} token - Authentication token
    * @returns {Promise} - Resolved with user list data
@@ -20,10 +20,10 @@ class AdminService {
       throw error;
     }
   }
-  
+
   /**
    * Get user details
-   * 
+   *
    * @param {string} userId - User ID
    * @param {string} token - Authentication token
    * @returns {Promise} - Resolved with user details
@@ -36,10 +36,10 @@ class AdminService {
       throw error;
     }
   }
-  
+
   /**
    * Update user
-   * 
+   *
    * @param {string} userId - User ID
    * @param {Object} userData - Updated user data
    * @param {string} token - Authentication token
@@ -53,10 +53,10 @@ class AdminService {
       throw error;
     }
   }
-  
+
   /**
    * Delete user
-   * 
+   *
    * @param {string} userId - User ID
    * @param {string} token - Authentication token
    * @returns {Promise} - Resolved with deletion result
@@ -69,10 +69,10 @@ class AdminService {
       throw error;
     }
   }
-  
+
   /**
    * Get system statistics
-   * 
+   *
    * @param {string} timeframe - Timeframe for statistics
    * @param {string} token - Authentication token
    * @returns {Promise} - Resolved with statistics data
@@ -85,10 +85,10 @@ class AdminService {
       throw error;
     }
   }
-  
+
   /**
    * Get system settings
-   * 
+   *
    * @param {string} token - Authentication token
    * @returns {Promise} - Resolved with settings data
    */
@@ -100,10 +100,10 @@ class AdminService {
       throw error;
     }
   }
-  
+
   /**
    * Update system settings
-   * 
+   *
    * @param {Object} settings - Updated settings
    * @param {string} token - Authentication token
    * @returns {Promise} - Resolved with updated settings

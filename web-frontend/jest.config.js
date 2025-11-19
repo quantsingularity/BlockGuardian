@@ -13,4 +13,3 @@ module.exports = {
   },
   // Add more configuration options as needed
 };
-

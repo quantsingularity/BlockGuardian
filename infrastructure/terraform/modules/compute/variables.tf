@@ -367,4 +367,3 @@ variable "compliance_tags" {
     DataClass  = "Confidential"
   }
 }
-

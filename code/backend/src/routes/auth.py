@@ -11,10 +11,8 @@ from flask import Blueprint, g, jsonify, request
 from src.models.base import db_manager
 from src.models.user import User, UserStatus, db
 from src.security.audit import audit_logger
-from src.security.auth import (AuditEventType, AuditSeverity, auth_manager,
-                               jwt_required)
-from src.security.rate_limiting import (RateLimitScope, RateLimitType,
-                                        rate_limit)
+from src.security.auth import AuditEventType, AuditSeverity, auth_manager, jwt_required
+from src.security.rate_limiting import RateLimitScope, RateLimitType, rate_limit
 from src.security.validation import ValidationError, security_validator
 
 auth_bp = Blueprint("auth", __name__)

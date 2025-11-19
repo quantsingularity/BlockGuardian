@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 /**
  * Custom hook for persisting state to AsyncStorage
- * 
+ *
  * @param {string} key - Storage key
  * @param {any} initialValue - Initial state value
  * @returns {Array} - [storedValue, setStoredValue]
@@ -38,10 +38,10 @@ const useAsyncStorage = (key, initialValue) => {
     try {
       // Allow value to be a function for same API as useState
       const valueToStore = value instanceof Function ? value(storedValue) : value;
-      
+
       // Save state
       setStoredValue(valueToStore);
-      
+
       // Save to AsyncStorage
       await AsyncStorage.setItem(key, JSON.stringify(valueToStore));
     } catch (e) {

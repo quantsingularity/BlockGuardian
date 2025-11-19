@@ -11,12 +11,20 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Any, Dict, List, Optional, Tuple
 
-from sqlalchemy import (JSON, Boolean, Column, DateTime, Float, ForeignKey,
-                        Integer, String, Text)
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+)
 from sqlalchemy.orm import relationship
 from src.models.base import AuditMixin, Base, TimestampMixin, db_manager
-from src.models.portfolio import (Transaction, TransactionStatus,
-                                  TransactionType)
+from src.models.portfolio import Transaction, TransactionStatus, TransactionType
 from src.models.user import AMLRiskLevel, KYCStatus, User
 from src.security.audit import audit_logger
 

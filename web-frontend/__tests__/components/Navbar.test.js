@@ -55,7 +55,7 @@ describe('Navbar Component', () => {
   test('toggles mobile menu visibility', () => {
     render(<Navbar darkMode={false} toggleDarkMode={mockToggleDarkMode} />);
     const menuButton = screen.getByRole('button', { name: /Open main menu/i });
-    
+
     // Initially, mobile menu specific links should not be visible (unless screen size forces it, but testing library defaults usually don't)
     // Let's check for a link that's definitely in the mobile section
     expect(screen.queryByRole('link', { name: /Portfolio/i, hidden: false })).not.toHaveClass('sm:hidden'); // Desktop link exists
@@ -97,4 +97,3 @@ describe('Navbar Component', () => {
   });
 
 });
-

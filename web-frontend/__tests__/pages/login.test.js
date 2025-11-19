@@ -31,7 +31,7 @@ describe('Login Page', () => {
     mockToggleDarkMode.mockClear();
     mockPush.mockClear();
     // Reset useRouter mock if needed
-    jest.clearAllMocks(); 
+    jest.clearAllMocks();
   });
 
   test('renders login form by default', () => {
@@ -113,7 +113,7 @@ describe('Login Page', () => {
     expect(await screen.findByText(/Passwords do not match/i)).toBeInTheDocument();
     expect(mockPush).not.toHaveBeenCalled();
   });
-  
+
   test('shows error message for missing name on signup submit', async () => {
     render(<Login {...defaultProps} />);
     fireEvent.click(screen.getByRole('button', { name: /Sign up/i })); // Switch to signup
@@ -147,9 +147,9 @@ describe('Login Page', () => {
     }, { timeout: 2000 }); // Timeout slightly longer than the 1500ms in component
 
     // Check loading indicator is gone (though component might unmount on redirect)
-    // expect(submitButton).not.toBeDisabled(); 
+    // expect(submitButton).not.toBeDisabled();
   });
-  
+
   test('simulates successful signup and redirects', async () => {
     render(<Login {...defaultProps} />);
     fireEvent.click(screen.getByRole('button', { name: /Sign up/i })); // Switch to signup
@@ -180,4 +180,3 @@ describe('Login Page', () => {
   });
 
 });
-

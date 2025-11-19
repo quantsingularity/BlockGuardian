@@ -4,18 +4,17 @@ Implements comprehensive validation for financial data, user inputs, and securit
 """
 
 import hashlib
-import html
 import ipaddress
 import json
 import re
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import List, Tuple, Union
 from urllib.parse import urlparse
 
 import bleach
 from email_validator import EmailNotValidError, validate_email
-from flask import current_app, request
+from flask import request
 from src.config import current_config
 
 

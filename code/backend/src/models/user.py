@@ -4,30 +4,17 @@ Implements KYC/AML compliance, MFA, and comprehensive audit trails
 """
 
 import enum
-import json
 import uuid
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import (
-    Boolean,
-    Column,
-    DateTime,
-    Enum,
-    ForeignKey,
-    Index,
-    Integer,
-    Numeric,
-    String,
-    Text,
-)
+from sqlalchemy import (Boolean, Column, DateTime, ForeignKey, Index, Integer,
+                        Numeric, String, Text)
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 
-from ..security.auth import UserRole, auth_manager
-from ..security.encryption import encryption_manager
+from ..security.auth import auth_manager
 from .base import BaseModel
 
 

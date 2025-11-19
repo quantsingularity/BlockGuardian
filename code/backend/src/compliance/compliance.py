@@ -4,16 +4,13 @@ Implements KYC/AML, regulatory reporting, and comprehensive compliance monitorin
 """
 
 import hashlib
-import json
 import logging
 import os
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
-
-import requests
+from typing import Any, Dict, List, Optional
 
 from ..models.base import db_manager
 from ..models.transaction import SuspiciousActivity, Transaction

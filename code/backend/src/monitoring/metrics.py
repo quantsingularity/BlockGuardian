@@ -3,19 +3,17 @@ Comprehensive monitoring and metrics system for BlockGuardian Backend
 Implements real-time monitoring, performance tracking, and alerting
 """
 
-import json
 import logging
 import threading
 import time
 from collections import defaultdict, deque
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import psutil
-from flask import g, request
-from sqlalchemy import Boolean, Column, DateTime, Float, Integer, String, Text
-from src.models.base import Base, TimestampMixin, db_manager
+from flask import g
+from src.models.base import db_manager
 from src.security.audit import audit_logger
 
 

@@ -6,27 +6,14 @@ Implements comprehensive compliance monitoring, reporting, and regulatory requir
 import csv
 import enum
 import io
-import json
 from datetime import datetime, timedelta
-from decimal import Decimal
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
-from sqlalchemy import (
-    JSON,
-    Boolean,
-    Column,
-    DateTime,
-    Float,
-    ForeignKey,
-    Integer,
-    String,
-    Text,
-)
-from sqlalchemy.orm import relationship
+from sqlalchemy import (JSON, Boolean, Column, DateTime, Float, ForeignKey,
+                        Integer, String, Text)
 from src.models.base import AuditMixin, Base, TimestampMixin, db_manager
-from src.models.portfolio import Transaction, TransactionStatus, TransactionType
+from src.models.portfolio import Transaction, TransactionStatus
 from src.models.user import AMLRiskLevel, KYCStatus, User
-from src.security.audit import audit_logger
 
 
 class ReportType(enum.Enum):
@@ -612,7 +599,6 @@ class ComplianceManager:
     def _setup_monitoring_rules(self):
         """Set up compliance monitoring rules"""
         # This would set up various compliance rules
-        pass
 
     def check_transaction_compliance(
         self, transaction: Transaction

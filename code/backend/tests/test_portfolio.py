@@ -5,30 +5,19 @@ Tests portfolio creation, asset management, and trading functionality
 
 import json
 import os
-
 # Test configuration
 import sys
-from datetime import datetime, timedelta
 from decimal import Decimal
-from unittest.mock import MagicMock, patch
 
 import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from src.main import create_app
-from src.models.base import db_manager
-from src.models.portfolio import (
-    Asset,
-    AssetType,
-    Portfolio,
-    PortfolioHolding,
-    PortfolioType,
-    Transaction,
-    TransactionStatus,
-    TransactionType,
-)
-from src.models.user import User, db
+from src.models.portfolio import (Asset, AssetType, Portfolio,
+                                  PortfolioHolding, Transaction,
+                                  TransactionStatus, TransactionType)
+from src.models.user import db
 
 
 @pytest.fixture
@@ -421,7 +410,7 @@ class TestPortfolioHoldings:
 
         with app.app_context():
             # Add some holdings manually for testing
-            portfolio = db.session.query(Portfolio).get(portfolio_id)
+            db.session.query(Portfolio).get(portfolio_id)
             asset = db.session.query(Asset).filter(Asset.symbol == "AAPL").first()
 
             holding = PortfolioHolding(

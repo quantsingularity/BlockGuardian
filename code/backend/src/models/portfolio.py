@@ -7,21 +7,10 @@ import enum
 import json
 from datetime import datetime, timedelta
 from decimal import Decimal
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
-from sqlalchemy import (
-    Boolean,
-    Column,
-    DateTime,
-    Enum,
-    Float,
-    ForeignKey,
-    Index,
-    Integer,
-    Numeric,
-    String,
-    Text,
-)
+from sqlalchemy import (Boolean, Column, DateTime, Enum, Float, ForeignKey,
+                        Index, Integer, Numeric, String, Text)
 from sqlalchemy.orm import relationship
 from src.models.base import AuditMixin, Base, EncryptedMixin, TimestampMixin
 

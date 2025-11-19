@@ -4,15 +4,15 @@ Implements enterprise-grade database patterns with audit trails and encryption
 """
 
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from flask import g, has_request_context
-from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text, create_engine
+from sqlalchemy import Boolean, Column, DateTime, Integer, Text, create_engine
 from sqlalchemy.event import listens_for
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.orm import scoped_session, sessionmaker
 from src.config import current_config
-from src.security.audit import AuditEventType, AuditSeverity, audit_logger
+from src.security.audit import audit_logger
 from src.security.encryption import encryption_manager
 
 

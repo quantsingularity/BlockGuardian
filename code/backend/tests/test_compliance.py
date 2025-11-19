@@ -3,23 +3,16 @@ Comprehensive Test Suite for Compliance Module
 Tests KYC/AML compliance, regulatory reporting, and risk management features
 """
 
-import json
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 from flask import Flask
 from flask_testing import TestCase
-from src.compliance.compliance import (
-    ComplianceRule,
-    ComplianceStatus,
-    DocumentType,
-    EnhancedComplianceManager,
-    RegulatoryRequirement,
-    RiskLevel,
-)
-from src.models.base import db_manager
+from src.compliance.compliance import (ComplianceRule, ComplianceStatus,
+                                       DocumentType, EnhancedComplianceManager,
+                                       RegulatoryRequirement, RiskLevel)
 from src.models.transaction import SuspiciousActivity, Transaction
 from src.models.user import User
 
@@ -64,7 +57,6 @@ class TestComplianceManager(TestCase):
 
     def tearDown(self):
         """Clean up after tests"""
-        pass
 
     def test_compliance_status_enum(self):
         """Test ComplianceStatus enumeration"""

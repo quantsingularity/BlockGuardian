@@ -6,19 +6,11 @@ Implements comprehensive portfolio operations, asset management, and transaction
 import json
 from datetime import datetime, timedelta
 from decimal import Decimal
-from typing import Any, Dict, List
 
 from flask import Blueprint, g, jsonify, request
 from src.models.base import db_manager, paginate_query
-from src.models.portfolio import (
-    Asset,
-    AssetType,
-    Portfolio,
-    PortfolioHolding,
-    Transaction,
-    TransactionStatus,
-    TransactionType,
-)
+from src.models.portfolio import (Asset, Portfolio, PortfolioHolding,
+                                  Transaction, TransactionType)
 from src.models.user import User
 from src.security.audit import audit_logger
 from src.security.auth import Permission, jwt_required, permission_required
@@ -66,7 +58,7 @@ def get_portfolios():
         finally:
             session.close()
 
-    except Exception as e:
+    except Exception:
         return jsonify({"error": "Failed to get portfolios"}), 500
 
 
@@ -152,7 +144,7 @@ def create_portfolio():
 
     except ValidationError as e:
         return jsonify({"error": e.message, "field": e.field}), 400
-    except Exception as e:
+    except Exception:
         return jsonify({"error": "Failed to create portfolio"}), 500
 
 
@@ -196,7 +188,7 @@ def get_portfolio(portfolio_id):
         finally:
             session.close()
 
-    except Exception as e:
+    except Exception:
         return jsonify({"error": "Failed to get portfolio"}), 500
 
 
@@ -270,7 +262,7 @@ def update_portfolio(portfolio_id):
 
     except ValidationError as e:
         return jsonify({"error": e.message, "field": e.field}), 400
-    except Exception as e:
+    except Exception:
         return jsonify({"error": "Failed to update portfolio"}), 500
 
 
@@ -338,7 +330,7 @@ def get_portfolio_transactions(portfolio_id):
         finally:
             session.close()
 
-    except Exception as e:
+    except Exception:
         return jsonify({"error": "Failed to get transactions"}), 500
 
 
@@ -503,7 +495,7 @@ def buy_asset(portfolio_id):
 
     except ValidationError as e:
         return jsonify({"error": e.message, "field": e.field}), 400
-    except Exception as e:
+    except Exception:
         return jsonify({"error": "Failed to execute buy order"}), 500
 
 
@@ -645,7 +637,7 @@ def sell_asset(portfolio_id):
 
     except ValidationError as e:
         return jsonify({"error": e.message, "field": e.field}), 400
-    except Exception as e:
+    except Exception:
         return jsonify({"error": "Failed to execute sell order"}), 500
 
 
@@ -723,7 +715,7 @@ def get_portfolio_performance(portfolio_id):
         finally:
             session.close()
 
-    except Exception as e:
+    except Exception:
         return jsonify({"error": "Failed to get portfolio performance"}), 500
 
 
@@ -764,5 +756,5 @@ def search_assets():
         finally:
             session.close()
 
-    except Exception as e:
+    except Exception:
         return jsonify({"error": "Failed to search assets"}), 500

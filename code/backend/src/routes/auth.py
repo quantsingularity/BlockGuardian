@@ -4,15 +4,13 @@ Implements secure authentication, registration, and session management
 """
 
 import json
-from datetime import datetime, timedelta
-from typing import Any, Dict
 
 from flask import Blueprint, g, jsonify, request
 from src.models.base import db_manager
-from src.models.user import User, UserStatus, db
+from src.models.user import User, UserStatus
 from src.security.audit import audit_logger
-from src.security.auth import AuditEventType, AuditSeverity, auth_manager, jwt_required
-from src.security.rate_limiting import RateLimitScope, RateLimitType, rate_limit
+from src.security.auth import AuditEventType, auth_manager, jwt_required
+from src.security.rate_limiting import RateLimitScope, rate_limit
 from src.security.validation import ValidationError, security_validator
 
 auth_bp = Blueprint("auth", __name__)
@@ -299,7 +297,7 @@ def logout():
 
         return jsonify({"error": "No token provided"}), 400
 
-    except Exception as e:
+    except Exception:
         return jsonify({"error": "Logout failed"}), 500
 
 
@@ -323,7 +321,7 @@ def refresh_token():
             200,
         )
 
-    except Exception as e:
+    except Exception:
         return jsonify({"error": "Token refresh failed"}), 500
 
 
@@ -357,7 +355,7 @@ def setup_mfa():
         finally:
             session.close()
 
-    except Exception as e:
+    except Exception:
         return jsonify({"error": "MFA setup failed"}), 500
 
 
@@ -391,7 +389,7 @@ def enable_mfa():
         finally:
             session.close()
 
-    except Exception as e:
+    except Exception:
         return jsonify({"error": "MFA enable failed"}), 500
 
 
@@ -427,7 +425,7 @@ def disable_mfa():
         finally:
             session.close()
 
-    except Exception as e:
+    except Exception:
         return jsonify({"error": "MFA disable failed"}), 500
 
 
@@ -479,7 +477,7 @@ def change_password():
 
     except ValidationError as e:
         return jsonify({"error": e.message, "field": e.field}), 400
-    except Exception as e:
+    except Exception:
         return jsonify({"error": "Password change failed"}), 500
 
 
@@ -499,7 +497,7 @@ def get_profile():
         finally:
             session.close()
 
-    except Exception as e:
+    except Exception:
         return jsonify({"error": "Failed to get profile"}), 500
 
 
@@ -569,7 +567,7 @@ def update_profile():
 
     except ValidationError as e:
         return jsonify({"error": e.message, "field": e.field}), 400
-    except Exception as e:
+    except Exception:
         return jsonify({"error": "Profile update failed"}), 500
 
 
@@ -598,5 +596,5 @@ def verify_token():
         else:
             return jsonify({"valid": False}), 200
 
-    except Exception as e:
+    except Exception:
         return jsonify({"error": "Token verification failed"}), 500

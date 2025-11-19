@@ -5,27 +5,19 @@ Implements multi-factor authentication, session management, and advanced securit
 
 import base64
 import hashlib
-import hmac
 import json
 import logging
 import os
 import secrets
 from datetime import datetime, timedelta, timezone
-from decimal import Decimal
 from io import BytesIO
 from typing import Any, Dict, List, Optional, Tuple
 
 import pyotp
 import qrcode
 import redis
-from flask import current_app, request, session
-from flask_jwt_extended import (
-    JWTManager,
-    create_access_token,
-    create_refresh_token,
-    get_jwt_identity,
-    verify_jwt_in_request,
-)
+from flask_jwt_extended import (JWTManager, create_access_token,
+                                create_refresh_token)
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from ..models.base import db_manager
@@ -47,13 +39,9 @@ class SecurityLevel:
 class AuthenticationError(Exception):
     """Custom authentication exception"""
 
-    pass
-
 
 class SecurityViolationError(Exception):
     """Custom security violation exception"""
-
-    pass
 
 
 class EnhancedAuthManager:

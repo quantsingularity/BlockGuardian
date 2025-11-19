@@ -6,11 +6,9 @@ This script runs various code quality and security checks on the BlockGuardian c
 It includes linting, static analysis, and security scanning for both backend and smart contracts.
 """
 
-import json
 import os
 import subprocess
 import sys
-from pathlib import Path
 
 
 def run_command(command, cwd=None):

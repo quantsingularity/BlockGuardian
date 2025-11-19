@@ -5,21 +5,15 @@ Tests user registration, login, MFA, and security features
 
 import json
 import os
-
 # Test configuration
 import sys
-from datetime import datetime, timedelta
-from unittest.mock import MagicMock, patch
 
 import pytest
-from flask import Flask
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from src.main import create_app
-from src.models.base import db_manager
-from src.models.user import User, UserRole, UserStatus, db
-from src.security.auth import auth_manager
+from src.models.user import User, db
 
 
 @pytest.fixture

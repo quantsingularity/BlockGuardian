@@ -5,6 +5,7 @@ Tests user registration, login, MFA, and security features
 
 import json
 import os
+
 # Test configuration
 import sys
 

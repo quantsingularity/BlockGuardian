@@ -12,8 +12,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 
 from flask import current_app, g, request
-from sqlalchemy import (Column, DateTime, Index, Integer, String, Text,
-                        create_engine)
+from sqlalchemy import Column, DateTime, Index, Integer, String, Text, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from src.config import current_config

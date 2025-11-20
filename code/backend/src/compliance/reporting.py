@@ -9,8 +9,17 @@ import io
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
-from sqlalchemy import (JSON, Boolean, Column, DateTime, Float, ForeignKey,
-                        Integer, String, Text)
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+)
 from src.models.base import AuditMixin, Base, TimestampMixin, db_manager
 from src.models.portfolio import Transaction, TransactionStatus
 from src.models.user import AMLRiskLevel, KYCStatus, User

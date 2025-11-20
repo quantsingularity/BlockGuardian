@@ -7,8 +7,17 @@ import enum
 from datetime import datetime
 from typing import Any, Dict
 
-from sqlalchemy import (JSON, Boolean, Column, DateTime, Float, ForeignKey,
-                        Integer, String, Text)
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+)
 from sqlalchemy.orm import relationship
 from src.models.base import AuditMixin, Base, TimestampMixin
 

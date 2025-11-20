@@ -16,8 +16,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import pyotp
 import qrcode
 import redis
-from flask_jwt_extended import (JWTManager, create_access_token,
-                                create_refresh_token)
+from flask_jwt_extended import JWTManager, create_access_token, create_refresh_token
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from ..models.base import db_manager

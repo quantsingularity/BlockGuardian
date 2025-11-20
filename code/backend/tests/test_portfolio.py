@@ -5,6 +5,7 @@ Tests portfolio creation, asset management, and trading functionality
 
 import json
 import os
+
 # Test configuration
 import sys
 from decimal import Decimal
@@ -14,9 +15,15 @@ import pytest
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from src.main import create_app
-from src.models.portfolio import (Asset, AssetType, Portfolio,
-                                  PortfolioHolding, Transaction,
-                                  TransactionStatus, TransactionType)
+from src.models.portfolio import (
+    Asset,
+    AssetType,
+    Portfolio,
+    PortfolioHolding,
+    Transaction,
+    TransactionStatus,
+    TransactionType,
+)
 from src.models.user import db
 
 

@@ -10,9 +10,14 @@ from unittest.mock import Mock, patch
 import pytest
 from flask import Flask
 from flask_testing import TestCase
-from src.compliance.compliance import (ComplianceRule, ComplianceStatus,
-                                       DocumentType, EnhancedComplianceManager,
-                                       RegulatoryRequirement, RiskLevel)
+from src.compliance.compliance import (
+    ComplianceRule,
+    ComplianceStatus,
+    DocumentType,
+    EnhancedComplianceManager,
+    RegulatoryRequirement,
+    RiskLevel,
+)
 from src.models.transaction import SuspiciousActivity, Transaction
 from src.models.user import User
 

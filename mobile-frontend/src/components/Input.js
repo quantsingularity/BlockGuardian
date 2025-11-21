@@ -1,7 +1,7 @@
-import React from 'react';
-import { View, Text, TextInput } from 'react-native';
-import { styled } from 'nativewind';
-import { Ionicons } from '@expo/vector-icons';
+import React from "react";
+import { View, Text, TextInput } from "react-native";
+import { styled } from "nativewind";
+import { Ionicons } from "@expo/vector-icons";
 
 const StyledView = styled(View);
 const StyledText = styled(Text);
@@ -29,16 +29,20 @@ const Input = ({
   isSecure = false,
   icon,
   error,
-  keyboardType = 'default',
-  className = '',
+  keyboardType = "default",
+  className = "",
 }) => {
   return (
     <StyledView className={`mb-4 ${className}`}>
       {label && (
-        <StyledText className="text-gray-300 mb-1 font-medium">{label}</StyledText>
+        <StyledText className="text-gray-300 mb-1 font-medium">
+          {label}
+        </StyledText>
       )}
 
-      <StyledView className={`flex-row items-center bg-gray-700 rounded-lg border ${error ? 'border-red-500' : 'border-gray-600'} px-3 py-2`}>
+      <StyledView
+        className={`flex-row items-center bg-gray-700 rounded-lg border ${error ? "border-red-500" : "border-gray-600"} px-3 py-2`}
+      >
         {icon && (
           <Ionicons
             name={icon}

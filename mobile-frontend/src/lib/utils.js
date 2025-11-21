@@ -11,7 +11,7 @@
  * @returns {string} - Formatted address
  */
 export const formatAddress = (address, prefixLength = 6, suffixLength = 4) => {
-  if (!address) return '';
+  if (!address) return "";
   if (address.length <= prefixLength + suffixLength) return address;
 
   return `${address.substring(0, prefixLength)}...${address.substring(address.length - suffixLength)}`;
@@ -26,17 +26,17 @@ export const formatAddress = (address, prefixLength = 6, suffixLength = 4) => {
  * @returns {string} - Formatted amount
  */
 export const formatCryptoAmount = (amount, decimals = 4, trimZeros = true) => {
-  if (amount === undefined || amount === null) return '0';
+  if (amount === undefined || amount === null) return "0";
 
   // Convert to number if string
-  const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+  const numAmount = typeof amount === "string" ? parseFloat(amount) : amount;
 
   // Format with fixed decimals
   let formatted = numAmount.toFixed(decimals);
 
   // Trim trailing zeros if requested
   if (trimZeros) {
-    formatted = formatted.replace(/\.?0+$/, '');
+    formatted = formatted.replace(/\.?0+$/, "");
   }
 
   return formatted;
@@ -49,19 +49,19 @@ export const formatCryptoAmount = (amount, decimals = 4, trimZeros = true) => {
  * @param {string} format - Format type ('full', 'date', 'time', 'relative')
  * @returns {string} - Formatted date
  */
-export const formatDate = (date, format = 'full') => {
-  if (!date) return '';
+export const formatDate = (date, format = "full") => {
+  if (!date) return "";
 
   const dateObj = date instanceof Date ? date : new Date(date);
 
   switch (format) {
-    case 'full':
+    case "full":
       return dateObj.toLocaleString();
-    case 'date':
+    case "date":
       return dateObj.toLocaleDateString();
-    case 'time':
+    case "time":
       return dateObj.toLocaleTimeString();
-    case 'relative':
+    case "relative":
       return getRelativeTimeString(dateObj);
     default:
       return dateObj.toLocaleString();
@@ -83,15 +83,15 @@ const getRelativeTimeString = (date) => {
   const diffDay = Math.floor(diffHour / 24);
 
   if (diffSec < 60) {
-    return 'just now';
+    return "just now";
   } else if (diffMin < 60) {
-    return `${diffMin} minute${diffMin > 1 ? 's' : ''} ago`;
+    return `${diffMin} minute${diffMin > 1 ? "s" : ""} ago`;
   } else if (diffHour < 24) {
-    return `${diffHour} hour${diffHour > 1 ? 's' : ''} ago`;
+    return `${diffHour} hour${diffHour > 1 ? "s" : ""} ago`;
   } else if (diffDay < 30) {
-    return `${diffDay} day${diffDay > 1 ? 's' : ''} ago`;
+    return `${diffDay} day${diffDay > 1 ? "s" : ""} ago`;
   } else {
-    return formatDate(date, 'date');
+    return formatDate(date, "date");
   }
 };
 
@@ -121,37 +121,39 @@ export const validatePassword = (password, options = {}) => {
     requireUppercase = true,
     requireLowercase = true,
     requireNumbers = true,
-    requireSpecial = true
+    requireSpecial = true,
   } = options;
 
   const result = {
     isValid: true,
-    errors: []
+    errors: [],
   };
 
   if (!password || password.length < minLength) {
     result.isValid = false;
-    result.errors.push(`Password must be at least ${minLength} characters long`);
+    result.errors.push(
+      `Password must be at least ${minLength} characters long`,
+    );
   }
 
   if (requireUppercase && !/[A-Z]/.test(password)) {
     result.isValid = false;
-    result.errors.push('Password must contain at least one uppercase letter');
+    result.errors.push("Password must contain at least one uppercase letter");
   }
 
   if (requireLowercase && !/[a-z]/.test(password)) {
     result.isValid = false;
-    result.errors.push('Password must contain at least one lowercase letter');
+    result.errors.push("Password must contain at least one lowercase letter");
   }
 
   if (requireNumbers && !/[0-9]/.test(password)) {
     result.isValid = false;
-    result.errors.push('Password must contain at least one number');
+    result.errors.push("Password must contain at least one number");
   }
 
   if (requireSpecial && !/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password)) {
     result.isValid = false;
-    result.errors.push('Password must contain at least one special character');
+    result.errors.push("Password must contain at least one special character");
   }
 
   return result;
@@ -162,5 +164,5 @@ export default {
   formatCryptoAmount,
   formatDate,
   isValidEmail,
-  validatePassword
+  validatePassword,
 };

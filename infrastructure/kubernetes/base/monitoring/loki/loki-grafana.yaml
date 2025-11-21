@@ -102,56 +102,56 @@ spec:
         runAsUser: 10001
         fsGroup: 10001
       containers:
-      - name: loki
-        image: grafana/loki:2.9.0
-        args:
-        - -config.file=/etc/loki/loki.yaml
-        ports:
-        - containerPort: 3100
-          name: http-metrics
-        - containerPort: 9096
-          name: grpc
-        securityContext:
-          runAsNonRoot: true
-          runAsUser: 10001
-          allowPrivilegeEscalation: false
-          readOnlyRootFilesystem: true
-          capabilities:
-            drop:
-            - ALL
-        resources:
-          requests:
-            cpu: 500m
-            memory: 1Gi
-          limits:
-            cpu: 2000m
-            memory: 4Gi
-        volumeMounts:
-        - name: config
-          mountPath: /etc/loki
-        - name: storage
-          mountPath: /loki
-        - name: tmp
-          mountPath: /tmp
-        livenessProbe:
-          httpGet:
-            path: /ready
-            port: http-metrics
-          initialDelaySeconds: 45
-        readinessProbe:
-          httpGet:
-            path: /ready
-            port: http-metrics
-          initialDelaySeconds: 45
+        - name: loki
+          image: grafana/loki:2.9.0
+          args:
+            - -config.file=/etc/loki/loki.yaml
+          ports:
+            - containerPort: 3100
+              name: http-metrics
+            - containerPort: 9096
+              name: grpc
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: 2000m
+              memory: 4Gi
+          volumeMounts:
+            - name: config
+              mountPath: /etc/loki
+            - name: storage
+              mountPath: /loki
+            - name: tmp
+              mountPath: /tmp
+          livenessProbe:
+            httpGet:
+              path: /ready
+              port: http-metrics
+            initialDelaySeconds: 45
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http-metrics
+            initialDelaySeconds: 45
       volumes:
-      - name: config
-        configMap:
-          name: loki-config
-      - name: storage
-        persistentVolumeClaim:
-          claimName: loki-storage
-      - name: tmp
-        emptyDir: {}
+        - name: config
+          configMap:
+            name: loki-config
+        - name: storage
+          persistentVolumeClaim:
+            claimName: loki-storage
+        - name: tmp
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
@@ -163,14 +163,14 @@ metadata:
     compliance: "pci-dss,soc2,iso27001"
 spec:
   ports:
-  - port: 3100
-    protocol: TCP
-    name: http-metrics
-    targetPort: http-metrics
-  - port: 9096
-    protocol: TCP
-    name: grpc
-    targetPort: grpc
+    - port: 3100
+      protocol: TCP
+      name: http-metrics
+      targetPort: http-metrics
+    - port: 9096
+      protocol: TCP
+      name: grpc
+      targetPort: grpc
   selector:
     app: loki
 ---
@@ -184,7 +184,7 @@ metadata:
     compliance: "pci-dss,soc2,iso27001"
 spec:
   accessModes:
-  - ReadWriteOnce
+    - ReadWriteOnce
   resources:
     requests:
       storage: 200Gi
@@ -365,92 +365,92 @@ spec:
         runAsUser: 472
         fsGroup: 472
       containers:
-      - name: grafana
-        image: grafana/grafana:10.1.0
-        ports:
-        - containerPort: 3000
-          name: http-grafana
-        securityContext:
-          runAsNonRoot: true
-          runAsUser: 472
-          allowPrivilegeEscalation: false
-          readOnlyRootFilesystem: true
-          capabilities:
-            drop:
-            - ALL
-        resources:
-          requests:
-            cpu: 250m
-            memory: 512Mi
-          limits:
-            cpu: 1000m
-            memory: 2Gi
-        volumeMounts:
-        - name: config
-          mountPath: /etc/grafana
-        - name: secrets
-          mountPath: /etc/secrets
-          readOnly: true
-        - name: ssl-certs
-          mountPath: /etc/ssl/certs
-          readOnly: true
-        - name: ssl-private
-          mountPath: /etc/ssl/private
-          readOnly: true
-        - name: storage
-          mountPath: /var/lib/grafana
-        - name: dashboards
-          mountPath: /var/lib/grafana/dashboards
-        - name: tmp
-          mountPath: /tmp
-        env:
-        - name: GF_SECURITY_ADMIN_PASSWORD__FILE
-          value: /etc/secrets/admin-password
-        - name: GF_SECURITY_SECRET_KEY__FILE
-          value: /etc/secrets/secret-key
-        - name: GF_DATABASE_HOST__FILE
-          value: /etc/secrets/db-host
-        - name: GF_DATABASE_NAME__FILE
-          value: /etc/secrets/db-name
-        - name: GF_DATABASE_USER__FILE
-          value: /etc/secrets/db-user
-        - name: GF_DATABASE_PASSWORD__FILE
-          value: /etc/secrets/db-password
-        livenessProbe:
-          httpGet:
-            path: /api/health
-            port: http-grafana
-            scheme: HTTPS
-          initialDelaySeconds: 60
-          timeoutSeconds: 30
-        readinessProbe:
-          httpGet:
-            path: /api/health
-            port: http-grafana
-            scheme: HTTPS
-          initialDelaySeconds: 10
-          timeoutSeconds: 30
+        - name: grafana
+          image: grafana/grafana:10.1.0
+          ports:
+            - containerPort: 3000
+              name: http-grafana
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 472
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 2Gi
+          volumeMounts:
+            - name: config
+              mountPath: /etc/grafana
+            - name: secrets
+              mountPath: /etc/secrets
+              readOnly: true
+            - name: ssl-certs
+              mountPath: /etc/ssl/certs
+              readOnly: true
+            - name: ssl-private
+              mountPath: /etc/ssl/private
+              readOnly: true
+            - name: storage
+              mountPath: /var/lib/grafana
+            - name: dashboards
+              mountPath: /var/lib/grafana/dashboards
+            - name: tmp
+              mountPath: /tmp
+          env:
+            - name: GF_SECURITY_ADMIN_PASSWORD__FILE
+              value: /etc/secrets/admin-password
+            - name: GF_SECURITY_SECRET_KEY__FILE
+              value: /etc/secrets/secret-key
+            - name: GF_DATABASE_HOST__FILE
+              value: /etc/secrets/db-host
+            - name: GF_DATABASE_NAME__FILE
+              value: /etc/secrets/db-name
+            - name: GF_DATABASE_USER__FILE
+              value: /etc/secrets/db-user
+            - name: GF_DATABASE_PASSWORD__FILE
+              value: /etc/secrets/db-password
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http-grafana
+              scheme: HTTPS
+            initialDelaySeconds: 60
+            timeoutSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http-grafana
+              scheme: HTTPS
+            initialDelaySeconds: 10
+            timeoutSeconds: 30
       volumes:
-      - name: config
-        configMap:
-          name: grafana-config
-      - name: secrets
-        secret:
-          secretName: grafana-secrets
-      - name: ssl-certs
-        secret:
-          secretName: grafana-ssl-certs
-      - name: ssl-private
-        secret:
-          secretName: grafana-ssl-private
-      - name: storage
-        persistentVolumeClaim:
-          claimName: grafana-storage
-      - name: dashboards
-        configMap:
-          name: grafana-dashboards
-      - name: tmp
-        emptyDir: {}
+        - name: config
+          configMap:
+            name: grafana-config
+        - name: secrets
+          secret:
+            secretName: grafana-secrets
+        - name: ssl-certs
+          secret:
+            secretName: grafana-ssl-certs
+        - name: ssl-private
+          secret:
+            secretName: grafana-ssl-private
+        - name: storage
+          persistentVolumeClaim:
+            claimName: grafana-storage
+        - name: dashboards
+          configMap:
+            name: grafana-dashboards
+        - name: tmp
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
@@ -462,10 +462,10 @@ metadata:
     compliance: "pci-dss,soc2,iso27001"
 spec:
   ports:
-  - port: 3000
-    protocol: TCP
-    name: http-grafana
-    targetPort: http-grafana
+    - port: 3000
+      protocol: TCP
+      name: http-grafana
+      targetPort: http-grafana
   selector:
     app: grafana
   type: ClusterIP
@@ -480,7 +480,7 @@ metadata:
     compliance: "pci-dss,soc2,iso27001"
 spec:
   accessModes:
-  - ReadWriteOnce
+    - ReadWriteOnce
   resources:
     requests:
       storage: 10Gi

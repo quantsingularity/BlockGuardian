@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import NetInfo from '@react-native-community/netinfo';
+import { useState, useEffect } from "react";
+import NetInfo from "@react-native-community/netinfo";
 
 /**
  * Custom hook for monitoring network connectivity
@@ -14,7 +14,7 @@ const useNetworkStatus = () => {
 
   useEffect(() => {
     // Subscribe to network state updates
-    const unsubscribe = NetInfo.addEventListener(state => {
+    const unsubscribe = NetInfo.addEventListener((state) => {
       setIsConnected(state.isConnected);
       setConnectionType(state.type);
       setIsInternetReachable(state.isInternetReachable);
@@ -22,7 +22,7 @@ const useNetworkStatus = () => {
     });
 
     // Initial fetch of network state
-    NetInfo.fetch().then(state => {
+    NetInfo.fetch().then((state) => {
       setIsConnected(state.isConnected);
       setConnectionType(state.type);
       setIsInternetReachable(state.isInternetReachable);
@@ -40,9 +40,9 @@ const useNetworkStatus = () => {
     connectionType,
     isInternetReachable,
     details,
-    isWifi: connectionType === 'wifi',
-    isCellular: connectionType === 'cellular',
-    isOffline: !isConnected
+    isWifi: connectionType === "wifi",
+    isCellular: connectionType === "cellular",
+    isOffline: !isConnected,
   };
 };
 

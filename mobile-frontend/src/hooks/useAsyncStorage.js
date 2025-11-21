@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useState, useEffect } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 /**
  * Custom hook for persisting state to AsyncStorage
@@ -23,7 +23,7 @@ const useAsyncStorage = (key, initialValue) => {
         setStoredValue(value);
         setError(null);
       } catch (e) {
-        console.error('Error loading from AsyncStorage:', e);
+        console.error("Error loading from AsyncStorage:", e);
         setError(e);
       } finally {
         setIsLoading(false);
@@ -37,7 +37,8 @@ const useAsyncStorage = (key, initialValue) => {
   const setValue = async (value) => {
     try {
       // Allow value to be a function for same API as useState
-      const valueToStore = value instanceof Function ? value(storedValue) : value;
+      const valueToStore =
+        value instanceof Function ? value(storedValue) : value;
 
       // Save state
       setStoredValue(valueToStore);
@@ -45,7 +46,7 @@ const useAsyncStorage = (key, initialValue) => {
       // Save to AsyncStorage
       await AsyncStorage.setItem(key, JSON.stringify(valueToStore));
     } catch (e) {
-      console.error('Error saving to AsyncStorage:', e);
+      console.error("Error saving to AsyncStorage:", e);
       setError(e);
     }
   };
@@ -56,7 +57,7 @@ const useAsyncStorage = (key, initialValue) => {
       await AsyncStorage.removeItem(key);
       setStoredValue(initialValue);
     } catch (e) {
-      console.error('Error removing from AsyncStorage:', e);
+      console.error("Error removing from AsyncStorage:", e);
       setError(e);
     }
   };

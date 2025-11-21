@@ -1,5 +1,5 @@
-import api from '../lib/api';
-import { API_ENDPOINTS } from '../lib/constants';
+import api from "../lib/api";
+import { API_ENDPOINTS } from "../lib/constants";
 
 /**
  * Admin service for administrative functions
@@ -16,7 +16,7 @@ class AdminService {
     try {
       return await api.get(API_ENDPOINTS.ADMIN.USERS, params, token);
     } catch (error) {
-      console.error('Get users error:', error);
+      console.error("Get users error:", error);
       throw error;
     }
   }
@@ -32,7 +32,7 @@ class AdminService {
     try {
       return await api.get(`${API_ENDPOINTS.ADMIN.USERS}/${userId}`, {}, token);
     } catch (error) {
-      console.error('Get user details error:', error);
+      console.error("Get user details error:", error);
       throw error;
     }
   }
@@ -47,9 +47,13 @@ class AdminService {
    */
   async updateUser(userId, userData, token) {
     try {
-      return await api.put(`${API_ENDPOINTS.ADMIN.USERS}/${userId}`, userData, token);
+      return await api.put(
+        `${API_ENDPOINTS.ADMIN.USERS}/${userId}`,
+        userData,
+        token,
+      );
     } catch (error) {
-      console.error('Update user error:', error);
+      console.error("Update user error:", error);
       throw error;
     }
   }
@@ -65,7 +69,7 @@ class AdminService {
     try {
       return await api.del(`${API_ENDPOINTS.ADMIN.USERS}/${userId}`, token);
     } catch (error) {
-      console.error('Delete user error:', error);
+      console.error("Delete user error:", error);
       throw error;
     }
   }
@@ -77,11 +81,11 @@ class AdminService {
    * @param {string} token - Authentication token
    * @returns {Promise} - Resolved with statistics data
    */
-  async getSystemStats(timeframe = 'all', token) {
+  async getSystemStats(timeframe = "all", token) {
     try {
       return await api.get(API_ENDPOINTS.ADMIN.STATS, { timeframe }, token);
     } catch (error) {
-      console.error('Get system stats error:', error);
+      console.error("Get system stats error:", error);
       throw error;
     }
   }
@@ -96,7 +100,7 @@ class AdminService {
     try {
       return await api.get(API_ENDPOINTS.ADMIN.SETTINGS, {}, token);
     } catch (error) {
-      console.error('Get system settings error:', error);
+      console.error("Get system settings error:", error);
       throw error;
     }
   }
@@ -112,7 +116,7 @@ class AdminService {
     try {
       return await api.put(API_ENDPOINTS.ADMIN.SETTINGS, settings, token);
     } catch (error) {
-      console.error('Update system settings error:', error);
+      console.error("Update system settings error:", error);
       throw error;
     }
   }

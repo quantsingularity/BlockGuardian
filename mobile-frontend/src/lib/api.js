@@ -3,7 +3,7 @@
  */
 
 // Base API URL - would be configured based on environment
-const API_BASE_URL = 'https://api.blockguardian.io';
+const API_BASE_URL = "https://api.blockguardian.io";
 
 /**
  * Handles API response and error checking
@@ -12,8 +12,8 @@ const API_BASE_URL = 'https://api.blockguardian.io';
  * @returns {Promise} - Resolved with response data or rejected with error
  */
 const handleResponse = async (response) => {
-  const contentType = response.headers.get('content-type');
-  const isJson = contentType && contentType.includes('application/json');
+  const contentType = response.headers.get("content-type");
+  const isJson = contentType && contentType.includes("application/json");
 
   // Parse response based on content type
   const data = isJson ? await response.json() : await response.text();
@@ -24,8 +24,8 @@ const handleResponse = async (response) => {
     const error = {
       status: response.status,
       statusText: response.statusText,
-      message: isJson && data.message ? data.message : 'An error occurred',
-      data: data
+      message: isJson && data.message ? data.message : "An error occurred",
+      data: data,
     };
 
     throw error;
@@ -46,18 +46,18 @@ const createRequestOptions = (method, data, token) => {
   const options = {
     method,
     headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json'
-    }
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
   };
 
   // Add authorization header if token is provided
   if (token) {
-    options.headers['Authorization'] = `Bearer ${token}`;
+    options.headers["Authorization"] = `Bearer ${token}`;
   }
 
   // Add request body for non-GET requests
-  if (data && method !== 'GET') {
+  if (data && method !== "GET") {
     options.body = JSON.stringify(data);
   }
 
@@ -74,14 +74,15 @@ const createRequestOptions = (method, data, token) => {
  */
 export const get = async (endpoint, params = {}, token = null) => {
   // Build query string from params
-  const queryString = Object.keys(params).length > 0
-    ? `?${new URLSearchParams(params).toString()}`
-    : '';
+  const queryString =
+    Object.keys(params).length > 0
+      ? `?${new URLSearchParams(params).toString()}`
+      : "";
 
   // Make request
   const response = await fetch(
     `${API_BASE_URL}${endpoint}${queryString}`,
-    createRequestOptions('GET', null, token)
+    createRequestOptions("GET", null, token),
   );
 
   return handleResponse(response);
@@ -98,7 +99,7 @@ export const get = async (endpoint, params = {}, token = null) => {
 export const post = async (endpoint, data = {}, token = null) => {
   const response = await fetch(
     `${API_BASE_URL}${endpoint}`,
-    createRequestOptions('POST', data, token)
+    createRequestOptions("POST", data, token),
   );
 
   return handleResponse(response);
@@ -115,7 +116,7 @@ export const post = async (endpoint, data = {}, token = null) => {
 export const put = async (endpoint, data = {}, token = null) => {
   const response = await fetch(
     `${API_BASE_URL}${endpoint}`,
-    createRequestOptions('PUT', data, token)
+    createRequestOptions("PUT", data, token),
   );
 
   return handleResponse(response);
@@ -131,7 +132,7 @@ export const put = async (endpoint, data = {}, token = null) => {
 export const del = async (endpoint, token = null) => {
   const response = await fetch(
     `${API_BASE_URL}${endpoint}`,
-    createRequestOptions('DELETE', null, token)
+    createRequestOptions("DELETE", null, token),
   );
 
   return handleResponse(response);
@@ -148,7 +149,7 @@ export const del = async (endpoint, token = null) => {
 export const patch = async (endpoint, data = {}, token = null) => {
   const response = await fetch(
     `${API_BASE_URL}${endpoint}`,
-    createRequestOptions('PATCH', data, token)
+    createRequestOptions("PATCH", data, token),
   );
 
   return handleResponse(response);
@@ -159,5 +160,5 @@ export default {
   post,
   put,
   del,
-  patch
+  patch,
 };

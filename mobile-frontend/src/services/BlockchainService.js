@@ -1,5 +1,5 @@
-import api from '../lib/api';
-import { API_ENDPOINTS } from '../lib/constants';
+import api from "../lib/api";
+import { API_ENDPOINTS } from "../lib/constants";
 
 /**
  * Blockchain service for interacting with blockchain networks
@@ -16,13 +16,17 @@ class BlockchainService {
    */
   async getTransactionHistory(address, networkId, params = {}, token = null) {
     try {
-      return await api.get(API_ENDPOINTS.BLOCKCHAIN.TRANSACTIONS, {
-        address,
-        networkId,
-        ...params
-      }, token);
+      return await api.get(
+        API_ENDPOINTS.BLOCKCHAIN.TRANSACTIONS,
+        {
+          address,
+          networkId,
+          ...params,
+        },
+        token,
+      );
     } catch (error) {
-      console.error('Get transaction history error:', error);
+      console.error("Get transaction history error:", error);
       throw error;
     }
   }
@@ -37,12 +41,16 @@ class BlockchainService {
    */
   async getAddressBalance(address, networkId, token = null) {
     try {
-      return await api.get(API_ENDPOINTS.BLOCKCHAIN.BALANCE, {
-        address,
-        networkId
-      }, token);
+      return await api.get(
+        API_ENDPOINTS.BLOCKCHAIN.BALANCE,
+        {
+          address,
+          networkId,
+        },
+        token,
+      );
     } catch (error) {
-      console.error('Get address balance error:', error);
+      console.error("Get address balance error:", error);
       throw error;
     }
   }
@@ -57,11 +65,15 @@ class BlockchainService {
    */
   async getTransactionDetails(txHash, networkId, token = null) {
     try {
-      return await api.get(`${API_ENDPOINTS.BLOCKCHAIN.TRANSACTIONS}/${txHash}`, {
-        networkId
-      }, token);
+      return await api.get(
+        `${API_ENDPOINTS.BLOCKCHAIN.TRANSACTIONS}/${txHash}`,
+        {
+          networkId,
+        },
+        token,
+      );
     } catch (error) {
-      console.error('Get transaction details error:', error);
+      console.error("Get transaction details error:", error);
       throw error;
     }
   }
@@ -76,12 +88,16 @@ class BlockchainService {
    */
   async getTokenBalances(address, networkId, token = null) {
     try {
-      return await api.get(`${API_ENDPOINTS.BLOCKCHAIN.BALANCE}/tokens`, {
-        address,
-        networkId
-      }, token);
+      return await api.get(
+        `${API_ENDPOINTS.BLOCKCHAIN.BALANCE}/tokens`,
+        {
+          address,
+          networkId,
+        },
+        token,
+      );
     } catch (error) {
-      console.error('Get token balances error:', error);
+      console.error("Get token balances error:", error);
       throw error;
     }
   }
@@ -96,12 +112,16 @@ class BlockchainService {
    */
   async getNFTBalances(address, networkId, token = null) {
     try {
-      return await api.get(`${API_ENDPOINTS.BLOCKCHAIN.BALANCE}/nfts`, {
-        address,
-        networkId
-      }, token);
+      return await api.get(
+        `${API_ENDPOINTS.BLOCKCHAIN.BALANCE}/nfts`,
+        {
+          address,
+          networkId,
+        },
+        token,
+      );
     } catch (error) {
-      console.error('Get NFT balances error:', error);
+      console.error("Get NFT balances error:", error);
       throw error;
     }
   }
@@ -116,12 +136,16 @@ class BlockchainService {
    */
   async exploreBlockchain(params = {}, networkId, token = null) {
     try {
-      return await api.get(API_ENDPOINTS.BLOCKCHAIN.EXPLORER, {
-        networkId,
-        ...params
-      }, token);
+      return await api.get(
+        API_ENDPOINTS.BLOCKCHAIN.EXPLORER,
+        {
+          networkId,
+          ...params,
+        },
+        token,
+      );
     } catch (error) {
-      console.error('Explore blockchain error:', error);
+      console.error("Explore blockchain error:", error);
       throw error;
     }
   }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 
 /**
  * Custom hook for handling wallet connection state
@@ -10,7 +10,7 @@ const useWallet = (provider) => {
   const [isConnected, setIsConnected] = useState(false);
   const [address, setAddress] = useState(null);
   const [chainId, setChainId] = useState(null);
-  const [balance, setBalance] = useState('0');
+  const [balance, setBalance] = useState("0");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -31,7 +31,7 @@ const useWallet = (provider) => {
   // Connect wallet
   const connect = async () => {
     if (!provider) {
-      setError('Wallet provider not available');
+      setError("Wallet provider not available");
       return;
     }
 
@@ -54,8 +54,8 @@ const useWallet = (provider) => {
 
       return { success: true, address: provider.address };
     } catch (err) {
-      console.error('Wallet connection error:', err);
-      setError(err.message || 'Failed to connect wallet');
+      console.error("Wallet connection error:", err);
+      setError(err.message || "Failed to connect wallet");
       return { success: false, error: err.message };
     } finally {
       setIsLoading(false);
@@ -65,7 +65,7 @@ const useWallet = (provider) => {
   // Disconnect wallet
   const disconnect = async () => {
     if (!provider) {
-      setError('Wallet provider not available');
+      setError("Wallet provider not available");
       return;
     }
 
@@ -80,12 +80,12 @@ const useWallet = (provider) => {
       setIsConnected(false);
       setAddress(null);
       setChainId(null);
-      setBalance('0');
+      setBalance("0");
 
       return { success: true };
     } catch (err) {
-      console.error('Wallet disconnection error:', err);
-      setError(err.message || 'Failed to disconnect wallet');
+      console.error("Wallet disconnection error:", err);
+      setError(err.message || "Failed to disconnect wallet");
       return { success: false, error: err.message };
     } finally {
       setIsLoading(false);
@@ -104,19 +104,19 @@ const useWallet = (provider) => {
       // For example: const balanceWei = await provider.request({ method: 'eth_getBalance', params: [address, 'latest'] });
 
       // Simulate balance fetch with timeout
-      const mockBalance = '1.234'; // This would be replaced with actual balance conversion
+      const mockBalance = "1.234"; // This would be replaced with actual balance conversion
       setBalance(mockBalance);
 
       return mockBalance;
     } catch (err) {
-      console.error('Balance fetch error:', err);
-      setError(err.message || 'Failed to fetch balance');
+      console.error("Balance fetch error:", err);
+      setError(err.message || "Failed to fetch balance");
     }
   };
 
   // Format address for display
   const formatAddress = (addr = address) => {
-    if (!addr) return '';
+    if (!addr) return "";
     return `${addr.substring(0, 6)}...${addr.substring(addr.length - 4)}`;
   };
 
@@ -130,7 +130,7 @@ const useWallet = (provider) => {
     connect,
     disconnect,
     fetchBalance,
-    formatAddress
+    formatAddress,
   };
 };
 

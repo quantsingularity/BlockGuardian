@@ -240,9 +240,9 @@ firewall_rules:
 
 # Audit rules
 audit_rules:
-  - "-D"  # Delete all existing rules
-  - "-b 8192"  # Buffer size
-  - "-f 1"  # Failure mode
+  - "-D" # Delete all existing rules
+  - "-b 8192" # Buffer size
+  - "-f 1" # Failure mode
   - "-w /var/log/audit/ -p wa -k auditlog"
   - "-w /etc/passwd -p wa -k passwd_changes"
   - "-w /etc/group -p wa -k group_changes"
@@ -260,7 +260,7 @@ audit_rules:
   - "-a always,exit -F arch=b32 -S chmod -S fchmod -S fchmodat -F auid>=1000 -F auid!=4294967295 -k perm_mod"
   - "-a always,exit -F arch=b64 -S chown -S fchown -S fchownat -S lchown -F auid>=1000 -F auid!=4294967295 -k perm_mod"
   - "-a always,exit -F arch=b32 -S chown -S fchown -S fchownat -S lchown -F auid>=1000 -F auid!=4294967295 -k perm_mod"
-  - "-e 2"  # Make configuration immutable
+  - "-e 2" # Make configuration immutable
 
 # Fail2ban configuration
 fail2ban_config:
@@ -319,7 +319,7 @@ security_banner: |
   ****************************************************************************
 
 # Logging configuration
-log_retention_days: 2555  # 7 years for financial compliance
+log_retention_days: 2555 # 7 years for financial compliance
 log_max_size: 100M
 log_rotate_count: 52
 

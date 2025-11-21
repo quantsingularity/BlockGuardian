@@ -10,7 +10,7 @@
   file:
     path: /var/log/security-hardening.log
     state: touch
-    mode: '0600'
+    mode: "0600"
     owner: root
     group: root
   tags: [audit, logging]
@@ -58,22 +58,22 @@
   template:
     src: sudoers_security.j2
     dest: /etc/sudoers.d/security
-    mode: '0440'
-    validate: 'visudo -cf %s'
+    mode: "0440"
+    validate: "visudo -cf %s"
   tags: [sudo, security]
 
 - name: Set password policy
   template:
     src: pwquality.conf.j2
     dest: /etc/security/pwquality.conf
-    mode: '0644'
+    mode: "0644"
   tags: [passwords, security]
 
 - name: Configure login definitions
   template:
     src: login.defs.j2
     dest: /etc/login.defs
-    mode: '0644'
+    mode: "0644"
   tags: [login, security]
 
 # SSH Hardening
@@ -82,14 +82,14 @@
     src: /etc/ssh/sshd_config
     dest: /etc/ssh/sshd_config.backup
     remote_src: yes
-    mode: '0600'
+    mode: "0600"
   tags: [ssh, backup]
 
 - name: Configure secure SSH settings
   template:
     src: sshd_config.j2
     dest: /etc/ssh/sshd_config
-    mode: '0600'
+    mode: "0600"
     backup: yes
   notify: restart sshd
   tags: [ssh, security]
@@ -103,7 +103,7 @@
 - name: Set proper permissions on SSH host keys
   file:
     path: "{{ item }}"
-    mode: '0600'
+    mode: "0600"
     owner: root
     group: root
   with_fileglob:
@@ -113,7 +113,7 @@
 - name: Set proper permissions on SSH public keys
   file:
     path: "{{ item }}"
-    mode: '0644'
+    mode: "0644"
     owner: root
     group: root
   with_fileglob:
@@ -130,7 +130,7 @@
   template:
     src: sysctl_security.conf.j2
     dest: /etc/sysctl.d/99-security.conf
-    mode: '0644'
+    mode: "0644"
   notify: reload sysctl
   tags: [kernel, security]
 
@@ -138,14 +138,14 @@
   template:
     src: limits.conf.j2
     dest: /etc/security/limits.d/99-security.conf
-    mode: '0644'
+    mode: "0644"
   tags: [limits, security]
 
 - name: Disable unused filesystems
   template:
     src: blacklist_filesystems.conf.j2
     dest: /etc/modprobe.d/blacklist-filesystems.conf
-    mode: '0644'
+    mode: "0644"
   tags: [filesystems, security]
 
 # Audit System Configuration
@@ -172,7 +172,7 @@
   template:
     src: network_security.conf.j2
     dest: /etc/sysctl.d/10-network-security.conf
-    mode: '0644'
+    mode: "0644"
   notify: reload sysctl
   tags: [network, security]
 
@@ -180,7 +180,7 @@
   template:
     src: blacklist_protocols.conf.j2
     dest: /etc/modprobe.d/blacklist-protocols.conf
-    mode: '0644'
+    mode: "0644"
   tags: [network, security]
 
 # Service Hardening
@@ -202,7 +202,7 @@
   template:
     src: rsyslog_security.conf.j2
     dest: /etc/rsyslog.d/10-security.conf
-    mode: '0644'
+    mode: "0644"
   notify: restart rsyslog
   tags: [logging, security]
 
@@ -210,7 +210,7 @@
   template:
     src: logrotate_security.j2
     dest: /etc/logrotate.d/security
-    mode: '0644'
+    mode: "0644"
   tags: [logging, security]
 
 # Intrusion Detection
@@ -253,5 +253,5 @@
   template:
     src: hardening_report.j2
     dest: "/var/log/security-hardening-report-{{ ansible_date_time.date }}.json"
-    mode: '0600'
+    mode: "0600"
   tags: [reporting, security]

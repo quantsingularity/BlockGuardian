@@ -2,56 +2,56 @@ name: Smart Contracts CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
     paths:
-      - 'blockchain-contracts/**'
-      - '.github/workflows/smart-contracts-ci-cd.yml'
+      - "blockchain-contracts/**"
+      - ".github/workflows/smart-contracts-ci-cd.yml"
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
     paths:
-      - 'blockchain-contracts/**'
-      - '.github/workflows/smart-contracts-ci-cd.yml'
+      - "blockchain-contracts/**"
+      - ".github/workflows/smart-contracts-ci-cd.yml"
 
 jobs:
   test:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
-        cache: 'npm'
-        cache-dependency-path: './blockchain-contracts/package-lock.json'
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: "./blockchain-contracts/package-lock.json"
 
-    - name: Install dependencies
-      working-directory: ./blockchain-contracts
-      run: npm ci
+      - name: Install dependencies
+        working-directory: ./blockchain-contracts
+        run: npm ci
 
-    - name: Run linting
-      working-directory: ./blockchain-contracts
-      run: npx hardhat check || echo "No linting configured, skipping"
+      - name: Run linting
+        working-directory: ./blockchain-contracts
+        run: npx hardhat check || echo "No linting configured, skipping"
 
-    - name: Compile contracts
-      working-directory: ./blockchain-contracts
-      run: npx hardhat compile
+      - name: Compile contracts
+        working-directory: ./blockchain-contracts
+        run: npx hardhat compile
 
-    - name: Test contracts
-      working-directory: ./blockchain-contracts
-      run: npx hardhat test
+      - name: Test contracts
+        working-directory: ./blockchain-contracts
+        run: npx hardhat test
 
-    - name: Generate coverage report
-      working-directory: ./blockchain-contracts
-      run: npx hardhat coverage || echo "Coverage plugin not installed, skipping"
+      - name: Generate coverage report
+        working-directory: ./blockchain-contracts
+        run: npx hardhat coverage || echo "Coverage plugin not installed, skipping"
 
-    - name: Upload coverage report
-      uses: actions/upload-artifact@v3
-      if: always()
-      with:
-        name: smart-contracts-coverage-report
-        path: ./blockchain-contracts/coverage/
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: smart-contracts-coverage-report
+          path: ./blockchain-contracts/coverage/
 
   security-audit:
     runs-on: ubuntu-latest
@@ -59,36 +59,36 @@ jobs:
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
 
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
 
-    - name: Install dependencies
-      working-directory: ./blockchain-contracts
-      run: npm ci
+      - name: Install dependencies
+        working-directory: ./blockchain-contracts
+        run: npm ci
 
-    - name: Run Slither
-      working-directory: ./blockchain-contracts
-      run: |
-        pip install slither-analyzer
-        slither . --json slither-report.json || echo "Slither analysis completed with findings"
+      - name: Run Slither
+        working-directory: ./blockchain-contracts
+        run: |
+          pip install slither-analyzer
+          slither . --json slither-report.json || echo "Slither analysis completed with findings"
 
-    - name: Run Mythril
-      working-directory: ./blockchain-contracts
-      run: |
-        pip install mythril
-        myth analyze ./contracts/*.sol --solc-json mythril-report.json || echo "Mythril analysis completed with findings"
+      - name: Run Mythril
+        working-directory: ./blockchain-contracts
+        run: |
+          pip install mythril
+          myth analyze ./contracts/*.sol --solc-json mythril-report.json || echo "Mythril analysis completed with findings"
 
-    - name: Upload security reports
-      uses: actions/upload-artifact@v3
-      with:
-        name: smart-contracts-security-reports
-        path: |
-          ./blockchain-contracts/slither-report.json
-          ./blockchain-contracts/mythril-report.json
+      - name: Upload security reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: smart-contracts-security-reports
+          path: |
+            ./blockchain-contracts/slither-report.json
+            ./blockchain-contracts/mythril-report.json
 
   deploy:
     needs: [test, security-audit]
@@ -96,27 +96,27 @@ jobs:
     if: github.ref == 'refs/heads/main'
 
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
 
-    - name: Install dependencies
-      working-directory: ./blockchain-contracts
-      run: npm ci
+      - name: Install dependencies
+        working-directory: ./blockchain-contracts
+        run: npm ci
 
-    - name: Deploy to testnet
-      working-directory: ./blockchain-contracts
-      env:
-        PRIVATE_KEY: ${{ secrets.BLOCKCHAIN_PRIVATE_KEY }}
-        INFURA_API_KEY: ${{ secrets.INFURA_API_KEY }}
-        ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
-      run: npx hardhat run scripts/deploy.js --network testnet
+      - name: Deploy to testnet
+        working-directory: ./blockchain-contracts
+        env:
+          PRIVATE_KEY: ${{ secrets.BLOCKCHAIN_PRIVATE_KEY }}
+          INFURA_API_KEY: ${{ secrets.INFURA_API_KEY }}
+          ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
+        run: npx hardhat run scripts/deploy.js --network testnet
 
-    - name: Verify contracts on Etherscan
-      working-directory: ./blockchain-contracts
-      env:
-        ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
-      run: npx hardhat verify --network testnet $(cat deployment-address.txt) "Constructor Argument 1" "Constructor Argument 2" || echo "Verification skipped or failed"
+      - name: Verify contracts on Etherscan
+        working-directory: ./blockchain-contracts
+        env:
+          ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
+        run: npx hardhat verify --network testnet $(cat deployment-address.txt) "Constructor Argument 1" "Constructor Argument 2" || echo "Verification skipped or failed"

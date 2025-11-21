@@ -1,5 +1,5 @@
-import api from '../lib/api';
-import { API_ENDPOINTS } from '../lib/constants';
+import api from "../lib/api";
+import { API_ENDPOINTS } from "../lib/constants";
 
 /**
  * Security service for blockchain security checks and alerts
@@ -15,12 +15,16 @@ class SecurityService {
    */
   async scanAddress(address, networkId, token = null) {
     try {
-      return await api.post(API_ENDPOINTS.SECURITY.SCAN, {
-        address,
-        networkId
-      }, token);
+      return await api.post(
+        API_ENDPOINTS.SECURITY.SCAN,
+        {
+          address,
+          networkId,
+        },
+        token,
+      );
     } catch (error) {
-      console.error('Security scan error:', error);
+      console.error("Security scan error:", error);
       throw error;
     }
   }
@@ -35,7 +39,7 @@ class SecurityService {
     try {
       return await api.get(API_ENDPOINTS.SECURITY.ALERTS, {}, token);
     } catch (error) {
-      console.error('Get security alerts error:', error);
+      console.error("Get security alerts error:", error);
       throw error;
     }
   }
@@ -50,12 +54,16 @@ class SecurityService {
    */
   async generateSecurityReport(address, networkId, token = null) {
     try {
-      return await api.get(API_ENDPOINTS.SECURITY.REPORT, {
-        address,
-        networkId
-      }, token);
+      return await api.get(
+        API_ENDPOINTS.SECURITY.REPORT,
+        {
+          address,
+          networkId,
+        },
+        token,
+      );
     } catch (error) {
-      console.error('Generate security report error:', error);
+      console.error("Generate security report error:", error);
       throw error;
     }
   }
@@ -71,13 +79,17 @@ class SecurityService {
    */
   async verifyContract(contractAddress, networkId, contractData, token = null) {
     try {
-      return await api.post(`${API_ENDPOINTS.SECURITY.SCAN}/verify`, {
-        contractAddress,
-        networkId,
-        ...contractData
-      }, token);
+      return await api.post(
+        `${API_ENDPOINTS.SECURITY.SCAN}/verify`,
+        {
+          contractAddress,
+          networkId,
+          ...contractData,
+        },
+        token,
+      );
     } catch (error) {
-      console.error('Verify contract error:', error);
+      console.error("Verify contract error:", error);
       throw error;
     }
   }
@@ -92,12 +104,16 @@ class SecurityService {
    */
   async checkTransactionSafety(txHash, networkId, token = null) {
     try {
-      return await api.get(`${API_ENDPOINTS.SECURITY.SCAN}/transaction`, {
-        txHash,
-        networkId
-      }, token);
+      return await api.get(
+        `${API_ENDPOINTS.SECURITY.SCAN}/transaction`,
+        {
+          txHash,
+          networkId,
+        },
+        token,
+      );
     } catch (error) {
-      console.error('Check transaction safety error:', error);
+      console.error("Check transaction safety error:", error);
       throw error;
     }
   }

@@ -1,5 +1,5 @@
-import api from '../lib/api';
-import { API_ENDPOINTS } from '../lib/constants';
+import api from "../lib/api";
+import { API_ENDPOINTS } from "../lib/constants";
 
 /**
  * Portfolio service for managing user's blockchain assets and investments
@@ -15,7 +15,7 @@ class PortfolioService {
     try {
       return await api.get(API_ENDPOINTS.PORTFOLIO.LIST, {}, token);
     } catch (error) {
-      console.error('Get portfolio summary error:', error);
+      console.error("Get portfolio summary error:", error);
       throw error;
     }
   }
@@ -32,7 +32,7 @@ class PortfolioService {
       const params = portfolioId ? { id: portfolioId } : {};
       return await api.get(API_ENDPOINTS.PORTFOLIO.DETAILS, params, token);
     } catch (error) {
-      console.error('Get portfolio details error:', error);
+      console.error("Get portfolio details error:", error);
       throw error;
     }
   }
@@ -48,7 +48,7 @@ class PortfolioService {
     try {
       return await api.post(API_ENDPOINTS.PORTFOLIO.ADD, assetData, token);
     } catch (error) {
-      console.error('Add asset error:', error);
+      console.error("Add asset error:", error);
       throw error;
     }
   }
@@ -63,9 +63,13 @@ class PortfolioService {
    */
   async updateAsset(assetId, assetData, token) {
     try {
-      return await api.put(`${API_ENDPOINTS.PORTFOLIO.UPDATE}/${assetId}`, assetData, token);
+      return await api.put(
+        `${API_ENDPOINTS.PORTFOLIO.UPDATE}/${assetId}`,
+        assetData,
+        token,
+      );
     } catch (error) {
-      console.error('Update asset error:', error);
+      console.error("Update asset error:", error);
       throw error;
     }
   }
@@ -79,9 +83,12 @@ class PortfolioService {
    */
   async removeAsset(assetId, token) {
     try {
-      return await api.del(`${API_ENDPOINTS.PORTFOLIO.DELETE}/${assetId}`, token);
+      return await api.del(
+        `${API_ENDPOINTS.PORTFOLIO.DELETE}/${assetId}`,
+        token,
+      );
     } catch (error) {
-      console.error('Remove asset error:', error);
+      console.error("Remove asset error:", error);
       throw error;
     }
   }
@@ -93,11 +100,15 @@ class PortfolioService {
    * @param {string} timeframe - Timeframe for history (e.g., '1d', '1w', '1m', '1y')
    * @returns {Promise} - Resolved with performance history data
    */
-  async getPerformanceHistory(token, timeframe = '1m') {
+  async getPerformanceHistory(token, timeframe = "1m") {
     try {
-      return await api.get(`${API_ENDPOINTS.PORTFOLIO.DETAILS}/history`, { timeframe }, token);
+      return await api.get(
+        `${API_ENDPOINTS.PORTFOLIO.DETAILS}/history`,
+        { timeframe },
+        token,
+      );
     } catch (error) {
-      console.error('Get performance history error:', error);
+      console.error("Get performance history error:", error);
       throw error;
     }
   }
@@ -110,9 +121,13 @@ class PortfolioService {
    */
   async getRiskAssessment(token) {
     try {
-      return await api.get(`${API_ENDPOINTS.PORTFOLIO.DETAILS}/risk`, {}, token);
+      return await api.get(
+        `${API_ENDPOINTS.PORTFOLIO.DETAILS}/risk`,
+        {},
+        token,
+      );
     } catch (error) {
-      console.error('Get risk assessment error:', error);
+      console.error("Get risk assessment error:", error);
       throw error;
     }
   }

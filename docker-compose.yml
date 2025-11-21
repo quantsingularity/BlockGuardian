@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   backend:
@@ -9,10 +9,10 @@ services:
     ports:
       - "5001:5001"
     volumes:
-      - ./backend:/app  # Mounts the backend code into the container for development
+      - ./backend:/app # Mounts the backend code into the container for development
     # environment:
-      # - FLASK_ENV=development # Or production
-      # - DATABASE_URL=your_database_url
+    # - FLASK_ENV=development # Or production
+    # - DATABASE_URL=your_database_url
     networks:
       - blockguardian_net
 
@@ -32,7 +32,7 @@ services:
     networks:
       - blockguardian_net
     # environment:
-      # - NEXT_PUBLIC_API_URL=http://backend:5001/api
+    # - NEXT_PUBLIC_API_URL=http://backend:5001/api
 
   # Placeholder for a local blockchain node (e.g., Hardhat)
   # hardhat_node:

@@ -314,64 +314,64 @@ spec:
         runAsUser: 65534
         fsGroup: 65534
       containers:
-      - name: alertmanager
-        image: prom/alertmanager:v0.25.0
-        args:
-        - '--config.file=/etc/alertmanager/alertmanager.yml'
-        - '--storage.path=/alertmanager'
-        - '--data.retention=2555h'  # 7 years retention for compliance
-        - '--web.listen-address=:9093'
-        - '--web.external-url=https://alertmanager.{{ .Values.domain }}'
-        - '--cluster.listen-address=0.0.0.0:9094'
-        - '--log.level=info'
-        ports:
-        - containerPort: 9093
-          name: web
-        - containerPort: 9094
-          name: cluster
-        securityContext:
-          runAsNonRoot: true
-          runAsUser: 65534
-          allowPrivilegeEscalation: false
-          readOnlyRootFilesystem: true
-          capabilities:
-            drop:
-            - ALL
-        resources:
-          requests:
-            cpu: 100m
-            memory: 128Mi
-          limits:
-            cpu: 500m
-            memory: 512Mi
-        volumeMounts:
-        - name: config
-          mountPath: /etc/alertmanager
-        - name: storage
-          mountPath: /alertmanager
-        - name: tmp
-          mountPath: /tmp
-        livenessProbe:
-          httpGet:
-            path: /-/healthy
-            port: web
-          initialDelaySeconds: 30
-          timeoutSeconds: 30
-        readinessProbe:
-          httpGet:
-            path: /-/ready
-            port: web
-          initialDelaySeconds: 5
-          timeoutSeconds: 5
+        - name: alertmanager
+          image: prom/alertmanager:v0.25.0
+          args:
+            - "--config.file=/etc/alertmanager/alertmanager.yml"
+            - "--storage.path=/alertmanager"
+            - "--data.retention=2555h" # 7 years retention for compliance
+            - "--web.listen-address=:9093"
+            - "--web.external-url=https://alertmanager.{{ .Values.domain }}"
+            - "--cluster.listen-address=0.0.0.0:9094"
+            - "--log.level=info"
+          ports:
+            - containerPort: 9093
+              name: web
+            - containerPort: 9094
+              name: cluster
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          volumeMounts:
+            - name: config
+              mountPath: /etc/alertmanager
+            - name: storage
+              mountPath: /alertmanager
+            - name: tmp
+              mountPath: /tmp
+          livenessProbe:
+            httpGet:
+              path: /-/healthy
+              port: web
+            initialDelaySeconds: 30
+            timeoutSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: web
+            initialDelaySeconds: 5
+            timeoutSeconds: 5
       volumes:
-      - name: config
-        configMap:
-          name: alertmanager-config
-      - name: storage
-        persistentVolumeClaim:
-          claimName: alertmanager-storage
-      - name: tmp
-        emptyDir: {}
+        - name: config
+          configMap:
+            name: alertmanager-config
+        - name: storage
+          persistentVolumeClaim:
+            claimName: alertmanager-storage
+        - name: tmp
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
@@ -383,14 +383,14 @@ metadata:
     compliance: "pci-dss,soc2,iso27001"
 spec:
   ports:
-  - port: 9093
-    protocol: TCP
-    name: web
-    targetPort: web
-  - port: 9094
-    protocol: TCP
-    name: cluster
-    targetPort: cluster
+    - port: 9093
+      protocol: TCP
+      name: web
+      targetPort: web
+    - port: 9094
+      protocol: TCP
+      name: cluster
+      targetPort: cluster
   selector:
     app: alertmanager
 ---
@@ -404,7 +404,7 @@ metadata:
     compliance: "pci-dss,soc2,iso27001"
 spec:
   accessModes:
-  - ReadWriteOnce
+    - ReadWriteOnce
   resources:
     requests:
       storage: 10Gi

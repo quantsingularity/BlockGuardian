@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, Text, ActivityIndicator, Modal } from 'react-native';
-import { styled } from 'nativewind';
+import React from "react";
+import { View, Text, ActivityIndicator, Modal } from "react-native";
+import { styled } from "nativewind";
 
 const StyledView = styled(View);
 const StyledText = styled(Text);
@@ -15,19 +15,19 @@ const StyledText = styled(Text);
  */
 const LoadingOverlay = ({
   visible = false,
-  message = 'Loading...',
-  className = '',
+  message = "Loading...",
+  className = "",
 }) => {
   return (
-    <Modal
-      transparent={true}
-      animationType="fade"
-      visible={visible}
-    >
-      <StyledView className={`flex-1 justify-center items-center bg-black/70 ${className}`}>
+    <Modal transparent={true} animationType="fade" visible={visible}>
+      <StyledView
+        className={`flex-1 justify-center items-center bg-black/70 ${className}`}
+      >
         <StyledView className="bg-gray-800 p-6 rounded-xl items-center border border-gray-700">
           <ActivityIndicator size="large" color="#4f46e5" />
-          <StyledText className="text-white font-medium mt-3">{message}</StyledText>
+          <StyledText className="text-white font-medium mt-3">
+            {message}
+          </StyledText>
         </StyledView>
       </StyledView>
     </Modal>

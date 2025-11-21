@@ -1,5 +1,5 @@
-import api from '../lib/api';
-import { API_ENDPOINTS } from '../lib/constants';
+import api from "../lib/api";
+import { API_ENDPOINTS } from "../lib/constants";
 
 /**
  * Market service for cryptocurrency market data and analysis
@@ -16,7 +16,7 @@ class MarketService {
     try {
       return await api.get(API_ENDPOINTS.MARKET.PRICES, params, token);
     } catch (error) {
-      console.error('Get market prices error:', error);
+      console.error("Get market prices error:", error);
       throw error;
     }
   }
@@ -28,11 +28,11 @@ class MarketService {
    * @param {string} token - Authentication token (optional)
    * @returns {Promise} - Resolved with market trend data
    */
-  async getMarketTrends(timeframe = '1d', token = null) {
+  async getMarketTrends(timeframe = "1d", token = null) {
     try {
       return await api.get(API_ENDPOINTS.MARKET.TRENDS, { timeframe }, token);
     } catch (error) {
-      console.error('Get market trends error:', error);
+      console.error("Get market trends error:", error);
       throw error;
     }
   }
@@ -46,9 +46,13 @@ class MarketService {
    */
   async getCoinDetails(coinId, token = null) {
     try {
-      return await api.get(`${API_ENDPOINTS.MARKET.DETAILS}/${coinId}`, {}, token);
+      return await api.get(
+        `${API_ENDPOINTS.MARKET.DETAILS}/${coinId}`,
+        {},
+        token,
+      );
     } catch (error) {
-      console.error('Get coin details error:', error);
+      console.error("Get coin details error:", error);
       throw error;
     }
   }
@@ -61,11 +65,15 @@ class MarketService {
    * @param {string} token - Authentication token (optional)
    * @returns {Promise} - Resolved with price history data
    */
-  async getPriceHistory(coinId, timeframe = '1m', token = null) {
+  async getPriceHistory(coinId, timeframe = "1m", token = null) {
     try {
-      return await api.get(`${API_ENDPOINTS.MARKET.DETAILS}/${coinId}/history`, { timeframe }, token);
+      return await api.get(
+        `${API_ENDPOINTS.MARKET.DETAILS}/${coinId}/history`,
+        { timeframe },
+        token,
+      );
     } catch (error) {
-      console.error('Get price history error:', error);
+      console.error("Get price history error:", error);
       throw error;
     }
   }
@@ -79,9 +87,13 @@ class MarketService {
    */
   async searchCoins(query, token = null) {
     try {
-      return await api.get(`${API_ENDPOINTS.MARKET.PRICES}/search`, { query }, token);
+      return await api.get(
+        `${API_ENDPOINTS.MARKET.PRICES}/search`,
+        { query },
+        token,
+      );
     } catch (error) {
-      console.error('Search coins error:', error);
+      console.error("Search coins error:", error);
       throw error;
     }
   }
@@ -98,7 +110,7 @@ class MarketService {
       const params = coinId ? { coinId } : {};
       return await api.get(`${API_ENDPOINTS.AI.SENTIMENT}`, params, token);
     } catch (error) {
-      console.error('Get sentiment analysis error:', error);
+      console.error("Get sentiment analysis error:", error);
       throw error;
     }
   }

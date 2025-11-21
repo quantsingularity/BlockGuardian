@@ -26,7 +26,7 @@
         path: /var/log/ansible-audit.log
         line: "{{ ansible_date_time.iso8601 }} - Ansible playbook started by {{ ansible_user_id }} from {{ ansible_env.SSH_CLIENT.split()[0] | default('localhost') }}"
         create: yes
-        mode: '0600'
+        mode: "0600"
       tags: [audit]
 
   roles:
@@ -44,14 +44,14 @@
       template:
         src: compliance_report.j2
         dest: "/var/log/compliance-{{ ansible_date_time.date }}.json"
-        mode: '0600'
+        mode: "0600"
       tags: [compliance, reporting]
 
     - name: Create audit log entry for playbook completion
       lineinfile:
         path: /var/log/ansible-audit.log
         line: "{{ ansible_date_time.iso8601 }} - Ansible playbook completed successfully"
-        mode: '0600'
+        mode: "0600"
       tags: [audit]
 
 - name: Configure Web Servers with Enhanced Security
@@ -113,7 +113,7 @@
   become: true
   gather_facts: true
   vars:
-    log_retention_days: 2555  # 7 years for financial compliance
+    log_retention_days: 2555 # 7 years for financial compliance
     enable_siem: true
 
   roles:
@@ -141,7 +141,7 @@
       template:
         src: security_report.j2
         dest: "/var/log/security-report-{{ ansible_date_time.date }}.json"
-        mode: '0600'
+        mode: "0600"
       tags: [reporting, security]
 
     - name: Verify all security controls are in place

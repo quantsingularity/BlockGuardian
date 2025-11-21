@@ -1,7 +1,7 @@
-import React from 'react';
-import { View, Text, FlatList, TouchableOpacity } from 'react-native';
-import { styled } from 'nativewind';
-import { Ionicons } from '@expo/vector-icons';
+import React from "react";
+import { View, Text, FlatList, TouchableOpacity } from "react-native";
+import { styled } from "nativewind";
+import { Ionicons } from "@expo/vector-icons";
 
 const StyledView = styled(View);
 const StyledText = styled(Text);
@@ -20,22 +20,23 @@ const TransactionList = ({
   transactions = [],
   onTransactionPress,
   loading = false,
-  className = '',
+  className = "",
 }) => {
   // Function to format transaction amount with appropriate color
   const formatAmount = (amount, type) => {
-    const isPositive = type === 'received';
+    const isPositive = type === "received";
     return (
       <StyledView className="flex-row items-center">
         <Ionicons
-          name={isPositive ? 'arrow-down-outline' : 'arrow-up-outline'}
+          name={isPositive ? "arrow-down-outline" : "arrow-up-outline"}
           size={16}
-          color={isPositive ? '#10b981' : '#ef4444'}
+          color={isPositive ? "#10b981" : "#ef4444"}
         />
         <StyledText
-          className={`ml-1 font-medium ${isPositive ? 'text-green-500' : 'text-red-500'}`}
+          className={`ml-1 font-medium ${isPositive ? "text-green-500" : "text-red-500"}`}
         >
-          {isPositive ? '+' : '-'}{amount}
+          {isPositive ? "+" : "-"}
+          {amount}
         </StyledText>
       </StyledView>
     );
@@ -44,7 +45,11 @@ const TransactionList = ({
   // Function to format timestamp
   const formatDate = (timestamp) => {
     const date = new Date(timestamp);
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return (
+      date.toLocaleDateString() +
+      " " +
+      date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    );
   };
 
   // Function to truncate hash
@@ -61,23 +66,35 @@ const TransactionList = ({
     >
       <StyledView className="flex-row justify-between items-center mb-2">
         <StyledView className="flex-row items-center">
-          <StyledView className={`w-10 h-10 rounded-full items-center justify-center ${item.type === 'received' ? 'bg-green-900/30' : 'bg-red-900/30'}`}>
+          <StyledView
+            className={`w-10 h-10 rounded-full items-center justify-center ${item.type === "received" ? "bg-green-900/30" : "bg-red-900/30"}`}
+          >
             <Ionicons
-              name={item.type === 'received' ? 'arrow-down-outline' : 'arrow-up-outline'}
+              name={
+                item.type === "received"
+                  ? "arrow-down-outline"
+                  : "arrow-up-outline"
+              }
               size={20}
-              color={item.type === 'received' ? '#10b981' : '#ef4444'}
+              color={item.type === "received" ? "#10b981" : "#ef4444"}
             />
           </StyledView>
           <StyledView className="ml-3">
-            <StyledText className="text-white font-medium">{item.type === 'received' ? 'Received' : 'Sent'}</StyledText>
-            <StyledText className="text-gray-400 text-xs">{formatDate(item.timestamp)}</StyledText>
+            <StyledText className="text-white font-medium">
+              {item.type === "received" ? "Received" : "Sent"}
+            </StyledText>
+            <StyledText className="text-gray-400 text-xs">
+              {formatDate(item.timestamp)}
+            </StyledText>
           </StyledView>
         </StyledView>
         {formatAmount(item.amount, item.type)}
       </StyledView>
 
       <StyledView className="bg-gray-700/50 p-2 rounded">
-        <StyledText className="text-gray-300 text-xs">Tx: {truncateHash(item.hash)}</StyledText>
+        <StyledText className="text-gray-300 text-xs">
+          Tx: {truncateHash(item.hash)}
+        </StyledText>
       </StyledView>
     </StyledTouchableOpacity>
   );
@@ -86,7 +103,9 @@ const TransactionList = ({
   const EmptyState = () => (
     <StyledView className="items-center justify-center py-8">
       <Ionicons name="document-outline" size={48} color="#6b7280" />
-      <StyledText className="text-gray-400 mt-2 text-center">No transactions found</StyledText>
+      <StyledText className="text-gray-400 mt-2 text-center">
+        No transactions found
+      </StyledText>
     </StyledView>
   );
 

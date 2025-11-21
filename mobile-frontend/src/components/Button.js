@@ -1,7 +1,7 @@
-import React from 'react';
-import { TouchableOpacity, Text, ActivityIndicator } from 'react-native';
-import { styled } from 'nativewind';
-import { Ionicons } from '@expo/vector-icons';
+import React from "react";
+import { TouchableOpacity, Text, ActivityIndicator } from "react-native";
+import { styled } from "nativewind";
+import { Ionicons } from "@expo/vector-icons";
 
 const StyledTouchableOpacity = styled(TouchableOpacity);
 const StyledText = styled(Text);
@@ -21,35 +21,35 @@ const StyledText = styled(Text);
  */
 const Button = ({
   title,
-  variant = 'primary',
-  size = 'md',
+  variant = "primary",
+  size = "md",
   isLoading = false,
   isDisabled = false,
   icon,
   onPress,
-  className = '',
+  className = "",
 }) => {
   // Variant styles
   const variantStyles = {
-    primary: 'bg-indigo-600 active:bg-indigo-700',
-    secondary: 'bg-gray-600 active:bg-gray-700',
-    danger: 'bg-red-600 active:bg-red-700',
-    success: 'bg-green-600 active:bg-green-700',
-    outline: 'bg-transparent border border-gray-400 active:bg-gray-800',
+    primary: "bg-indigo-600 active:bg-indigo-700",
+    secondary: "bg-gray-600 active:bg-gray-700",
+    danger: "bg-red-600 active:bg-red-700",
+    success: "bg-green-600 active:bg-green-700",
+    outline: "bg-transparent border border-gray-400 active:bg-gray-800",
   };
 
   // Size styles
   const sizeStyles = {
-    sm: 'px-3 py-1.5 rounded text-sm',
-    md: 'px-4 py-2 rounded-lg text-base',
-    lg: 'px-6 py-3 rounded-xl text-lg',
+    sm: "px-3 py-1.5 rounded text-sm",
+    md: "px-4 py-2 rounded-lg text-base",
+    lg: "px-6 py-3 rounded-xl text-lg",
   };
 
   // Text color based on variant
-  const textColor = variant === 'outline' ? 'text-white' : 'text-white';
+  const textColor = variant === "outline" ? "text-white" : "text-white";
 
   // Disabled state
-  const disabledStyle = isDisabled ? 'opacity-50' : '';
+  const disabledStyle = isDisabled ? "opacity-50" : "";
 
   return (
     <StyledTouchableOpacity
@@ -65,12 +65,14 @@ const Button = ({
           {icon && (
             <Ionicons
               name={icon}
-              size={size === 'sm' ? 16 : size === 'md' ? 18 : 22}
+              size={size === "sm" ? 16 : size === "md" ? 18 : 22}
               color="white"
               style={{ marginRight: 8 }}
             />
           )}
-          <StyledText className={`font-semibold ${textColor}`}>{title}</StyledText>
+          <StyledText className={`font-semibold ${textColor}`}>
+            {title}
+          </StyledText>
         </>
       )}
     </StyledTouchableOpacity>

@@ -76,6 +76,7 @@ BlockGuardian follows a modern microservices architecture with clear separation 
 ## Key Features
 
 ### Portfolio Management
+
 - **Multi-Portfolio Support**: Manage multiple investment portfolios with different strategies and risk profiles
 - **Real-Time Valuation**: Live portfolio valuation with real-time market data integration
 - **Performance Analytics**: Comprehensive performance attribution and risk-adjusted returns analysis
@@ -83,6 +84,7 @@ BlockGuardian follows a modern microservices architecture with clear separation 
 - **Benchmark Comparison**: Performance comparison against custom and standard benchmarks
 
 ### Trading Operations
+
 - **Advanced Order Management**: Support for market, limit, stop, and complex order types
 - **Real-Time Execution**: Low-latency order execution with smart routing
 - **Risk Controls**: Pre-trade risk checks and position limits enforcement
@@ -90,6 +92,7 @@ BlockGuardian follows a modern microservices architecture with clear separation 
 - **Transaction Cost Analysis**: Comprehensive TCA with execution quality metrics
 
 ### Compliance & Risk Management
+
 - **KYC/AML Compliance**: Automated customer verification and anti-money laundering monitoring
 - **Regulatory Reporting**: Automated generation of regulatory reports (CTR, SAR, etc.)
 - **Risk Assessment**: Real-time risk monitoring with customizable risk limits
@@ -97,6 +100,7 @@ BlockGuardian follows a modern microservices architecture with clear separation 
 - **Sanctions Screening**: Real-time screening against global sanctions lists
 
 ### Security Features
+
 - **Multi-Factor Authentication**: Advanced MFA with TOTP and backup codes
 - **Session Management**: Secure session handling with Redis-based storage
 - **Encryption**: End-to-end encryption for sensitive data
@@ -106,6 +110,7 @@ BlockGuardian follows a modern microservices architecture with clear separation 
 ## Technology Stack
 
 ### Backend Technologies
+
 - **Framework**: Flask 2.3+ with Flask-RESTful
 - **Database**: PostgreSQL 14+ with SQLAlchemy ORM
 - **Caching**: Redis 7+ for session management and caching
@@ -115,6 +120,7 @@ BlockGuardian follows a modern microservices architecture with clear separation 
 - **API Documentation**: Swagger/OpenAPI 3.0 specification
 
 ### Frontend Technologies
+
 - **Framework**: React 18+ with functional components and hooks
 - **Styling**: Tailwind CSS 3+ for responsive design
 - **Charts**: Recharts for financial data visualization
@@ -123,6 +129,7 @@ BlockGuardian follows a modern microservices architecture with clear separation 
 - **Testing**: Jest and React Testing Library
 
 ### Infrastructure & DevOps
+
 - **Containerization**: Docker with multi-stage builds
 - **Orchestration**: Docker Compose for local development
 - **CI/CD**: GitHub Actions for automated testing and deployment
@@ -131,6 +138,7 @@ BlockGuardian follows a modern microservices architecture with clear separation 
 - **Security Scanning**: Automated vulnerability scanning with Snyk
 
 ### Blockchain Technologies
+
 - **Smart Contracts**: Solidity 0.8+ for Ethereum compatibility
 - **Web3 Integration**: Web3.py for blockchain interactions
 - **Networks**: Support for Ethereum, Polygon, and other EVM chains
@@ -143,6 +151,7 @@ BlockGuardian follows a modern microservices architecture with clear separation 
 BlockGuardian implements a comprehensive security framework that meets or exceeds industry standards for financial services:
 
 #### Authentication & Authorization
+
 - **Multi-Factor Authentication (MFA)**: TOTP-based MFA with backup codes
 - **Session Security**: Secure session management with automatic timeout
 - **Password Policy**: Enforced strong password requirements
@@ -150,6 +159,7 @@ BlockGuardian implements a comprehensive security framework that meets or exceed
 - **Device Fingerprinting**: Device-based security controls
 
 #### Data Protection
+
 - **Encryption at Rest**: AES-256 encryption for sensitive data storage
 - **Encryption in Transit**: TLS 1.3 for all network communications
 - **Key Management**: Secure key rotation and management
@@ -157,6 +167,7 @@ BlockGuardian implements a comprehensive security framework that meets or exceed
 - **Backup Security**: Encrypted backups with secure key management
 
 #### Network Security
+
 - **API Rate Limiting**: Configurable rate limits to prevent abuse
 - **CORS Protection**: Strict CORS policies for web security
 - **Input Validation**: Comprehensive input validation and sanitization
@@ -166,6 +177,7 @@ BlockGuardian implements a comprehensive security framework that meets or exceed
 ### Compliance Framework
 
 #### Regulatory Standards
+
 - **BSA/AML**: Bank Secrecy Act and Anti-Money Laundering compliance
 - **KYC**: Know Your Customer verification procedures
 - **GDPR**: General Data Protection Regulation compliance
@@ -173,6 +185,7 @@ BlockGuardian implements a comprehensive security framework that meets or exceed
 - **PCI DSS**: Payment Card Industry Data Security Standard
 
 #### Monitoring & Reporting
+
 - **Transaction Monitoring**: Real-time AML transaction monitoring
 - **Suspicious Activity Reporting**: Automated SAR generation and filing
 - **Regulatory Reporting**: Automated CTR and other regulatory reports
@@ -194,29 +207,34 @@ Before installing BlockGuardian, ensure you have the following prerequisites:
 ### Backend Setup
 
 1. **Clone the Repository**
+
    ```bash
    git clone https://github.com/abrar2030/BlockGuardian.git
    cd BlockGuardian/code/backend
    ```
 
 2. **Create Virtual Environment**
+
    ```bash
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
 
 3. **Install Dependencies**
+
    ```bash
    pip install -r requirements.txt
    ```
 
 4. **Environment Configuration**
+
    ```bash
    cp .env.example .env
    # Edit .env file with your configuration
    ```
 
 5. **Database Setup**
+
    ```bash
    # Create database
    createdb blockguardian
@@ -236,11 +254,13 @@ Before installing BlockGuardian, ensure you have the following prerequisites:
 ### Frontend Setup
 
 1. **Navigate to Frontend Directory**
+
    ```bash
    cd ../frontend
    ```
 
 2. **Install Dependencies**
+
    ```bash
    npm install
    # or
@@ -248,6 +268,7 @@ Before installing BlockGuardian, ensure you have the following prerequisites:
    ```
 
 3. **Environment Configuration**
+
    ```bash
    cp .env.local.example .env.local
    # Edit .env.local with your configuration
@@ -280,9 +301,11 @@ docker-compose down
 ### Authentication Endpoints
 
 #### POST /api/auth/login
+
 Authenticate user and create session.
 
 **Request Body:**
+
 ```json
 {
   "email": "user@example.com",
@@ -292,6 +315,7 @@ Authenticate user and create session.
 ```
 
 **Response:**
+
 ```json
 {
   "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
@@ -306,14 +330,17 @@ Authenticate user and create session.
 ```
 
 #### POST /api/auth/logout
+
 Logout user and invalidate session.
 
 ### Portfolio Management Endpoints
 
 #### GET /api/portfolios
+
 Retrieve user's portfolios.
 
 **Response:**
+
 ```json
 {
   "portfolios": [
@@ -330,9 +357,11 @@ Retrieve user's portfolios.
 ```
 
 #### POST /api/portfolios
+
 Create new portfolio.
 
 **Request Body:**
+
 ```json
 {
   "name": "Conservative Portfolio",
@@ -345,9 +374,11 @@ Create new portfolio.
 ### Trading Endpoints
 
 #### POST /api/orders
+
 Place new order.
 
 **Request Body:**
+
 ```json
 {
   "portfolio_id": "uuid",
@@ -360,17 +391,21 @@ Place new order.
 ```
 
 #### GET /api/orders
+
 Retrieve user's orders.
 
 #### DELETE /api/orders/{order_id}
+
 Cancel pending order.
 
 ### Compliance Endpoints
 
 #### POST /api/compliance/kyc/verify
+
 Submit KYC verification documents.
 
 #### GET /api/compliance/reports/{report_type}
+
 Generate compliance reports.
 
 ## Frontend Components
@@ -380,6 +415,7 @@ Generate compliance reports.
 The `Dashboard` component provides a comprehensive overview of user portfolios with real-time data visualization:
 
 **Features:**
+
 - Real-time portfolio valuation
 - Performance charts with multiple timeframes
 - Asset allocation visualization
@@ -387,15 +423,16 @@ The `Dashboard` component provides a comprehensive overview of user portfolios w
 - Market overview with news integration
 
 **Usage:**
+
 ```jsx
-import Dashboard from './components/Dashboard';
+import Dashboard from "./components/Dashboard";
 
 <Dashboard
   user={user}
   portfolios={portfolios}
   transactions={transactions}
   marketData={marketData}
-/>
+/>;
 ```
 
 ### Portfolio Manager Component
@@ -403,6 +440,7 @@ import Dashboard from './components/Dashboard';
 The `PortfolioManager` component offers advanced portfolio management capabilities:
 
 **Features:**
+
 - Multi-portfolio management
 - Performance analytics and attribution
 - Risk analysis and recommendations
@@ -410,15 +448,16 @@ The `PortfolioManager` component offers advanced portfolio management capabiliti
 - Customizable settings and preferences
 
 **Usage:**
+
 ```jsx
-import PortfolioManager from './components/PortfolioManager';
+import PortfolioManager from "./components/PortfolioManager";
 
 <PortfolioManager
   portfolios={portfolios}
   onPortfolioUpdate={handleUpdate}
   onRebalance={handleRebalance}
   onCreatePortfolio={handleCreate}
-/>
+/>;
 ```
 
 ### Trading Interface Component
@@ -426,6 +465,7 @@ import PortfolioManager from './components/PortfolioManager';
 The `TradingInterface` component provides professional trading capabilities:
 
 **Features:**
+
 - Real-time market data and charts
 - Advanced order management
 - Risk controls and position monitoring
@@ -433,8 +473,9 @@ The `TradingInterface` component provides professional trading capabilities:
 - Order confirmation and execution
 
 **Usage:**
+
 ```jsx
-import TradingInterface from './components/TradingInterface';
+import TradingInterface from "./components/TradingInterface";
 
 <TradingInterface
   user={user}
@@ -442,7 +483,7 @@ import TradingInterface from './components/TradingInterface';
   marketData={marketData}
   onPlaceOrder={handlePlaceOrder}
   onCancelOrder={handleCancelOrder}
-/>
+/>;
 ```
 
 ## Database Schema
@@ -450,6 +491,7 @@ import TradingInterface from './components/TradingInterface';
 ### Core Tables
 
 #### users
+
 ```sql
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -473,6 +515,7 @@ CREATE TABLE users (
 ```
 
 #### portfolios
+
 ```sql
 CREATE TABLE portfolios (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -496,6 +539,7 @@ CREATE TABLE portfolios (
 ```
 
 #### transactions
+
 ```sql
 CREATE TABLE transactions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -521,6 +565,7 @@ CREATE TABLE transactions (
 ### Compliance Tables
 
 #### suspicious_activities
+
 ```sql
 CREATE TABLE suspicious_activities (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -543,17 +588,20 @@ CREATE TABLE suspicious_activities (
 ### Backend Testing
 
 #### Unit Tests
+
 - **Model Tests**: Comprehensive testing of database models and relationships
 - **Service Tests**: Business logic and service layer testing
 - **API Tests**: Endpoint testing with various scenarios
 - **Security Tests**: Authentication and authorization testing
 
 #### Integration Tests
+
 - **Database Integration**: Testing database operations and transactions
 - **External API Integration**: Testing third-party service integrations
 - **Compliance Integration**: Testing compliance workflows and reporting
 
 #### Performance Tests
+
 - **Load Testing**: API performance under various load conditions
 - **Stress Testing**: System behavior under extreme conditions
 - **Scalability Testing**: Performance with increasing data volumes
@@ -561,11 +609,13 @@ CREATE TABLE suspicious_activities (
 ### Frontend Testing
 
 #### Component Tests
+
 - **Unit Tests**: Individual component functionality testing
 - **Integration Tests**: Component interaction testing
 - **Snapshot Tests**: UI consistency and regression testing
 
 #### End-to-End Tests
+
 - **User Workflows**: Complete user journey testing
 - **Cross-Browser Testing**: Compatibility across different browsers
 - **Mobile Responsiveness**: Testing on various device sizes
@@ -581,17 +631,20 @@ CREATE TABLE suspicious_activities (
 ### System Performance Targets
 
 #### API Response Times
+
 - **Authentication**: < 200ms
 - **Portfolio Data**: < 500ms
 - **Trading Operations**: < 100ms
 - **Compliance Checks**: < 1000ms
 
 #### Database Performance
+
 - **Query Response Time**: < 50ms for 95th percentile
 - **Connection Pool**: Optimal connection management
 - **Index Optimization**: Proper indexing for all queries
 
 #### Frontend Performance
+
 - **Initial Load Time**: < 3 seconds
 - **Time to Interactive**: < 5 seconds
 - **Largest Contentful Paint**: < 2.5 seconds
@@ -599,11 +652,13 @@ CREATE TABLE suspicious_activities (
 ### Scalability Metrics
 
 #### Concurrent Users
+
 - **Target**: 10,000 concurrent users
 - **Peak Load**: 50,000 concurrent users
 - **Response Time**: Maintain < 1 second under peak load
 
 #### Data Volume
+
 - **Transactions**: 1 million transactions per day
 - **Users**: 100,000 active users
 - **Storage**: Efficient data archiving and retrieval
@@ -615,18 +670,21 @@ CREATE TABLE suspicious_activities (
 BlockGuardian implements comprehensive compliance monitoring to ensure adherence to financial regulations:
 
 #### Anti-Money Laundering (AML)
+
 - **Transaction Monitoring**: Real-time monitoring of all transactions
 - **Pattern Detection**: Advanced algorithms to detect suspicious patterns
 - **Risk Scoring**: Dynamic risk scoring based on user behavior
 - **Reporting**: Automated SAR generation and filing
 
 #### Know Your Customer (KYC)
+
 - **Identity Verification**: Multi-step identity verification process
 - **Document Verification**: Automated document analysis and verification
 - **Ongoing Monitoring**: Continuous monitoring of customer risk profiles
 - **Additional Due Diligence**: Additional verification for high-risk customers
 
 #### Regulatory Reporting
+
 - **Currency Transaction Reports (CTR)**: Automated CTR generation for large transactions
 - **Suspicious Activity Reports (SAR)**: Automated SAR filing for suspicious activities
 - **Regulatory Filings**: Automated generation of required regulatory filings
@@ -635,12 +693,14 @@ BlockGuardian implements comprehensive compliance monitoring to ensure adherence
 ### Data Privacy & Protection
 
 #### GDPR Compliance
+
 - **Data Minimization**: Collect only necessary personal data
 - **Consent Management**: Clear consent mechanisms for data processing
 - **Right to Erasure**: Automated data deletion upon request
 - **Data Portability**: Export user data in standard formats
 
 #### Data Security
+
 - **Encryption**: End-to-end encryption for all sensitive data
 - **Access Controls**: Role-based access control with audit logging
 - **Data Masking**: PII masking in non-production environments
@@ -660,12 +720,14 @@ BlockGuardian implements comprehensive compliance monitoring to ensure adherence
 ### Code Standards
 
 #### Backend Standards
+
 - **PEP 8**: Follow Python PEP 8 style guidelines
 - **Type Hints**: Use type hints for all function parameters and returns
 - **Docstrings**: Comprehensive docstrings for all classes and functions
 - **Error Handling**: Proper exception handling and logging
 
 #### Frontend Standards
+
 - **ESLint**: Follow ESLint configuration for code consistency
 - **Component Structure**: Consistent component structure and naming
 - **PropTypes**: Define PropTypes for all component props

@@ -1,5 +1,5 @@
-import api from '../lib/api';
-import { API_ENDPOINTS } from '../lib/constants';
+import api from "../lib/api";
+import { API_ENDPOINTS } from "../lib/constants";
 
 /**
  * Authentication service for user login, registration, and token management
@@ -14,7 +14,10 @@ class AuthService {
    */
   async login(email, password) {
     try {
-      const response = await api.post(API_ENDPOINTS.AUTH.LOGIN, { email, password });
+      const response = await api.post(API_ENDPOINTS.AUTH.LOGIN, {
+        email,
+        password,
+      });
 
       // Store token if provided
       if (response.token) {
@@ -23,7 +26,7 @@ class AuthService {
 
       return response;
     } catch (error) {
-      console.error('Login error:', error);
+      console.error("Login error:", error);
       throw error;
     }
   }
@@ -45,7 +48,7 @@ class AuthService {
 
       return response;
     } catch (error) {
-      console.error('Registration error:', error);
+      console.error("Registration error:", error);
       throw error;
     }
   }
@@ -65,7 +68,7 @@ class AuthService {
 
       return { success: true };
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error("Logout error:", error);
 
       // Still clear token even if API call fails
       await this.clearToken();
@@ -83,9 +86,9 @@ class AuthService {
     try {
       // Implementation would use AsyncStorage in a real app
       // For now, we'll use a mock implementation
-      return localStorage.getItem('auth_token');
+      return localStorage.getItem("auth_token");
     } catch (error) {
-      console.error('Get token error:', error);
+      console.error("Get token error:", error);
       return null;
     }
   }
@@ -99,9 +102,9 @@ class AuthService {
   async setToken(token) {
     try {
       // Implementation would use AsyncStorage in a real app
-      localStorage.setItem('auth_token', token);
+      localStorage.setItem("auth_token", token);
     } catch (error) {
-      console.error('Set token error:', error);
+      console.error("Set token error:", error);
       throw error;
     }
   }
@@ -114,9 +117,9 @@ class AuthService {
   async clearToken() {
     try {
       // Implementation would use AsyncStorage in a real app
-      localStorage.removeItem('auth_token');
+      localStorage.removeItem("auth_token");
     } catch (error) {
-      console.error('Clear token error:', error);
+      console.error("Clear token error:", error);
       throw error;
     }
   }
@@ -146,7 +149,7 @@ class AuthService {
 
       return response;
     } catch (error) {
-      console.error('Refresh token error:', error);
+      console.error("Refresh token error:", error);
       throw error;
     }
   }

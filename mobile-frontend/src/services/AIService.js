@@ -1,5 +1,5 @@
-import api from '../lib/api';
-import { API_ENDPOINTS } from '../lib/constants';
+import api from "../lib/api";
+import { API_ENDPOINTS } from "../lib/constants";
 
 /**
  * AI service for recommendations and analysis
@@ -16,7 +16,7 @@ class AIService {
     try {
       return await api.get(API_ENDPOINTS.AI.RECOMMENDATIONS, params, token);
     } catch (error) {
-      console.error('Get investment recommendations error:', error);
+      console.error("Get investment recommendations error:", error);
       throw error;
     }
   }
@@ -37,7 +37,7 @@ class AIService {
 
       return await api.get(API_ENDPOINTS.AI.RISK_ANALYSIS, params, token);
     } catch (error) {
-      console.error('Get risk analysis error:', error);
+      console.error("Get risk analysis error:", error);
       throw error;
     }
   }
@@ -54,7 +54,7 @@ class AIService {
       const params = coinId ? { coinId } : {};
       return await api.get(API_ENDPOINTS.AI.SENTIMENT, params, token);
     } catch (error) {
-      console.error('Get sentiment analysis error:', error);
+      console.error("Get sentiment analysis error:", error);
       throw error;
     }
   }
@@ -69,12 +69,16 @@ class AIService {
    */
   async getPortfolioOptimization(portfolioId, params = {}, token) {
     try {
-      return await api.post(`${API_ENDPOINTS.AI.RECOMMENDATIONS}/optimize`, {
-        portfolioId,
-        ...params
-      }, token);
+      return await api.post(
+        `${API_ENDPOINTS.AI.RECOMMENDATIONS}/optimize`,
+        {
+          portfolioId,
+          ...params,
+        },
+        token,
+      );
     } catch (error) {
-      console.error('Get portfolio optimization error:', error);
+      console.error("Get portfolio optimization error:", error);
       throw error;
     }
   }
@@ -87,14 +91,18 @@ class AIService {
    * @param {string} token - Authentication token (optional)
    * @returns {Promise} - Resolved with trend prediction data
    */
-  async getMarketPredictions(timeframe = '1w', assets = [], token = null) {
+  async getMarketPredictions(timeframe = "1w", assets = [], token = null) {
     try {
-      return await api.get(`${API_ENDPOINTS.AI.RECOMMENDATIONS}/predict`, {
-        timeframe,
-        assets: assets.join(',')
-      }, token);
+      return await api.get(
+        `${API_ENDPOINTS.AI.RECOMMENDATIONS}/predict`,
+        {
+          timeframe,
+          assets: assets.join(","),
+        },
+        token,
+      );
     } catch (error) {
-      console.error('Get market predictions error:', error);
+      console.error("Get market predictions error:", error);
       throw error;
     }
   }

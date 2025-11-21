@@ -7,6 +7,7 @@ This repository contains a comprehensive, financial-grade infrastructure impleme
 ### Compliance Standards
 
 This infrastructure is designed to meet the following compliance standards:
+
 - **PCI DSS** (Payment Card Industry Data Security Standard)
 - **SOC 2** (Service Organization Control 2)
 - **ISO 27001** (Information Security Management)
@@ -100,6 +101,7 @@ infrastructure/
 ### Prerequisites
 
 Ensure you have the following tools installed:
+
 - **Terraform** >= 1.5.0
 - **kubectl** >= 1.27.0
 - **AWS CLI** >= 2.0
@@ -110,12 +112,14 @@ Ensure you have the following tools installed:
 ### Environment Setup
 
 1. **Configure AWS Credentials**
+
    ```bash
    aws configure
    # or use IAM roles/instance profiles
    ```
 
 2. **Set Environment Variables**
+
    ```bash
    export AWS_REGION=us-east-1
    export ENVIRONMENT=staging
@@ -131,6 +135,7 @@ Ensure you have the following tools installed:
 ### Deployment
 
 #### Option 1: Automated Deployment (Recommended)
+
 ```bash
 # Deploy to staging environment
 ./scripts/deploy.sh staging deploy
@@ -140,6 +145,7 @@ Ensure you have the following tools installed:
 ```
 
 #### Option 2: Manual Deployment
+
 ```bash
 # 1. Deploy Infrastructure
 cd terraform/environments/staging
@@ -158,6 +164,7 @@ ansible-playbook -i inventory/staging playbooks/main.yml
 ## Security Features
 
 ### Network Security
+
 - **VPC with Private Subnets**: All application components in private subnets
 - **Network ACLs**: Stateless firewall rules at subnet level
 - **Security Groups**: Stateful firewall rules at instance level
@@ -165,18 +172,21 @@ ansible-playbook -i inventory/staging playbooks/main.yml
 - **DDoS Protection**: AWS Shield Advanced integration
 
 ### Data Protection
+
 - **Encryption at Rest**: All data encrypted using AWS KMS
 - **Encryption in Transit**: TLS 1.3 for all communications
 - **Key Management**: Centralized key management with rotation
 - **Data Classification**: Automated data classification and handling
 
 ### Access Control
+
 - **IAM Roles**: Least privilege access with temporary credentials
 - **MFA Required**: Multi-factor authentication for all admin access
 - **RBAC**: Role-based access control in Kubernetes
 - **Service Mesh**: Istio for service-to-service authentication
 
 ### Monitoring and Logging
+
 - **SIEM Integration**: Security Information and Event Management
 - **Real-time Alerting**: Immediate notification of security events
 - **Audit Logging**: Complete audit trail for all activities
@@ -185,18 +195,21 @@ ansible-playbook -i inventory/staging playbooks/main.yml
 ## Compliance Features
 
 ### PCI DSS Compliance
+
 - **Network Segmentation**: Isolated cardholder data environment
 - **Access Controls**: Strict access controls and monitoring
 - **Encryption**: Strong cryptography for data protection
 - **Vulnerability Management**: Regular security assessments
 
 ### SOC 2 Compliance
+
 - **Security Controls**: Comprehensive security control framework
 - **Availability**: High availability and disaster recovery
 - **Processing Integrity**: Data processing integrity controls
 - **Confidentiality**: Data confidentiality protections
 
 ### ISO 27001 Compliance
+
 - **ISMS**: Information Security Management System
 - **Risk Management**: Systematic risk assessment and treatment
 - **Continuous Improvement**: Regular security reviews and updates
@@ -205,21 +218,25 @@ ansible-playbook -i inventory/staging playbooks/main.yml
 ## Monitoring and Alerting
 
 ### Metrics Collection
+
 - **Prometheus**: Time-series metrics collection
 - **Grafana**: Visualization and dashboards
 - **Custom Metrics**: Application-specific metrics
 
 ### Log Aggregation
+
 - **Loki**: Log aggregation and storage
 - **Fluent Bit**: Log shipping and processing
 - **Retention**: 7-year log retention for compliance
 
 ### Alerting
+
 - **AlertManager**: Centralized alert management
 - **Multi-channel**: Email, Slack, PagerDuty notifications
 - **Escalation**: Automated escalation procedures
 
 ### Security Monitoring
+
 - **Falco**: Runtime security monitoring
 - **Intrusion Detection**: Network and host-based IDS
 - **Threat Intelligence**: Integration with threat feeds
@@ -227,12 +244,14 @@ ansible-playbook -i inventory/staging playbooks/main.yml
 ## Disaster Recovery
 
 ### Backup Strategy
+
 - **Automated Backups**: Daily encrypted backups
 - **Cross-region Replication**: Backups replicated to DR region
 - **Point-in-time Recovery**: 15-minute RPO capability
 - **Retention**: 7-year backup retention
 
 ### Recovery Procedures
+
 - **RTO**: 4-hour Recovery Time Objective
 - **RPO**: 15-minute Recovery Point Objective
 - **Automated Failover**: Database and application failover
@@ -241,12 +260,14 @@ ansible-playbook -i inventory/staging playbooks/main.yml
 ## CI/CD Pipeline
 
 ### Security-First Approach
+
 - **Security Scanning**: Automated vulnerability scanning
 - **Compliance Validation**: Continuous compliance checking
 - **Code Analysis**: Static and dynamic code analysis
 - **Container Scanning**: Container image vulnerability scanning
 
 ### Deployment Process
+
 - **Blue-Green Deployment**: Zero-downtime deployments
 - **Canary Releases**: Gradual rollout with monitoring
 - **Automated Testing**: Comprehensive test automation
@@ -255,12 +276,14 @@ ansible-playbook -i inventory/staging playbooks/main.yml
 ## Configuration Management
 
 ### Ansible Automation
+
 - **Security Hardening**: Automated security configuration
 - **Compliance Enforcement**: Continuous compliance enforcement
 - **Patch Management**: Automated security patching
 - **Configuration Drift**: Detection and remediation
 
 ### Infrastructure as Code
+
 - **Terraform**: Declarative infrastructure management
 - **Version Control**: All infrastructure changes tracked
 - **Peer Review**: Required code reviews for changes
@@ -271,6 +294,7 @@ ansible-playbook -i inventory/staging playbooks/main.yml
 ### Common Issues
 
 #### Deployment Failures
+
 ```bash
 # Check Terraform state
 terraform show
@@ -284,6 +308,7 @@ kubectl logs <pod-name> -f
 ```
 
 #### Security Issues
+
 ```bash
 # Check security policies
 kubectl get networkpolicies
@@ -294,6 +319,7 @@ openssl x509 -in cert.pem -text -noout
 ```
 
 #### Performance Issues
+
 ```bash
 # Check resource usage
 kubectl top nodes
@@ -306,6 +332,7 @@ curl http://prometheus:9090/metrics
 ### Support
 
 For technical support and questions:
+
 - **Documentation**: Check the `/docs` directory
 - **Logs**: Review deployment and application logs
 - **Monitoring**: Check Grafana dashboards
@@ -314,6 +341,7 @@ For technical support and questions:
 ## Contributing
 
 ### Development Workflow
+
 1. Create feature branch
 2. Make changes with tests
 3. Run security scans
@@ -323,6 +351,7 @@ For technical support and questions:
 7. Merge to main
 
 ### Security Requirements
+
 - All changes must pass security scans
 - Compliance validation required
 - Security team review for security changes
@@ -335,6 +364,7 @@ This infrastructure code is proprietary and confidential. Unauthorized access, u
 ## Changelog
 
 ### Version 2.0.0 (Current)
+
 - Enhanced financial-grade security controls
 - Comprehensive compliance framework
 - Advanced monitoring and alerting
@@ -342,6 +372,7 @@ This infrastructure code is proprietary and confidential. Unauthorized access, u
 - Automated CI/CD pipeline
 
 ### Version 1.0.0
+
 - Basic infrastructure setup
 - Initial security controls
 - Basic monitoring

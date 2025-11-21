@@ -1,9 +1,11 @@
 # Secret Management Documentation
 
 ## Overview
+
 This document outlines the secure secret management practices implemented in the BlockGuardian project's CI/CD pipelines.
 
 ## GitHub Secrets
+
 The CI/CD pipelines use GitHub's encrypted secrets feature to securely store sensitive information:
 
 1. **Docker Registry Credentials**
@@ -60,6 +62,7 @@ To add new secrets to the CI/CD pipeline:
 ## Security Auditing
 
 The CI/CD pipeline includes security scanning for:
+
 - Dependency vulnerabilities
 - Smart contract security issues
 - Code quality and best practices

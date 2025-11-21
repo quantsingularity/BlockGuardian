@@ -7,6 +7,7 @@ BlockGuardian Backend is an enterprise-grade financial services platform built w
 ## 🚀 Key Features
 
 ### Security & Authentication
+
 - **Multi-Factor Authentication (MFA)** with TOTP support
 - **JWT-based authentication** with refresh tokens
 - **Role-based access control** (RBAC)
@@ -16,6 +17,7 @@ BlockGuardian Backend is an enterprise-grade financial services platform built w
 - **Comprehensive audit logging** for compliance
 
 ### Financial Services
+
 - **Portfolio Management** with real-time valuation
 - **Asset Trading** (stocks, cryptocurrencies, ETFs, commodities)
 - **Transaction Processing** with settlement tracking
@@ -23,6 +25,7 @@ BlockGuardian Backend is an enterprise-grade financial services platform built w
 - **Performance Monitoring** and reporting
 
 ### AI/ML Capabilities
+
 - **Fraud Detection** using machine learning models
 - **Risk Assessment** algorithms
 - **Market Prediction** models
@@ -30,6 +33,7 @@ BlockGuardian Backend is an enterprise-grade financial services platform built w
 - **Automated Compliance Monitoring**
 
 ### Compliance & Regulatory
+
 - **KYC/AML** compliance workflows
 - **Suspicious Activity Reporting** (SAR)
 - **Large Transaction Reporting** (CTR)
@@ -38,6 +42,7 @@ BlockGuardian Backend is an enterprise-grade financial services platform built w
 - **Data Privacy** (GDPR/CCPA compliance)
 
 ### Monitoring & Operations
+
 - **Real-time Monitoring** with Prometheus metrics
 - **Health Checks** and alerting
 - **Performance Tracking** and optimization
@@ -47,6 +52,7 @@ BlockGuardian Backend is an enterprise-grade financial services platform built w
 ## 🏗️ Architecture
 
 ### Technology Stack
+
 - **Framework**: Flask 3.1.1 with production extensions
 - **Database**: SQLAlchemy with PostgreSQL/SQLite support
 - **Authentication**: JWT with Flask-JWT-Extended
@@ -57,6 +63,7 @@ BlockGuardian Backend is an enterprise-grade financial services platform built w
 - **Testing**: pytest with comprehensive test coverage
 
 ### Project Structure
+
 ```
 blockguardian_backend/
 ├── src/
@@ -93,6 +100,7 @@ blockguardian_backend/
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 - Python 3.11+
 - PostgreSQL 13+ (or SQLite for development)
 - Redis 6+ (optional, for caching and rate limiting)
@@ -101,29 +109,34 @@ blockguardian_backend/
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone <repository-url>
    cd blockguardian_backend
    ```
 
 2. **Create virtual environment**
+
    ```bash
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
 
 3. **Install dependencies**
+
    ```bash
    pip install -r requirements.txt
    ```
 
 4. **Set up environment variables**
+
    ```bash
    cp .env.example .env
    # Edit .env with your configuration
    ```
 
 5. **Initialize database**
+
    ```bash
    python src/database/init_db.py
    ```
@@ -178,6 +191,7 @@ PROMETHEUS_PORT=9090
 ### Build and run with Docker
 
 1. **Build the image**
+
    ```bash
    docker build -t blockguardian-backend .
    ```
@@ -195,7 +209,7 @@ PROMETHEUS_PORT=9090
 Create a `docker-compose.yml` file:
 
 ```yaml
-version: '3.8'
+version: "3.8"
 
 services:
   app:
@@ -233,6 +247,7 @@ volumes:
 ```
 
 Run with:
+
 ```bash
 docker-compose up -d
 ```
@@ -244,6 +259,7 @@ docker-compose up -d
 1. **Install Gunicorn** (included in requirements.txt)
 
 2. **Create Gunicorn configuration** (`gunicorn.conf.py`):
+
    ```python
    bind = "0.0.0.0:5000"
    workers = 4
@@ -347,6 +363,7 @@ Structured logging with different levels:
 - **CRITICAL**: Critical system failures
 
 Logs are written to:
+
 - Console (development)
 - Files (`logs/blockguardian.log`)
 - External systems (Sentry, ELK stack)
@@ -484,6 +501,7 @@ pre-commit install
 ```
 
 This will run:
+
 - Code formatting (black)
 - Linting (flake8)
 - Type checking (mypy)

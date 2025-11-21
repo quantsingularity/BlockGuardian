@@ -1,7 +1,7 @@
-import React from 'react';
-import { View, Text, Image, TouchableOpacity } from 'react-native';
-import { styled } from 'nativewind';
-import { Ionicons } from '@expo/vector-icons';
+import React from "react";
+import { View, Text, Image, TouchableOpacity } from "react-native";
+import { styled } from "nativewind";
+import { Ionicons } from "@expo/vector-icons";
 
 const StyledView = styled(View);
 const StyledText = styled(Text);
@@ -27,7 +27,7 @@ const Card = ({
   children,
   onPress,
   icon,
-  className = '',
+  className = "",
 }) => {
   const CardContainer = onPress ? StyledTouchableOpacity : StyledView;
 
@@ -55,11 +55,15 @@ const Card = ({
               style={{ marginRight: 8 }}
             />
           )}
-          <StyledText className="text-white font-bold text-lg">{title}</StyledText>
+          <StyledText className="text-white font-bold text-lg">
+            {title}
+          </StyledText>
         </StyledView>
 
         {subtitle && (
-          <StyledText className="text-gray-400 text-sm mb-3">{subtitle}</StyledText>
+          <StyledText className="text-gray-400 text-sm mb-3">
+            {subtitle}
+          </StyledText>
         )}
 
         {children}

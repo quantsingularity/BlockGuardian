@@ -61,6 +61,7 @@ Deploy BlockGuardian components to various environments:
 ```
 
 Options:
+
 - `-e, --environment`: Specify deployment environment (development, staging, production)
 - `-c, --component`: Deploy specific component (backend, web-frontend, mobile-frontend, blockchain)
 - `-s, --skip-tests`: Skip running tests before deployment

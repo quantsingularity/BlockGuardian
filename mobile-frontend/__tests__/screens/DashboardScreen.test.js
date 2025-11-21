@@ -1,13 +1,21 @@
 // Screen Test: /home/ubuntu/BlockGuardian_Tests/BlockGuardian_tests/mobile-frontend/__tests__/screens/DashboardScreen.test.js
-import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react-native';
-import DashboardScreen from '../../../../BlockGuardian_Project/mobile-frontend/src/screens/DashboardScreen';
+import React from "react";
+import { render, screen, fireEvent } from "@testing-library/react-native";
+import DashboardScreen from "../../../../BlockGuardian_Project/mobile-frontend/src/screens/DashboardScreen";
 
 // Mock dependencies
-jest.mock('@expo/vector-icons', () => {
+jest.mock("@expo/vector-icons", () => {
   // Mock Ionicons specifically, or provide a generic mock
   return {
-    Ionicons: ({ name, size, color, style }) => <mock-Ionicons testID={`icon-${name}`} name={name} size={size} color={color} style={style} />,
+    Ionicons: ({ name, size, color, style }) => (
+      <mock-Ionicons
+        testID={`icon-${name}`}
+        name={name}
+        size={size}
+        color={color}
+        style={style}
+      />
+    ),
   };
 });
 
@@ -21,12 +29,12 @@ const mockUseWalletConnectModal = jest.fn(() => ({
   provider: { disconnect: mockDisconnect },
 }));
 
-jest.mock('@walletconnect/modal-react-native', () => ({
+jest.mock("@walletconnect/modal-react-native", () => ({
   useWalletConnectModal: () => mockUseWalletConnectModal(),
 }));
 
 // Mock nativewind styled components - basic pass-through
-jest.mock('nativewind', () => ({
+jest.mock("nativewind", () => ({
   styled: (Component) => (props) => <Component {...props} />,
 }));
 
@@ -37,7 +45,7 @@ const mockNavigation = {
   goBack: jest.fn(),
 };
 
-describe('DashboardScreen', () => {
+describe("DashboardScreen", () => {
   beforeEach(() => {
     // Reset mocks and hook state before each test
     mockOpen.mockClear();
@@ -51,81 +59,83 @@ describe('DashboardScreen', () => {
     });
   });
 
-  test('renders dashboard title', () => {
+  test("renders dashboard title", () => {
     render(<DashboardScreen navigation={mockNavigation} />);
-    expect(screen.getByText('Dashboard')).toBeTruthy();
+    expect(screen.getByText("Dashboard")).toBeTruthy();
   });
 
-  test('renders Connect Wallet button when disconnected', () => {
+  test("renders Connect Wallet button when disconnected", () => {
     render(<DashboardScreen navigation={mockNavigation} />);
-    expect(screen.getByText('Connect Wallet')).toBeTruthy();
+    expect(screen.getByText("Connect Wallet")).toBeTruthy();
     expect(screen.queryByText(/Connected:/)).toBeNull();
   });
 
-  test('calls WalletConnect open function when Connect Wallet is pressed', () => {
+  test("calls WalletConnect open function when Connect Wallet is pressed", () => {
     render(<DashboardScreen navigation={mockNavigation} />);
-    const connectButton = screen.getByText('Connect Wallet');
+    const connectButton = screen.getByText("Connect Wallet");
     fireEvent.press(connectButton);
     expect(mockOpen).toHaveBeenCalledTimes(1);
   });
 
-  test('renders Disconnect button and address when connected', () => {
-    const testAddress = '0x1234...abcd';
+  test("renders Disconnect button and address when connected", () => {
+    const testAddress = "0x1234...abcd";
     mockUseWalletConnectModal.mockReturnValue({
       open: mockOpen,
       isConnected: true,
-      address: '0x1234567890abcdef1234567890abcdef1234abcd',
+      address: "0x1234567890abcdef1234567890abcdef1234abcd",
       provider: { disconnect: mockDisconnect },
     });
     render(<DashboardScreen navigation={mockNavigation} />);
-    expect(screen.getByText('Disconnect')).toBeTruthy();
+    expect(screen.getByText("Disconnect")).toBeTruthy();
     expect(screen.getByText(`Connected: ${testAddress}`)).toBeTruthy();
   });
 
-  test('calls WalletConnect disconnect function when Disconnect is pressed', () => {
+  test("calls WalletConnect disconnect function when Disconnect is pressed", () => {
     mockUseWalletConnectModal.mockReturnValue({
       open: mockOpen,
       isConnected: true,
-      address: '0x1234567890abcdef1234567890abcdef1234abcd',
+      address: "0x1234567890abcdef1234567890abcdef1234abcd",
       provider: { disconnect: mockDisconnect },
     });
     render(<DashboardScreen navigation={mockNavigation} />);
-    const disconnectButton = screen.getByText('Disconnect');
+    const disconnectButton = screen.getByText("Disconnect");
     fireEvent.press(disconnectButton);
     expect(mockDisconnect).toHaveBeenCalledTimes(1);
   });
 
-  test('renders all navigation items with icons', () => {
+  test("renders all navigation items with icons", () => {
     render(<DashboardScreen navigation={mockNavigation} />);
     const items = [
-      { name: 'Portfolio', icon: 'briefcase-outline' },
-      { name: 'Market Analysis', icon: 'analytics-outline' },
-      { name: 'Blockchain Explorer', icon: 'search-circle-outline' },
-      { name: 'AI Recommendations', icon: 'bulb-outline' },
-      { name: 'Security Check', icon: 'shield-checkmark-outline' },
-      { name: 'Admin Panel', icon: 'settings-outline' },
+      { name: "Portfolio", icon: "briefcase-outline" },
+      { name: "Market Analysis", icon: "analytics-outline" },
+      { name: "Blockchain Explorer", icon: "search-circle-outline" },
+      { name: "AI Recommendations", icon: "bulb-outline" },
+      { name: "Security Check", icon: "shield-checkmark-outline" },
+      { name: "Admin Panel", icon: "settings-outline" },
     ];
 
-    items.forEach(item => {
+    items.forEach((item) => {
       expect(screen.getByText(item.name)).toBeTruthy();
       expect(screen.getByTestId(`icon-${item.icon}`)).toBeTruthy();
     });
   });
 
-  test('navigates to correct screen when an item is pressed', () => {
+  test("navigates to correct screen when an item is pressed", () => {
     render(<DashboardScreen navigation={mockNavigation} />);
-    const portfolioItem = screen.getByText('Portfolio');
+    const portfolioItem = screen.getByText("Portfolio");
     fireEvent.press(portfolioItem);
-    expect(mockNavigate).toHaveBeenCalledWith('Portfolio');
+    expect(mockNavigate).toHaveBeenCalledWith("Portfolio");
 
-    const aiItem = screen.getByText('AI Recommendations');
+    const aiItem = screen.getByText("AI Recommendations");
     fireEvent.press(aiItem);
-    expect(mockNavigate).toHaveBeenCalledWith('AIRecommendations');
+    expect(mockNavigate).toHaveBeenCalledWith("AIRecommendations");
   });
 
-  test('renders Account Summary placeholder', () => {
+  test("renders Account Summary placeholder", () => {
     render(<DashboardScreen navigation={mockNavigation} />);
-    expect(screen.getByText('Account Summary')).toBeTruthy();
-    expect(screen.getByText(/Summary details will appear here.../)).toBeTruthy();
+    expect(screen.getByText("Account Summary")).toBeTruthy();
+    expect(
+      screen.getByText(/Summary details will appear here.../),
+    ).toBeTruthy();
   });
 });

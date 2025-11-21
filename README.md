@@ -15,6 +15,7 @@ BlockGuardian is a comprehensive blockchain security and monitoring platform tha
 > **Note**: This project is under active development. Features and functionalities are continuously being enhanced to improve security capabilities and user experience.
 
 ## Table of Contents
+
 - [Overview](#overview)
 - [Key Features](#key-features)
 - [Architecture](#architecture)
@@ -35,28 +36,32 @@ BlockGuardian provides a robust set of tools for monitoring blockchain networks,
 ## Key Features
 
 ### Security Monitoring
-* **Real-time Transaction Monitoring**: Track and analyze blockchain transactions as they occur
-* **Anomaly Detection**: Identify suspicious patterns and potential security threats
-* **Smart Contract Auditing**: Automated and manual auditing tools for smart contract code
-* **Vulnerability Scanning**: Detect common security vulnerabilities in blockchain applications
+
+- **Real-time Transaction Monitoring**: Track and analyze blockchain transactions as they occur
+- **Anomaly Detection**: Identify suspicious patterns and potential security threats
+- **Smart Contract Auditing**: Automated and manual auditing tools for smart contract code
+- **Vulnerability Scanning**: Detect common security vulnerabilities in blockchain applications
 
 ### Compliance & Governance
-* **Regulatory Compliance**: Tools to ensure adherence to relevant regulations (GDPR, AML, KYC)
-* **Audit Trail**: Immutable record of all security-related activities
-* **Risk Assessment**: Evaluate and quantify security risks in blockchain implementations
-* **Governance Framework**: Establish and enforce security policies for blockchain operations
+
+- **Regulatory Compliance**: Tools to ensure adherence to relevant regulations (GDPR, AML, KYC)
+- **Audit Trail**: Immutable record of all security-related activities
+- **Risk Assessment**: Evaluate and quantify security risks in blockchain implementations
+- **Governance Framework**: Establish and enforce security policies for blockchain operations
 
 ### Analytics & Reporting
-* **Security Dashboards**: Visualize security metrics and KPIs
-* **Incident Response**: Tools for managing and responding to security incidents
-* **Forensic Analysis**: Investigate security breaches and unauthorized activities
-* **Compliance Reporting**: Generate reports for regulatory compliance
+
+- **Security Dashboards**: Visualize security metrics and KPIs
+- **Incident Response**: Tools for managing and responding to security incidents
+- **Forensic Analysis**: Investigate security breaches and unauthorized activities
+- **Compliance Reporting**: Generate reports for regulatory compliance
 
 ### Developer Tools
-* **Secure Development Guidelines**: Best practices for blockchain development
-* **Code Analysis**: Static and dynamic analysis tools for smart contracts
-* **Testing Framework**: Comprehensive testing tools for blockchain applications
-* **Security Plugins**: Integrations with popular development environments
+
+- **Secure Development Guidelines**: Best practices for blockchain development
+- **Code Analysis**: Static and dynamic analysis tools for smart contracts
+- **Testing Framework**: Comprehensive testing tools for blockchain applications
+- **Security Plugins**: Integrations with popular development environments
 
 ## Architecture
 
@@ -87,31 +92,35 @@ BlockGuardian/
 ## Technology Stack
 
 ### Backend
-* **Languages**: Python, Rust, Go
-* **Frameworks**: FastAPI, Actix, Gin
-* **Database**: PostgreSQL, MongoDB, Redis
-* **Message Queue**: Kafka, RabbitMQ
-* **Blockchain**: Web3.py, ethers.js, Solidity
+
+- **Languages**: Python, Rust, Go
+- **Frameworks**: FastAPI, Actix, Gin
+- **Database**: PostgreSQL, MongoDB, Redis
+- **Message Queue**: Kafka, RabbitMQ
+- **Blockchain**: Web3.py, ethers.js, Solidity
 
 ### Web Frontend
-* **Framework**: React with TypeScript
-* **State Management**: Redux Toolkit
-* **Data Visualization**: D3.js, Recharts
-* **Styling**: Tailwind CSS, Styled Components
-* **Web3**: ethers.js, web3.js
+
+- **Framework**: React with TypeScript
+- **State Management**: Redux Toolkit
+- **Data Visualization**: D3.js, Recharts
+- **Styling**: Tailwind CSS, Styled Components
+- **Web3**: ethers.js, web3.js
 
 ### Mobile Frontend
-* **Framework**: React Native
-* **Navigation**: React Navigation
-* **State Management**: Redux Toolkit
-* **UI Components**: React Native Paper
+
+- **Framework**: React Native
+- **Navigation**: React Navigation
+- **State Management**: Redux Toolkit
+- **UI Components**: React Native Paper
 
 ### Infrastructure
-* **Containerization**: Docker
-* **Orchestration**: Kubernetes
-* **CI/CD**: GitHub Actions
-* **Monitoring**: Prometheus, Grafana
-* **Infrastructure as Code**: Terraform, Ansible
+
+- **Containerization**: Docker
+- **Orchestration**: Kubernetes
+- **CI/CD**: GitHub Actions
+- **Monitoring**: Prometheus, Grafana
+- **Infrastructure as Code**: Terraform, Ansible
 
 ## Project Structure
 
@@ -133,11 +142,12 @@ BlockGuardian/
 ## Installation & Setup
 
 ### Prerequisites
-* Docker and Docker Compose
-* Node.js (v16+)
-* Python (v3.9+)
-* Go (v1.18+)
-* Rust (latest stable)
+
+- Docker and Docker Compose
+- Node.js (v16+)
+- Python (v3.9+)
+- Go (v1.18+)
+- Rust (latest stable)
 
 ### Setup Using Environment Script
 
@@ -158,47 +168,47 @@ cd BlockGuardian
 ### Manual Setup for Individual Components
 
 1. **Backend (`backend/`):**
-   * Navigate to the `backend` directory: `cd backend`
-   * Create a virtual environment: `python -m venv venv`
-   * Activate the virtual environment: `source venv/bin/activate` (Linux/Mac) or `venv\Scripts\activate` (Windows)
-   * Install dependencies: `pip install -r requirements.txt`
-   * Set up environment variables: `cp .env.example .env` and edit as needed
-   * Run the development server: `uvicorn main:app --reload`
+   - Navigate to the `backend` directory: `cd backend`
+   - Create a virtual environment: `python -m venv venv`
+   - Activate the virtual environment: `source venv/bin/activate` (Linux/Mac) or `venv\Scripts\activate` (Windows)
+   - Install dependencies: `pip install -r requirements.txt`
+   - Set up environment variables: `cp .env.example .env` and edit as needed
+   - Run the development server: `uvicorn main:app --reload`
 
 2. **Blockchain Contracts (`blockchain-contracts/`):**
-   * Navigate to the `blockchain-contracts` directory: `cd blockchain-contracts`
-   * Install dependencies: `npm install`
-   * Compile contracts: `npx hardhat compile`
-   * Run tests: `npx hardhat test`
-   * Deploy contracts: `npx hardhat run scripts/deploy.js --network <network_name>`
+   - Navigate to the `blockchain-contracts` directory: `cd blockchain-contracts`
+   - Install dependencies: `npm install`
+   - Compile contracts: `npx hardhat compile`
+   - Run tests: `npx hardhat test`
+   - Deploy contracts: `npx hardhat run scripts/deploy.js --network <network_name>`
 
 3. **Data Analysis (`data-analysis/`):**
-   * Navigate to the `data-analysis` directory: `cd data-analysis`
-   * Create a virtual environment: `python -m venv venv`
-   * Activate the virtual environment: `source venv/bin/activate` (Linux/Mac) or `venv\Scripts\activate` (Windows)
-   * Install dependencies: `pip install -r requirements.txt`
-   * Run Jupyter notebook: `jupyter notebook`
+   - Navigate to the `data-analysis` directory: `cd data-analysis`
+   - Create a virtual environment: `python -m venv venv`
+   - Activate the virtual environment: `source venv/bin/activate` (Linux/Mac) or `venv\Scripts\activate` (Windows)
+   - Install dependencies: `pip install -r requirements.txt`
+   - Run Jupyter notebook: `jupyter notebook`
 
 4. **Blockchain Interaction (`blockchain/`):**
-   * Navigate to the `blockchain` directory: `cd blockchain`
-   * Install dependencies: `npm install` or `go mod download` depending on the implementation
+   - Navigate to the `blockchain` directory: `cd blockchain`
+   - Install dependencies: `npm install` or `go mod download` depending on the implementation
 
 5. **Mobile Frontend (`mobile-frontend/`):**
-   * Navigate to the `mobile-frontend` directory: `cd mobile-frontend`
-   * Install dependencies: `npm install` or `yarn install`
-   * Start the development server: `npm start` or `yarn start`
-   * Run on Android or iOS:
+   - Navigate to the `mobile-frontend` directory: `cd mobile-frontend`
+   - Install dependencies: `npm install` or `yarn install`
+   - Start the development server: `npm start` or `yarn start`
+   - Run on Android or iOS:
      ```bash
      yarn android # or npx react-native run-android
      yarn ios   # or npx react-native run-ios
      ```
 
 6. **Web Frontend (`web-frontend/`):**
-   * Navigate to the `web-frontend` directory: `cd web-frontend`
-   * Install dependencies: `npm install`
-   * Run in development mode: `npm run dev` (usually accessible at `http://localhost:3000`)
-   * Build for production: `npm run build`
-   * Start production server: `npm run start`
+   - Navigate to the `web-frontend` directory: `cd web-frontend`
+   - Install dependencies: `npm install`
+   - Run in development mode: `npm run dev` (usually accessible at `http://localhost:3000`)
+   - Build for production: `npm run build`
+   - Start production server: `npm run start`
 
 ### Running the Entire Project (using Docker Compose)
 
@@ -213,10 +223,10 @@ docker-compose up --build
 
 The repository includes several utility scripts to simplify common tasks:
 
-* `setup_blockguardian_env.sh`: Sets up the development environment
-* `run_blockguardian.sh`: Starts the application
-* `lint-all.sh`: Runs linting on all code
-* `validate_code_quality.py`: Validates code quality and security
+- `setup_blockguardian_env.sh`: Sets up the development environment
+- `run_blockguardian.sh`: Starts the application
+- `lint-all.sh`: Runs linting on all code
+- `validate_code_quality.py`: Validates code quality and security
 
 ## Testing
 
@@ -224,32 +234,35 @@ The project maintains comprehensive test coverage across all components to ensur
 
 ### Test Coverage
 
-| Component | Coverage | Status |
-|-----------|----------|--------|
-| Backend Services | 82% | ✅ |
-| Smart Contracts | 90% | ✅ |
-| Blockchain Connectors | 75% | ✅ |
-| Web Frontend | 72% | ✅ |
-| Mobile Frontend | 68% | ✅ |
-| Overall | 79% | ✅ |
+| Component             | Coverage | Status |
+| --------------------- | -------- | ------ |
+| Backend Services      | 82%      | ✅     |
+| Smart Contracts       | 90%      | ✅     |
+| Blockchain Connectors | 75%      | ✅     |
+| Web Frontend          | 72%      | ✅     |
+| Mobile Frontend       | 68%      | ✅     |
+| Overall               | 79%      | ✅     |
 
 ### Unit Tests
-* Backend API endpoint tests
-* Smart contract function tests
-* Frontend component tests
-* Blockchain connector tests
+
+- Backend API endpoint tests
+- Smart contract function tests
+- Frontend component tests
+- Blockchain connector tests
 
 ### Integration Tests
-* End-to-end workflow tests
-* Cross-service integration tests
-* API contract tests
-* Blockchain interaction tests
+
+- End-to-end workflow tests
+- Cross-service integration tests
+- API contract tests
+- Blockchain interaction tests
 
 ### Security Tests
-* Smart contract vulnerability scans
-* Penetration testing
-* Dependency vulnerability scanning
-* Access control testing
+
+- Smart contract vulnerability scans
+- Penetration testing
+- Dependency vulnerability scanning
+- Access control testing
 
 To run tests:
 
@@ -271,11 +284,11 @@ npm test
 
 BlockGuardian uses GitHub Actions for continuous integration and deployment:
 
-* Automated testing on each pull request
-* Smart contract security scanning
-* Code quality checks
-* Docker image building
-* Automated deployment to staging and production environments
+- Automated testing on each pull request
+- Smart contract security scanning
+- Code quality checks
+- Docker image building
+- Automated deployment to staging and production environments
 
 ## Contributing
 

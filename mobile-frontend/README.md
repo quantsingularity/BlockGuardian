@@ -14,7 +14,7 @@ The mobile-frontend directory follows a standard React Native project structure 
   - **services/**: API and service integrations
 
 - **assets/**: Static assets like images, fonts, and icons
-- ****tests**/**: Test files for components and functionality
+- \***\*tests**/\*\*: Test files for components and functionality
 - **.expo/**: Expo configuration files
 - **App.js**: Main application entry point
 - **app.json**: Expo application configuration

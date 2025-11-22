@@ -14,8 +14,8 @@ The web-frontend directory follows a standard Next.js project structure:
 
 - **pages/**: Next.js page components that define application routes
 - **styles/**: CSS and styling files, including Tailwind CSS configurations
-- ****tests**/**: Test files for components and pages
-- ****mocks**/**: Mock data and functions for testing
+- \***\*tests**/\*\*: Test files for components and pages
+- \***\*mocks**/\*\*: Mock data and functions for testing
 
 - **Dockerfile**: Container definition for deploying the frontend
 - **next.config.js**: Next.js configuration

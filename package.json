@@ -1,0 +1,19 @@
+{
+  "name": "blockguardian",
+  "version": "1.0.0",
+  "description": "![CI/CD Status](https://img.shields.io/github/actions/workflow/status/abrar2030/BlockGuardian/cicd.yml?branch=main&label=CI/CD&logo=github) [![Test Coverage](https://img.shields.io/badge/coverage-79%25-brightgreen)](https://github.com/abrar2030/BlockGuardian/actions) [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "prettier": "^3.6.2",
+    "prettier-plugin-solidity": "^2.2.0"
+  }
+}

@@ -3,7 +3,7 @@
  */
 
 // Base API URL - would be configured based on environment
-const API_BASE_URL = "https://api.blockguardian.io";
+const API_BASE_URL = 'https://api.blockguardian.io';
 
 /**
  * Handles API response and error checking
@@ -12,26 +12,26 @@ const API_BASE_URL = "https://api.blockguardian.io";
  * @returns {Promise} - Resolved with response data or rejected with error
  */
 const handleResponse = async (response) => {
-  const contentType = response.headers.get("content-type");
-  const isJson = contentType && contentType.includes("application/json");
+    const contentType = response.headers.get('content-type');
+    const isJson = contentType && contentType.includes('application/json');
 
-  // Parse response based on content type
-  const data = isJson ? await response.json() : await response.text();
+    // Parse response based on content type
+    const data = isJson ? await response.json() : await response.text();
 
-  // Check if response is successful
-  if (!response.ok) {
-    // Format error message
-    const error = {
-      status: response.status,
-      statusText: response.statusText,
-      message: isJson && data.message ? data.message : "An error occurred",
-      data: data,
-    };
+    // Check if response is successful
+    if (!response.ok) {
+        // Format error message
+        const error = {
+            status: response.status,
+            statusText: response.statusText,
+            message: isJson && data.message ? data.message : 'An error occurred',
+            data: data,
+        };
 
-    throw error;
-  }
+        throw error;
+    }
 
-  return data;
+    return data;
 };
 
 /**
@@ -43,25 +43,25 @@ const handleResponse = async (response) => {
  * @returns {Object} - Fetch request options
  */
 const createRequestOptions = (method, data, token) => {
-  const options = {
-    method,
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-  };
+    const options = {
+        method,
+        headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+        },
+    };
 
-  // Add authorization header if token is provided
-  if (token) {
-    options.headers["Authorization"] = `Bearer ${token}`;
-  }
+    // Add authorization header if token is provided
+    if (token) {
+        options.headers['Authorization'] = `Bearer ${token}`;
+    }
 
-  // Add request body for non-GET requests
-  if (data && method !== "GET") {
-    options.body = JSON.stringify(data);
-  }
+    // Add request body for non-GET requests
+    if (data && method !== 'GET') {
+        options.body = JSON.stringify(data);
+    }
 
-  return options;
+    return options;
 };
 
 /**
@@ -73,19 +73,17 @@ const createRequestOptions = (method, data, token) => {
  * @returns {Promise} - Resolved with response data
  */
 export const get = async (endpoint, params = {}, token = null) => {
-  // Build query string from params
-  const queryString =
-    Object.keys(params).length > 0
-      ? `?${new URLSearchParams(params).toString()}`
-      : "";
+    // Build query string from params
+    const queryString =
+        Object.keys(params).length > 0 ? `?${new URLSearchParams(params).toString()}` : '';
 
-  // Make request
-  const response = await fetch(
-    `${API_BASE_URL}${endpoint}${queryString}`,
-    createRequestOptions("GET", null, token),
-  );
+    // Make request
+    const response = await fetch(
+        `${API_BASE_URL}${endpoint}${queryString}`,
+        createRequestOptions('GET', null, token),
+    );
 
-  return handleResponse(response);
+    return handleResponse(response);
 };
 
 /**
@@ -97,12 +95,12 @@ export const get = async (endpoint, params = {}, token = null) => {
  * @returns {Promise} - Resolved with response data
  */
 export const post = async (endpoint, data = {}, token = null) => {
-  const response = await fetch(
-    `${API_BASE_URL}${endpoint}`,
-    createRequestOptions("POST", data, token),
-  );
+    const response = await fetch(
+        `${API_BASE_URL}${endpoint}`,
+        createRequestOptions('POST', data, token),
+    );
 
-  return handleResponse(response);
+    return handleResponse(response);
 };
 
 /**
@@ -114,12 +112,12 @@ export const post = async (endpoint, data = {}, token = null) => {
  * @returns {Promise} - Resolved with response data
  */
 export const put = async (endpoint, data = {}, token = null) => {
-  const response = await fetch(
-    `${API_BASE_URL}${endpoint}`,
-    createRequestOptions("PUT", data, token),
-  );
+    const response = await fetch(
+        `${API_BASE_URL}${endpoint}`,
+        createRequestOptions('PUT', data, token),
+    );
 
-  return handleResponse(response);
+    return handleResponse(response);
 };
 
 /**
@@ -130,12 +128,12 @@ export const put = async (endpoint, data = {}, token = null) => {
  * @returns {Promise} - Resolved with response data
  */
 export const del = async (endpoint, token = null) => {
-  const response = await fetch(
-    `${API_BASE_URL}${endpoint}`,
-    createRequestOptions("DELETE", null, token),
-  );
+    const response = await fetch(
+        `${API_BASE_URL}${endpoint}`,
+        createRequestOptions('DELETE', null, token),
+    );
 
-  return handleResponse(response);
+    return handleResponse(response);
 };
 
 /**
@@ -147,18 +145,18 @@ export const del = async (endpoint, token = null) => {
  * @returns {Promise} - Resolved with response data
  */
 export const patch = async (endpoint, data = {}, token = null) => {
-  const response = await fetch(
-    `${API_BASE_URL}${endpoint}`,
-    createRequestOptions("PATCH", data, token),
-  );
+    const response = await fetch(
+        `${API_BASE_URL}${endpoint}`,
+        createRequestOptions('PATCH', data, token),
+    );
 
-  return handleResponse(response);
+    return handleResponse(response);
 };
 
 export default {
-  get,
-  post,
-  put,
-  del,
-  patch,
+    get,
+    post,
+    put,
+    del,
+    patch,
 };

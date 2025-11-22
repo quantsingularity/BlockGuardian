@@ -1,7 +1,7 @@
-import React from "react";
-import { View, Text, Image, TouchableOpacity } from "react-native";
-import { styled } from "nativewind";
-import { Ionicons } from "@expo/vector-icons";
+import React from 'react';
+import { View, Text, Image, TouchableOpacity } from 'react-native';
+import { styled } from 'nativewind';
+import { Ionicons } from '@expo/vector-icons';
 
 const StyledView = styled(View);
 const StyledText = styled(Text);
@@ -20,56 +20,44 @@ const StyledTouchableOpacity = styled(TouchableOpacity);
  * @param {string} props.icon - Optional Ionicons icon name
  * @param {string} props.className - Additional tailwind classes
  */
-const Card = ({
-  title,
-  subtitle,
-  imageUri,
-  children,
-  onPress,
-  icon,
-  className = "",
-}) => {
-  const CardContainer = onPress ? StyledTouchableOpacity : StyledView;
+const Card = ({ title, subtitle, imageUri, children, onPress, icon, className = '' }) => {
+    const CardContainer = onPress ? StyledTouchableOpacity : StyledView;
 
-  return (
-    <CardContainer
-      className={`bg-gray-800 rounded-xl overflow-hidden border border-gray-700 shadow-md mb-4 ${className}`}
-      onPress={onPress}
-      activeOpacity={onPress ? 0.7 : 1}
-    >
-      {imageUri && (
-        <StyledImage
-          source={{ uri: imageUri }}
-          className="w-full h-40"
-          resizeMode="cover"
-        />
-      )}
+    return (
+        <CardContainer
+            className={`bg-gray-800 rounded-xl overflow-hidden border border-gray-700 shadow-md mb-4 ${className}`}
+            onPress={onPress}
+            activeOpacity={onPress ? 0.7 : 1}
+        >
+            {imageUri && (
+                <StyledImage
+                    source={{ uri: imageUri }}
+                    className="w-full h-40"
+                    resizeMode="cover"
+                />
+            )}
 
-      <StyledView className="p-4">
-        <StyledView className="flex-row items-center mb-2">
-          {icon && (
-            <Ionicons
-              name={icon}
-              size={20}
-              color="#4f46e5"
-              style={{ marginRight: 8 }}
-            />
-          )}
-          <StyledText className="text-white font-bold text-lg">
-            {title}
-          </StyledText>
-        </StyledView>
+            <StyledView className="p-4">
+                <StyledView className="flex-row items-center mb-2">
+                    {icon && (
+                        <Ionicons
+                            name={icon}
+                            size={20}
+                            color="#4f46e5"
+                            style={{ marginRight: 8 }}
+                        />
+                    )}
+                    <StyledText className="text-white font-bold text-lg">{title}</StyledText>
+                </StyledView>
 
-        {subtitle && (
-          <StyledText className="text-gray-400 text-sm mb-3">
-            {subtitle}
-          </StyledText>
-        )}
+                {subtitle && (
+                    <StyledText className="text-gray-400 text-sm mb-3">{subtitle}</StyledText>
+                )}
 
-        {children}
-      </StyledView>
-    </CardContainer>
-  );
+                {children}
+            </StyledView>
+        </CardContainer>
+    );
 };
 
 export default Card;

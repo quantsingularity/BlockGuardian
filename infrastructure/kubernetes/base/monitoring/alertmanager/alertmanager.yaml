@@ -1,411 +1,411 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: alertmanager-config
-  namespace: monitoring
-  labels:
-    app: alertmanager
-    compliance: "pci-dss,soc2,iso27001"
+    name: alertmanager-config
+    namespace: monitoring
+    labels:
+        app: alertmanager
+        compliance: 'pci-dss,soc2,iso27001'
 data:
-  alertmanager.yml: |
-    global:
-      smtp_smarthost: '{{ .Values.smtp.host }}:{{ .Values.smtp.port }}'
-      smtp_from: 'alertmanager@{{ .Values.domain }}'
-      smtp_auth_username: '{{ .Values.smtp.username }}'
-      smtp_auth_password: '{{ .Values.smtp.password }}'
-      smtp_require_tls: true
+    alertmanager.yml: |
+        global:
+          smtp_smarthost: '{{ .Values.smtp.host }}:{{ .Values.smtp.port }}'
+          smtp_from: 'alertmanager@{{ .Values.domain }}'
+          smtp_auth_username: '{{ .Values.smtp.username }}'
+          smtp_auth_password: '{{ .Values.smtp.password }}'
+          smtp_require_tls: true
 
-    templates:
-    - '/etc/alertmanager/templates/*.tmpl'
+        templates:
+        - '/etc/alertmanager/templates/*.tmpl'
 
-    route:
-      group_by: ['alertname', 'cluster', 'service']
-      group_wait: 10s
-      group_interval: 10s
-      repeat_interval: 12h
-      receiver: 'default'
-      routes:
-      # Critical security alerts - immediate notification
-      - match:
-          severity: critical
-        match_re:
-          category: security|audit
-        receiver: 'security-team'
-        group_wait: 0s
-        group_interval: 0s
-        repeat_interval: 5m
+        route:
+          group_by: ['alertname', 'cluster', 'service']
+          group_wait: 10s
+          group_interval: 10s
+          repeat_interval: 12h
+          receiver: 'default'
+          routes:
+          # Critical security alerts - immediate notification
+          - match:
+              severity: critical
+            match_re:
+              category: security|audit
+            receiver: 'security-team'
+            group_wait: 0s
+            group_interval: 0s
+            repeat_interval: 5m
 
-      # PCI DSS compliance alerts
-      - match_re:
-          compliance: .*pci-dss.*
-        receiver: 'compliance-team'
-        group_wait: 5s
-        repeat_interval: 30m
+          # PCI DSS compliance alerts
+          - match_re:
+              compliance: .*pci-dss.*
+            receiver: 'compliance-team'
+            group_wait: 5s
+            repeat_interval: 30m
 
-      # Database alerts
-      - match:
-          category: database
-        receiver: 'database-team'
-        group_wait: 30s
-        repeat_interval: 1h
+          # Database alerts
+          - match:
+              category: database
+            receiver: 'database-team'
+            group_wait: 30s
+            repeat_interval: 1h
 
-      # Application alerts
-      - match:
-          category: application
-        receiver: 'application-team'
-        group_wait: 1m
-        repeat_interval: 2h
+          # Application alerts
+          - match:
+              category: application
+            receiver: 'application-team'
+            group_wait: 1m
+            repeat_interval: 2h
 
-      # Infrastructure alerts
-      - match:
-          category: infrastructure
-        receiver: 'infrastructure-team'
-        group_wait: 2m
-        repeat_interval: 4h
+          # Infrastructure alerts
+          - match:
+              category: infrastructure
+            receiver: 'infrastructure-team'
+            group_wait: 2m
+            repeat_interval: 4h
 
-    receivers:
-    - name: 'default'
-      email_configs:
-      - to: 'ops-team@{{ .Values.domain }}'
-        subject: '[{{ .Status | toUpper }}] {{ .GroupLabels.alertname }} - {{ .GroupLabels.cluster }}'
-        body: |
-          {{ range .Alerts }}
-          Alert: {{ .Annotations.summary }}
-          Description: {{ .Annotations.description }}
-          Labels: {{ range .Labels.SortedPairs }}{{ .Name }}={{ .Value }} {{ end }}
-          {{ end }}
-        headers:
-          Priority: 'High'
-          X-Compliance: 'Financial-Grade'
+        receivers:
+        - name: 'default'
+          email_configs:
+          - to: 'ops-team@{{ .Values.domain }}'
+            subject: '[{{ .Status | toUpper }}] {{ .GroupLabels.alertname }} - {{ .GroupLabels.cluster }}'
+            body: |
+              {{ range .Alerts }}
+              Alert: {{ .Annotations.summary }}
+              Description: {{ .Annotations.description }}
+              Labels: {{ range .Labels.SortedPairs }}{{ .Name }}={{ .Value }} {{ end }}
+              {{ end }}
+            headers:
+              Priority: 'High'
+              X-Compliance: 'Financial-Grade'
 
-    - name: 'security-team'
-      email_configs:
-      - to: 'security-team@{{ .Values.domain }}'
-        subject: '[SECURITY ALERT] {{ .GroupLabels.alertname }} - IMMEDIATE ACTION REQUIRED'
-        body: |
-          🚨 CRITICAL SECURITY ALERT 🚨
+        - name: 'security-team'
+          email_configs:
+          - to: 'security-team@{{ .Values.domain }}'
+            subject: '[SECURITY ALERT] {{ .GroupLabels.alertname }} - IMMEDIATE ACTION REQUIRED'
+            body: |
+              🚨 CRITICAL SECURITY ALERT 🚨
 
-          {{ range .Alerts }}
-          Alert: {{ .Annotations.summary }}
-          Description: {{ .Annotations.description }}
-          Severity: {{ .Labels.severity }}
-          Compliance Impact: {{ .Labels.compliance }}
-          Time: {{ .StartsAt.Format "2006-01-02 15:04:05 UTC" }}
+              {{ range .Alerts }}
+              Alert: {{ .Annotations.summary }}
+              Description: {{ .Annotations.description }}
+              Severity: {{ .Labels.severity }}
+              Compliance Impact: {{ .Labels.compliance }}
+              Time: {{ .StartsAt.Format "2006-01-02 15:04:05 UTC" }}
 
-          Labels: {{ range .Labels.SortedPairs }}{{ .Name }}={{ .Value }} {{ end }}
-          {{ end }}
+              Labels: {{ range .Labels.SortedPairs }}{{ .Name }}={{ .Value }} {{ end }}
+              {{ end }}
 
-          This alert requires immediate investigation and response according to our incident response procedures.
-        headers:
-          Priority: 'Urgent'
-          X-Compliance: 'PCI-DSS,SOC2,ISO27001'
-          X-Alert-Type: 'Security'
-      slack_configs:
-      - api_url: '{{ .Values.slack.security_webhook }}'
-        channel: '#security-alerts'
-        color: 'danger'
-        title: '🚨 CRITICAL SECURITY ALERT'
-        text: |
-          {{ range .Alerts }}
-          *Alert:* {{ .Annotations.summary }}
-          *Description:* {{ .Annotations.description }}
-          *Severity:* {{ .Labels.severity }}
-          *Compliance:* {{ .Labels.compliance }}
-          {{ end }}
-        send_resolved: true
-      pagerduty_configs:
-      - routing_key: '{{ .Values.pagerduty.security_key }}'
-        description: '{{ .GroupLabels.alertname }}: {{ .Annotations.summary }}'
-        severity: 'critical'
-        details:
-          compliance: '{{ .Labels.compliance }}'
-          category: '{{ .Labels.category }}'
+              This alert requires immediate investigation and response according to our incident response procedures.
+            headers:
+              Priority: 'Urgent'
+              X-Compliance: 'PCI-DSS,SOC2,ISO27001'
+              X-Alert-Type: 'Security'
+          slack_configs:
+          - api_url: '{{ .Values.slack.security_webhook }}'
+            channel: '#security-alerts'
+            color: 'danger'
+            title: '🚨 CRITICAL SECURITY ALERT'
+            text: |
+              {{ range .Alerts }}
+              *Alert:* {{ .Annotations.summary }}
+              *Description:* {{ .Annotations.description }}
+              *Severity:* {{ .Labels.severity }}
+              *Compliance:* {{ .Labels.compliance }}
+              {{ end }}
+            send_resolved: true
+          pagerduty_configs:
+          - routing_key: '{{ .Values.pagerduty.security_key }}'
+            description: '{{ .GroupLabels.alertname }}: {{ .Annotations.summary }}'
+            severity: 'critical'
+            details:
+              compliance: '{{ .Labels.compliance }}'
+              category: '{{ .Labels.category }}'
 
-    - name: 'compliance-team'
-      email_configs:
-      - to: 'compliance-team@{{ .Values.domain }}'
-        subject: '[COMPLIANCE ALERT] {{ .GroupLabels.alertname }} - {{ .Labels.compliance }}'
-        body: |
-          📋 COMPLIANCE ALERT
+        - name: 'compliance-team'
+          email_configs:
+          - to: 'compliance-team@{{ .Values.domain }}'
+            subject: '[COMPLIANCE ALERT] {{ .GroupLabels.alertname }} - {{ .Labels.compliance }}'
+            body: |
+              📋 COMPLIANCE ALERT
 
-          {{ range .Alerts }}
-          Alert: {{ .Annotations.summary }}
-          Description: {{ .Annotations.description }}
-          Compliance Standard: {{ .Labels.compliance }}
-          Severity: {{ .Labels.severity }}
-          Time: {{ .StartsAt.Format "2006-01-02 15:04:05 UTC" }}
+              {{ range .Alerts }}
+              Alert: {{ .Annotations.summary }}
+              Description: {{ .Annotations.description }}
+              Compliance Standard: {{ .Labels.compliance }}
+              Severity: {{ .Labels.severity }}
+              Time: {{ .StartsAt.Format "2006-01-02 15:04:05 UTC" }}
 
-          This alert may impact our compliance with {{ .Labels.compliance }} standards.
-          Please review and take appropriate action.
-          {{ end }}
-        headers:
-          Priority: 'High'
-          X-Compliance: '{{ .Labels.compliance }}'
-      slack_configs:
-      - api_url: '{{ .Values.slack.compliance_webhook }}'
-        channel: '#compliance-alerts'
-        color: 'warning'
-        title: '📋 Compliance Alert'
-        text: |
-          {{ range .Alerts }}
-          *Standard:* {{ .Labels.compliance }}
-          *Alert:* {{ .Annotations.summary }}
-          *Description:* {{ .Annotations.description }}
-          {{ end }}
+              This alert may impact our compliance with {{ .Labels.compliance }} standards.
+              Please review and take appropriate action.
+              {{ end }}
+            headers:
+              Priority: 'High'
+              X-Compliance: '{{ .Labels.compliance }}'
+          slack_configs:
+          - api_url: '{{ .Values.slack.compliance_webhook }}'
+            channel: '#compliance-alerts'
+            color: 'warning'
+            title: '📋 Compliance Alert'
+            text: |
+              {{ range .Alerts }}
+              *Standard:* {{ .Labels.compliance }}
+              *Alert:* {{ .Annotations.summary }}
+              *Description:* {{ .Annotations.description }}
+              {{ end }}
 
-    - name: 'database-team'
-      email_configs:
-      - to: 'database-team@{{ .Values.domain }}'
-        subject: '[DATABASE ALERT] {{ .GroupLabels.alertname }}'
-        body: |
-          🗄️ DATABASE ALERT
+        - name: 'database-team'
+          email_configs:
+          - to: 'database-team@{{ .Values.domain }}'
+            subject: '[DATABASE ALERT] {{ .GroupLabels.alertname }}'
+            body: |
+              🗄️ DATABASE ALERT
 
-          {{ range .Alerts }}
-          Alert: {{ .Annotations.summary }}
-          Description: {{ .Annotations.description }}
-          Database: {{ .Labels.instance }}
-          Severity: {{ .Labels.severity }}
-          {{ end }}
-      slack_configs:
-      - api_url: '{{ .Values.slack.database_webhook }}'
-        channel: '#database-alerts'
-        color: 'warning'
-        title: '🗄️ Database Alert'
+              {{ range .Alerts }}
+              Alert: {{ .Annotations.summary }}
+              Description: {{ .Annotations.description }}
+              Database: {{ .Labels.instance }}
+              Severity: {{ .Labels.severity }}
+              {{ end }}
+          slack_configs:
+          - api_url: '{{ .Values.slack.database_webhook }}'
+            channel: '#database-alerts'
+            color: 'warning'
+            title: '🗄️ Database Alert'
 
-    - name: 'application-team'
-      email_configs:
-      - to: 'application-team@{{ .Values.domain }}'
-        subject: '[APPLICATION ALERT] {{ .GroupLabels.alertname }}'
-        body: |
-          🔧 APPLICATION ALERT
+        - name: 'application-team'
+          email_configs:
+          - to: 'application-team@{{ .Values.domain }}'
+            subject: '[APPLICATION ALERT] {{ .GroupLabels.alertname }}'
+            body: |
+              🔧 APPLICATION ALERT
 
-          {{ range .Alerts }}
-          Alert: {{ .Annotations.summary }}
-          Description: {{ .Annotations.description }}
-          Service: {{ .Labels.job }}
-          Severity: {{ .Labels.severity }}
-          {{ end }}
-      slack_configs:
-      - api_url: '{{ .Values.slack.application_webhook }}'
-        channel: '#application-alerts'
-        color: 'warning'
-        title: '🔧 Application Alert'
+              {{ range .Alerts }}
+              Alert: {{ .Annotations.summary }}
+              Description: {{ .Annotations.description }}
+              Service: {{ .Labels.job }}
+              Severity: {{ .Labels.severity }}
+              {{ end }}
+          slack_configs:
+          - api_url: '{{ .Values.slack.application_webhook }}'
+            channel: '#application-alerts'
+            color: 'warning'
+            title: '🔧 Application Alert'
 
-    - name: 'infrastructure-team'
-      email_configs:
-      - to: 'infrastructure-team@{{ .Values.domain }}'
-        subject: '[INFRASTRUCTURE ALERT] {{ .GroupLabels.alertname }}'
-        body: |
-          🏗️ INFRASTRUCTURE ALERT
+        - name: 'infrastructure-team'
+          email_configs:
+          - to: 'infrastructure-team@{{ .Values.domain }}'
+            subject: '[INFRASTRUCTURE ALERT] {{ .GroupLabels.alertname }}'
+            body: |
+              🏗️ INFRASTRUCTURE ALERT
 
-          {{ range .Alerts }}
-          Alert: {{ .Annotations.summary }}
-          Description: {{ .Annotations.description }}
-          Instance: {{ .Labels.instance }}
-          Severity: {{ .Labels.severity }}
-          {{ end }}
-      slack_configs:
-      - api_url: '{{ .Values.slack.infrastructure_webhook }}'
-        channel: '#infrastructure-alerts'
-        color: 'warning'
-        title: '🏗️ Infrastructure Alert'
+              {{ range .Alerts }}
+              Alert: {{ .Annotations.summary }}
+              Description: {{ .Annotations.description }}
+              Instance: {{ .Labels.instance }}
+              Severity: {{ .Labels.severity }}
+              {{ end }}
+          slack_configs:
+          - api_url: '{{ .Values.slack.infrastructure_webhook }}'
+            channel: '#infrastructure-alerts'
+            color: 'warning'
+            title: '🏗️ Infrastructure Alert'
 
-    inhibit_rules:
-    - source_match:
-        severity: 'critical'
-      target_match:
-        severity: 'warning'
-      equal: ['alertname', 'cluster', 'service']
+        inhibit_rules:
+        - source_match:
+            severity: 'critical'
+          target_match:
+            severity: 'warning'
+          equal: ['alertname', 'cluster', 'service']
 
-    - source_match:
-        alertname: 'ApplicationDown'
-      target_match_re:
-        alertname: 'HighErrorRate|SlowResponseTime'
-      equal: ['job']
+        - source_match:
+            alertname: 'ApplicationDown'
+          target_match_re:
+            alertname: 'HighErrorRate|SlowResponseTime'
+          equal: ['job']
 
-  notification.tmpl: |
-    {{ define "email.subject" }}
-    [{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] {{ .GroupLabels.alertname }} - Financial System Alert
-    {{ end }}
-
-    {{ define "email.html" }}
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="UTF-8">
-        <title>Financial System Alert</title>
-        <style>
-            body { font-family: Arial, sans-serif; margin: 20px; }
-            .header { background-color: #f44336; color: white; padding: 10px; border-radius: 5px; }
-            .warning { background-color: #ff9800; color: white; padding: 10px; border-radius: 5px; }
-            .info { background-color: #2196f3; color: white; padding: 10px; border-radius: 5px; }
-            .resolved { background-color: #4caf50; color: white; padding: 10px; border-radius: 5px; }
-            .alert { margin: 10px 0; padding: 15px; border-left: 4px solid #ccc; }
-            .critical { border-left-color: #f44336; }
-            .warning-alert { border-left-color: #ff9800; }
-            .labels { background-color: #f5f5f5; padding: 10px; margin: 10px 0; }
-            .compliance { background-color: #e3f2fd; padding: 10px; margin: 10px 0; border-radius: 5px; }
-        </style>
-    </head>
-    <body>
-        <div class="{{ if eq .Status "firing" }}{{ if eq .CommonLabels.severity "critical" }}header{{ else }}warning{{ end }}{{ else }}resolved{{ end }}">
-            <h2>{{ if eq .Status "firing" }}🚨 ALERT FIRING{{ else }}✅ ALERT RESOLVED{{ end }}</h2>
-            <p><strong>Status:</strong> {{ .Status | toUpper }}</p>
-            <p><strong>Group:</strong> {{ .GroupLabels.alertname }}</p>
-            <p><strong>Environment:</strong> {{ .CommonLabels.environment | default "unknown" }}</p>
-            <p><strong>Cluster:</strong> {{ .CommonLabels.cluster | default "unknown" }}</p>
-        </div>
-
-        {{ if .CommonLabels.compliance }}
-        <div class="compliance">
-            <h3>📋 Compliance Impact</h3>
-            <p><strong>Standards Affected:</strong> {{ .CommonLabels.compliance }}</p>
-            <p>This alert may impact compliance with the above standards. Please review and document any actions taken.</p>
-        </div>
+    notification.tmpl: |
+        {{ define "email.subject" }}
+        [{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] {{ .GroupLabels.alertname }} - Financial System Alert
         {{ end }}
 
-        <h3>Alert Details</h3>
-        {{ range .Alerts }}
-        <div class="alert {{ if eq .Labels.severity "critical" }}critical{{ else }}warning-alert{{ end }}">
-            <h4>{{ .Annotations.summary }}</h4>
-            <p><strong>Description:</strong> {{ .Annotations.description }}</p>
-            <p><strong>Severity:</strong> {{ .Labels.severity }}</p>
-            <p><strong>Started:</strong> {{ .StartsAt.Format "2006-01-02 15:04:05 UTC" }}</p>
-            {{ if .EndsAt }}
-            <p><strong>Ended:</strong> {{ .EndsAt.Format "2006-01-02 15:04:05 UTC" }}</p>
+        {{ define "email.html" }}
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Financial System Alert</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 20px; }
+                .header { background-color: #f44336; color: white; padding: 10px; border-radius: 5px; }
+                .warning { background-color: #ff9800; color: white; padding: 10px; border-radius: 5px; }
+                .info { background-color: #2196f3; color: white; padding: 10px; border-radius: 5px; }
+                .resolved { background-color: #4caf50; color: white; padding: 10px; border-radius: 5px; }
+                .alert { margin: 10px 0; padding: 15px; border-left: 4px solid #ccc; }
+                .critical { border-left-color: #f44336; }
+                .warning-alert { border-left-color: #ff9800; }
+                .labels { background-color: #f5f5f5; padding: 10px; margin: 10px 0; }
+                .compliance { background-color: #e3f2fd; padding: 10px; margin: 10px 0; border-radius: 5px; }
+            </style>
+        </head>
+        <body>
+            <div class="{{ if eq .Status "firing" }}{{ if eq .CommonLabels.severity "critical" }}header{{ else }}warning{{ end }}{{ else }}resolved{{ end }}">
+                <h2>{{ if eq .Status "firing" }}🚨 ALERT FIRING{{ else }}✅ ALERT RESOLVED{{ end }}</h2>
+                <p><strong>Status:</strong> {{ .Status | toUpper }}</p>
+                <p><strong>Group:</strong> {{ .GroupLabels.alertname }}</p>
+                <p><strong>Environment:</strong> {{ .CommonLabels.environment | default "unknown" }}</p>
+                <p><strong>Cluster:</strong> {{ .CommonLabels.cluster | default "unknown" }}</p>
+            </div>
+
+            {{ if .CommonLabels.compliance }}
+            <div class="compliance">
+                <h3>📋 Compliance Impact</h3>
+                <p><strong>Standards Affected:</strong> {{ .CommonLabels.compliance }}</p>
+                <p>This alert may impact compliance with the above standards. Please review and document any actions taken.</p>
+            </div>
             {{ end }}
 
-            <div class="labels">
-                <h5>Labels:</h5>
-                {{ range .Labels.SortedPairs }}
-                <span><strong>{{ .Name }}:</strong> {{ .Value }}</span><br>
+            <h3>Alert Details</h3>
+            {{ range .Alerts }}
+            <div class="alert {{ if eq .Labels.severity "critical" }}critical{{ else }}warning-alert{{ end }}">
+                <h4>{{ .Annotations.summary }}</h4>
+                <p><strong>Description:</strong> {{ .Annotations.description }}</p>
+                <p><strong>Severity:</strong> {{ .Labels.severity }}</p>
+                <p><strong>Started:</strong> {{ .StartsAt.Format "2006-01-02 15:04:05 UTC" }}</p>
+                {{ if .EndsAt }}
+                <p><strong>Ended:</strong> {{ .EndsAt.Format "2006-01-02 15:04:05 UTC" }}</p>
                 {{ end }}
-            </div>
-        </div>
-        {{ end }}
 
-        <hr>
-        <p><small>This alert was generated by the Financial-Grade Monitoring System. For support, contact the operations team.</small></p>
-    </body>
-    </html>
-    {{ end }}
+                <div class="labels">
+                    <h5>Labels:</h5>
+                    {{ range .Labels.SortedPairs }}
+                    <span><strong>{{ .Name }}:</strong> {{ .Value }}</span><br>
+                    {{ end }}
+                </div>
+            </div>
+            {{ end }}
+
+            <hr>
+            <p><small>This alert was generated by the Financial-Grade Monitoring System. For support, contact the operations team.</small></p>
+        </body>
+        </html>
+        {{ end }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: alertmanager
-  namespace: monitoring
-  labels:
-    app: alertmanager
-    compliance: "pci-dss,soc2,iso27001"
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: alertmanager
-  template:
-    metadata:
-      labels:
+    name: alertmanager
+    namespace: monitoring
+    labels:
         app: alertmanager
-        compliance: "pci-dss,soc2,iso27001"
-    spec:
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 65534
-        fsGroup: 65534
-      containers:
-        - name: alertmanager
-          image: prom/alertmanager:v0.25.0
-          args:
-            - "--config.file=/etc/alertmanager/alertmanager.yml"
-            - "--storage.path=/alertmanager"
-            - "--data.retention=2555h" # 7 years retention for compliance
-            - "--web.listen-address=:9093"
-            - "--web.external-url=https://alertmanager.{{ .Values.domain }}"
-            - "--cluster.listen-address=0.0.0.0:9094"
-            - "--log.level=info"
-          ports:
-            - containerPort: 9093
-              name: web
-            - containerPort: 9094
-              name: cluster
-          securityContext:
-            runAsNonRoot: true
-            runAsUser: 65534
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
-            capabilities:
-              drop:
-                - ALL
-          resources:
-            requests:
-              cpu: 100m
-              memory: 128Mi
-            limits:
-              cpu: 500m
-              memory: 512Mi
-          volumeMounts:
-            - name: config
-              mountPath: /etc/alertmanager
-            - name: storage
-              mountPath: /alertmanager
-            - name: tmp
-              mountPath: /tmp
-          livenessProbe:
-            httpGet:
-              path: /-/healthy
-              port: web
-            initialDelaySeconds: 30
-            timeoutSeconds: 30
-          readinessProbe:
-            httpGet:
-              path: /-/ready
-              port: web
-            initialDelaySeconds: 5
-            timeoutSeconds: 5
-      volumes:
-        - name: config
-          configMap:
-            name: alertmanager-config
-        - name: storage
-          persistentVolumeClaim:
-            claimName: alertmanager-storage
-        - name: tmp
-          emptyDir: {}
+        compliance: 'pci-dss,soc2,iso27001'
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            app: alertmanager
+    template:
+        metadata:
+            labels:
+                app: alertmanager
+                compliance: 'pci-dss,soc2,iso27001'
+        spec:
+            securityContext:
+                runAsNonRoot: true
+                runAsUser: 65534
+                fsGroup: 65534
+            containers:
+                - name: alertmanager
+                  image: prom/alertmanager:v0.25.0
+                  args:
+                      - '--config.file=/etc/alertmanager/alertmanager.yml'
+                      - '--storage.path=/alertmanager'
+                      - '--data.retention=2555h' # 7 years retention for compliance
+                      - '--web.listen-address=:9093'
+                      - '--web.external-url=https://alertmanager.{{ .Values.domain }}'
+                      - '--cluster.listen-address=0.0.0.0:9094'
+                      - '--log.level=info'
+                  ports:
+                      - containerPort: 9093
+                        name: web
+                      - containerPort: 9094
+                        name: cluster
+                  securityContext:
+                      runAsNonRoot: true
+                      runAsUser: 65534
+                      allowPrivilegeEscalation: false
+                      readOnlyRootFilesystem: true
+                      capabilities:
+                          drop:
+                              - ALL
+                  resources:
+                      requests:
+                          cpu: 100m
+                          memory: 128Mi
+                      limits:
+                          cpu: 500m
+                          memory: 512Mi
+                  volumeMounts:
+                      - name: config
+                        mountPath: /etc/alertmanager
+                      - name: storage
+                        mountPath: /alertmanager
+                      - name: tmp
+                        mountPath: /tmp
+                  livenessProbe:
+                      httpGet:
+                          path: /-/healthy
+                          port: web
+                      initialDelaySeconds: 30
+                      timeoutSeconds: 30
+                  readinessProbe:
+                      httpGet:
+                          path: /-/ready
+                          port: web
+                      initialDelaySeconds: 5
+                      timeoutSeconds: 5
+            volumes:
+                - name: config
+                  configMap:
+                      name: alertmanager-config
+                - name: storage
+                  persistentVolumeClaim:
+                      claimName: alertmanager-storage
+                - name: tmp
+                  emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: alertmanager
-  namespace: monitoring
-  labels:
-    app: alertmanager
-    compliance: "pci-dss,soc2,iso27001"
+    name: alertmanager
+    namespace: monitoring
+    labels:
+        app: alertmanager
+        compliance: 'pci-dss,soc2,iso27001'
 spec:
-  ports:
-    - port: 9093
-      protocol: TCP
-      name: web
-      targetPort: web
-    - port: 9094
-      protocol: TCP
-      name: cluster
-      targetPort: cluster
-  selector:
-    app: alertmanager
+    ports:
+        - port: 9093
+          protocol: TCP
+          name: web
+          targetPort: web
+        - port: 9094
+          protocol: TCP
+          name: cluster
+          targetPort: cluster
+    selector:
+        app: alertmanager
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: alertmanager-storage
-  namespace: monitoring
-  labels:
-    app: alertmanager
-    compliance: "pci-dss,soc2,iso27001"
+    name: alertmanager-storage
+    namespace: monitoring
+    labels:
+        app: alertmanager
+        compliance: 'pci-dss,soc2,iso27001'
 spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 10Gi
-  storageClassName: fast-ssd
+    accessModes:
+        - ReadWriteOnce
+    resources:
+        requests:
+            storage: 10Gi
+    storageClassName: fast-ssd

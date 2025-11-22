@@ -1,487 +1,487 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: loki-config
-  namespace: monitoring
-  labels:
-    app: loki
-    compliance: "pci-dss,soc2,iso27001"
+    name: loki-config
+    namespace: monitoring
+    labels:
+        app: loki
+        compliance: 'pci-dss,soc2,iso27001'
 data:
-  loki.yaml: |
-    auth_enabled: false
+    loki.yaml: |
+        auth_enabled: false
 
-    server:
-      http_listen_port: 3100
-      grpc_listen_port: 9096
-      log_level: info
+        server:
+          http_listen_port: 3100
+          grpc_listen_port: 9096
+          log_level: info
 
-    common:
-      path_prefix: /loki
-      storage:
-        filesystem:
-          chunks_directory: /loki/chunks
-          rules_directory: /loki/rules
-      replication_factor: 1
-      ring:
-        instance_addr: 127.0.0.1
-        kvstore:
-          store: inmemory
+        common:
+          path_prefix: /loki
+          storage:
+            filesystem:
+              chunks_directory: /loki/chunks
+              rules_directory: /loki/rules
+          replication_factor: 1
+          ring:
+            instance_addr: 127.0.0.1
+            kvstore:
+              store: inmemory
 
-    query_range:
-      results_cache:
-        cache:
-          embedded_cache:
-            enabled: true
-            max_size_mb: 100
+        query_range:
+          results_cache:
+            cache:
+              embedded_cache:
+                enabled: true
+                max_size_mb: 100
 
-    schema_config:
-      configs:
-        - from: 2020-10-24
-          store: boltdb-shipper
-          object_store: filesystem
-          schema: v11
-          index:
-            prefix: index_
-            period: 24h
+        schema_config:
+          configs:
+            - from: 2020-10-24
+              store: boltdb-shipper
+              object_store: filesystem
+              schema: v11
+              index:
+                prefix: index_
+                period: 24h
 
-    ruler:
-      alertmanager_url: http://alertmanager:9093
+        ruler:
+          alertmanager_url: http://alertmanager:9093
 
-    # Financial compliance retention
-    limits_config:
-      retention_period: 2555d  # 7 years for financial compliance
-      max_query_series: 100000
-      max_query_parallelism: 32
-      max_entries_limit_per_query: 10000
-      max_streams_per_user: 10000
-      max_line_size: 256000
-      ingestion_rate_mb: 10
-      ingestion_burst_size_mb: 20
-      per_stream_rate_limit: 3MB
-      per_stream_rate_limit_burst: 15MB
+        # Financial compliance retention
+        limits_config:
+          retention_period: 2555d  # 7 years for financial compliance
+          max_query_series: 100000
+          max_query_parallelism: 32
+          max_entries_limit_per_query: 10000
+          max_streams_per_user: 10000
+          max_line_size: 256000
+          ingestion_rate_mb: 10
+          ingestion_burst_size_mb: 20
+          per_stream_rate_limit: 3MB
+          per_stream_rate_limit_burst: 15MB
 
-    chunk_store_config:
-      max_look_back_period: 2555d
+        chunk_store_config:
+          max_look_back_period: 2555d
 
-    table_manager:
-      retention_deletes_enabled: false
-      retention_period: 2555d
+        table_manager:
+          retention_deletes_enabled: false
+          retention_period: 2555d
 
-    compactor:
-      working_directory: /loki/compactor
-      shared_store: filesystem
-      compaction_interval: 10m
-      retention_enabled: true
-      retention_delete_delay: 2h
-      retention_delete_worker_count: 150
+        compactor:
+          working_directory: /loki/compactor
+          shared_store: filesystem
+          compaction_interval: 10m
+          retention_enabled: true
+          retention_delete_delay: 2h
+          retention_delete_worker_count: 150
 
-    analytics:
-      reporting_enabled: false
+        analytics:
+          reporting_enabled: false
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: loki
-  namespace: monitoring
-  labels:
-    app: loki
-    compliance: "pci-dss,soc2,iso27001"
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: loki
-  template:
-    metadata:
-      labels:
+    name: loki
+    namespace: monitoring
+    labels:
         app: loki
-        compliance: "pci-dss,soc2,iso27001"
-    spec:
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 10001
-        fsGroup: 10001
-      containers:
-        - name: loki
-          image: grafana/loki:2.9.0
-          args:
-            - -config.file=/etc/loki/loki.yaml
-          ports:
-            - containerPort: 3100
-              name: http-metrics
-            - containerPort: 9096
-              name: grpc
-          securityContext:
-            runAsNonRoot: true
-            runAsUser: 10001
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
-            capabilities:
-              drop:
-                - ALL
-          resources:
-            requests:
-              cpu: 500m
-              memory: 1Gi
-            limits:
-              cpu: 2000m
-              memory: 4Gi
-          volumeMounts:
-            - name: config
-              mountPath: /etc/loki
-            - name: storage
-              mountPath: /loki
-            - name: tmp
-              mountPath: /tmp
-          livenessProbe:
-            httpGet:
-              path: /ready
-              port: http-metrics
-            initialDelaySeconds: 45
-          readinessProbe:
-            httpGet:
-              path: /ready
-              port: http-metrics
-            initialDelaySeconds: 45
-      volumes:
-        - name: config
-          configMap:
-            name: loki-config
-        - name: storage
-          persistentVolumeClaim:
-            claimName: loki-storage
-        - name: tmp
-          emptyDir: {}
+        compliance: 'pci-dss,soc2,iso27001'
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            app: loki
+    template:
+        metadata:
+            labels:
+                app: loki
+                compliance: 'pci-dss,soc2,iso27001'
+        spec:
+            securityContext:
+                runAsNonRoot: true
+                runAsUser: 10001
+                fsGroup: 10001
+            containers:
+                - name: loki
+                  image: grafana/loki:2.9.0
+                  args:
+                      - -config.file=/etc/loki/loki.yaml
+                  ports:
+                      - containerPort: 3100
+                        name: http-metrics
+                      - containerPort: 9096
+                        name: grpc
+                  securityContext:
+                      runAsNonRoot: true
+                      runAsUser: 10001
+                      allowPrivilegeEscalation: false
+                      readOnlyRootFilesystem: true
+                      capabilities:
+                          drop:
+                              - ALL
+                  resources:
+                      requests:
+                          cpu: 500m
+                          memory: 1Gi
+                      limits:
+                          cpu: 2000m
+                          memory: 4Gi
+                  volumeMounts:
+                      - name: config
+                        mountPath: /etc/loki
+                      - name: storage
+                        mountPath: /loki
+                      - name: tmp
+                        mountPath: /tmp
+                  livenessProbe:
+                      httpGet:
+                          path: /ready
+                          port: http-metrics
+                      initialDelaySeconds: 45
+                  readinessProbe:
+                      httpGet:
+                          path: /ready
+                          port: http-metrics
+                      initialDelaySeconds: 45
+            volumes:
+                - name: config
+                  configMap:
+                      name: loki-config
+                - name: storage
+                  persistentVolumeClaim:
+                      claimName: loki-storage
+                - name: tmp
+                  emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: loki
-  namespace: monitoring
-  labels:
-    app: loki
-    compliance: "pci-dss,soc2,iso27001"
+    name: loki
+    namespace: monitoring
+    labels:
+        app: loki
+        compliance: 'pci-dss,soc2,iso27001'
 spec:
-  ports:
-    - port: 3100
-      protocol: TCP
-      name: http-metrics
-      targetPort: http-metrics
-    - port: 9096
-      protocol: TCP
-      name: grpc
-      targetPort: grpc
-  selector:
-    app: loki
+    ports:
+        - port: 3100
+          protocol: TCP
+          name: http-metrics
+          targetPort: http-metrics
+        - port: 9096
+          protocol: TCP
+          name: grpc
+          targetPort: grpc
+    selector:
+        app: loki
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: loki-storage
-  namespace: monitoring
-  labels:
-    app: loki
-    compliance: "pci-dss,soc2,iso27001"
+    name: loki-storage
+    namespace: monitoring
+    labels:
+        app: loki
+        compliance: 'pci-dss,soc2,iso27001'
 spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 200Gi
-  storageClassName: fast-ssd
+    accessModes:
+        - ReadWriteOnce
+    resources:
+        requests:
+            storage: 200Gi
+    storageClassName: fast-ssd
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: grafana-config
-  namespace: monitoring
-  labels:
-    app: grafana
-    compliance: "pci-dss,soc2,iso27001"
+    name: grafana-config
+    namespace: monitoring
+    labels:
+        app: grafana
+        compliance: 'pci-dss,soc2,iso27001'
 data:
-  grafana.ini: |
-    [analytics]
-    reporting_enabled = false
-    check_for_updates = false
+    grafana.ini: |
+        [analytics]
+        reporting_enabled = false
+        check_for_updates = false
 
-    [security]
-    admin_user = admin
-    admin_password = $__file{/etc/secrets/admin-password}
-    secret_key = $__file{/etc/secrets/secret-key}
-    disable_gravatar = true
-    cookie_secure = true
-    cookie_samesite = strict
-    content_type_protection = true
-    x_content_type_options = true
-    x_xss_protection = true
-    strict_transport_security = true
-    strict_transport_security_max_age_seconds = 86400
-    strict_transport_security_preload = true
-    strict_transport_security_subdomains = true
-    x_content_type_options = true
-    referrer_policy = strict-origin-when-cross-origin
+        [security]
+        admin_user = admin
+        admin_password = $__file{/etc/secrets/admin-password}
+        secret_key = $__file{/etc/secrets/secret-key}
+        disable_gravatar = true
+        cookie_secure = true
+        cookie_samesite = strict
+        content_type_protection = true
+        x_content_type_options = true
+        x_xss_protection = true
+        strict_transport_security = true
+        strict_transport_security_max_age_seconds = 86400
+        strict_transport_security_preload = true
+        strict_transport_security_subdomains = true
+        x_content_type_options = true
+        referrer_policy = strict-origin-when-cross-origin
 
-    [server]
-    protocol = https
-    http_port = 3000
-    domain = grafana.{{ .Values.domain }}
-    root_url = https://grafana.{{ .Values.domain }}
-    cert_file = /etc/ssl/certs/tls.crt
-    cert_key = /etc/ssl/private/tls.key
+        [server]
+        protocol = https
+        http_port = 3000
+        domain = grafana.{{ .Values.domain }}
+        root_url = https://grafana.{{ .Values.domain }}
+        cert_file = /etc/ssl/certs/tls.crt
+        cert_key = /etc/ssl/private/tls.key
 
-    [database]
-    type = postgres
-    host = $__file{/etc/secrets/db-host}
-    name = $__file{/etc/secrets/db-name}
-    user = $__file{/etc/secrets/db-user}
-    password = $__file{/etc/secrets/db-password}
-    ssl_mode = require
+        [database]
+        type = postgres
+        host = $__file{/etc/secrets/db-host}
+        name = $__file{/etc/secrets/db-name}
+        user = $__file{/etc/secrets/db-user}
+        password = $__file{/etc/secrets/db-password}
+        ssl_mode = require
 
-    [session]
-    provider = database
-    cookie_name = grafana_sess
-    cookie_secure = true
-    session_life_time = 86400
+        [session]
+        provider = database
+        cookie_name = grafana_sess
+        cookie_secure = true
+        session_life_time = 86400
 
-    [dataproxy]
-    timeout = 30
-    keep_alive_seconds = 30
+        [dataproxy]
+        timeout = 30
+        keep_alive_seconds = 30
 
-    [alerting]
-    enabled = true
-    execute_alerts = true
+        [alerting]
+        enabled = true
+        execute_alerts = true
 
-    [log]
-    mode = console file
-    level = info
+        [log]
+        mode = console file
+        level = info
 
-    [log.console]
-    level = info
-    format = json
+        [log.console]
+        level = info
+        format = json
 
-    [log.file]
-    level = info
-    format = json
-    log_rotate = true
-    max_lines = 1000000
-    max_size_shift = 28
-    daily_rotate = true
-    max_days = 2555
+        [log.file]
+        level = info
+        format = json
+        log_rotate = true
+        max_lines = 1000000
+        max_size_shift = 28
+        daily_rotate = true
+        max_days = 2555
 
-    [auth]
-    login_remember_days = 1
-    login_maximum_inactive_lifetime_days = 1
-    login_maximum_lifetime_days = 7
+        [auth]
+        login_remember_days = 1
+        login_maximum_inactive_lifetime_days = 1
+        login_maximum_lifetime_days = 7
 
-    [auth.ldap]
-    enabled = false
+        [auth.ldap]
+        enabled = false
 
-    [smtp]
-    enabled = true
-    host = $__file{/etc/secrets/smtp-host}
-    user = $__file{/etc/secrets/smtp-user}
-    password = $__file{/etc/secrets/smtp-password}
-    from_address = grafana@{{ .Values.domain }}
-    from_name = Grafana Financial Monitoring
+        [smtp]
+        enabled = true
+        host = $__file{/etc/secrets/smtp-host}
+        user = $__file{/etc/secrets/smtp-user}
+        password = $__file{/etc/secrets/smtp-password}
+        from_address = grafana@{{ .Values.domain }}
+        from_name = Grafana Financial Monitoring
 
-    [unified_alerting]
-    enabled = true
+        [unified_alerting]
+        enabled = true
 
-    [feature_toggles]
-    enable = ngalert
+        [feature_toggles]
+        enable = ngalert
 
-  datasources.yaml: |
-    apiVersion: 1
-    datasources:
-    - name: Prometheus
-      type: prometheus
-      access: proxy
-      url: http://prometheus:9090
-      isDefault: true
-      editable: false
-      jsonData:
-        httpMethod: POST
-        manageAlerts: true
-        prometheusType: Prometheus
-        prometheusVersion: 2.45.0
-        cacheLevel: 'High'
-        disableRecordingRules: false
-        incrementalQueryOverlapWindow: 10m
+    datasources.yaml: |
+        apiVersion: 1
+        datasources:
+        - name: Prometheus
+          type: prometheus
+          access: proxy
+          url: http://prometheus:9090
+          isDefault: true
+          editable: false
+          jsonData:
+            httpMethod: POST
+            manageAlerts: true
+            prometheusType: Prometheus
+            prometheusVersion: 2.45.0
+            cacheLevel: 'High'
+            disableRecordingRules: false
+            incrementalQueryOverlapWindow: 10m
 
-    - name: Loki
-      type: loki
-      access: proxy
-      url: http://loki:3100
-      editable: false
-      jsonData:
-        maxLines: 1000
-        derivedFields:
-        - datasourceUid: jaeger
-          matcherRegex: "traceID=(\\w+)"
-          name: TraceID
-          url: "$${__value.raw}"
+        - name: Loki
+          type: loki
+          access: proxy
+          url: http://loki:3100
+          editable: false
+          jsonData:
+            maxLines: 1000
+            derivedFields:
+            - datasourceUid: jaeger
+              matcherRegex: "traceID=(\\w+)"
+              name: TraceID
+              url: "$${__value.raw}"
 
-    - name: Jaeger
-      type: jaeger
-      access: proxy
-      url: http://jaeger-query:16686
-      editable: false
-      uid: jaeger
+        - name: Jaeger
+          type: jaeger
+          access: proxy
+          url: http://jaeger-query:16686
+          editable: false
+          uid: jaeger
 
-  dashboards.yaml: |
-    apiVersion: 1
-    providers:
-    - name: 'default'
-      orgId: 1
-      folder: 'Financial Monitoring'
-      type: file
-      disableDeletion: false
-      updateIntervalSeconds: 10
-      allowUiUpdates: true
-      options:
-        path: /var/lib/grafana/dashboards
+    dashboards.yaml: |
+        apiVersion: 1
+        providers:
+        - name: 'default'
+          orgId: 1
+          folder: 'Financial Monitoring'
+          type: file
+          disableDeletion: false
+          updateIntervalSeconds: 10
+          allowUiUpdates: true
+          options:
+            path: /var/lib/grafana/dashboards
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: grafana
-  namespace: monitoring
-  labels:
-    app: grafana
-    compliance: "pci-dss,soc2,iso27001"
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: grafana
-  template:
-    metadata:
-      labels:
+    name: grafana
+    namespace: monitoring
+    labels:
         app: grafana
-        compliance: "pci-dss,soc2,iso27001"
-    spec:
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 472
-        fsGroup: 472
-      containers:
-        - name: grafana
-          image: grafana/grafana:10.1.0
-          ports:
-            - containerPort: 3000
-              name: http-grafana
-          securityContext:
-            runAsNonRoot: true
-            runAsUser: 472
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
-            capabilities:
-              drop:
-                - ALL
-          resources:
-            requests:
-              cpu: 250m
-              memory: 512Mi
-            limits:
-              cpu: 1000m
-              memory: 2Gi
-          volumeMounts:
-            - name: config
-              mountPath: /etc/grafana
-            - name: secrets
-              mountPath: /etc/secrets
-              readOnly: true
-            - name: ssl-certs
-              mountPath: /etc/ssl/certs
-              readOnly: true
-            - name: ssl-private
-              mountPath: /etc/ssl/private
-              readOnly: true
-            - name: storage
-              mountPath: /var/lib/grafana
-            - name: dashboards
-              mountPath: /var/lib/grafana/dashboards
-            - name: tmp
-              mountPath: /tmp
-          env:
-            - name: GF_SECURITY_ADMIN_PASSWORD__FILE
-              value: /etc/secrets/admin-password
-            - name: GF_SECURITY_SECRET_KEY__FILE
-              value: /etc/secrets/secret-key
-            - name: GF_DATABASE_HOST__FILE
-              value: /etc/secrets/db-host
-            - name: GF_DATABASE_NAME__FILE
-              value: /etc/secrets/db-name
-            - name: GF_DATABASE_USER__FILE
-              value: /etc/secrets/db-user
-            - name: GF_DATABASE_PASSWORD__FILE
-              value: /etc/secrets/db-password
-          livenessProbe:
-            httpGet:
-              path: /api/health
-              port: http-grafana
-              scheme: HTTPS
-            initialDelaySeconds: 60
-            timeoutSeconds: 30
-          readinessProbe:
-            httpGet:
-              path: /api/health
-              port: http-grafana
-              scheme: HTTPS
-            initialDelaySeconds: 10
-            timeoutSeconds: 30
-      volumes:
-        - name: config
-          configMap:
-            name: grafana-config
-        - name: secrets
-          secret:
-            secretName: grafana-secrets
-        - name: ssl-certs
-          secret:
-            secretName: grafana-ssl-certs
-        - name: ssl-private
-          secret:
-            secretName: grafana-ssl-private
-        - name: storage
-          persistentVolumeClaim:
-            claimName: grafana-storage
-        - name: dashboards
-          configMap:
-            name: grafana-dashboards
-        - name: tmp
-          emptyDir: {}
+        compliance: 'pci-dss,soc2,iso27001'
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            app: grafana
+    template:
+        metadata:
+            labels:
+                app: grafana
+                compliance: 'pci-dss,soc2,iso27001'
+        spec:
+            securityContext:
+                runAsNonRoot: true
+                runAsUser: 472
+                fsGroup: 472
+            containers:
+                - name: grafana
+                  image: grafana/grafana:10.1.0
+                  ports:
+                      - containerPort: 3000
+                        name: http-grafana
+                  securityContext:
+                      runAsNonRoot: true
+                      runAsUser: 472
+                      allowPrivilegeEscalation: false
+                      readOnlyRootFilesystem: true
+                      capabilities:
+                          drop:
+                              - ALL
+                  resources:
+                      requests:
+                          cpu: 250m
+                          memory: 512Mi
+                      limits:
+                          cpu: 1000m
+                          memory: 2Gi
+                  volumeMounts:
+                      - name: config
+                        mountPath: /etc/grafana
+                      - name: secrets
+                        mountPath: /etc/secrets
+                        readOnly: true
+                      - name: ssl-certs
+                        mountPath: /etc/ssl/certs
+                        readOnly: true
+                      - name: ssl-private
+                        mountPath: /etc/ssl/private
+                        readOnly: true
+                      - name: storage
+                        mountPath: /var/lib/grafana
+                      - name: dashboards
+                        mountPath: /var/lib/grafana/dashboards
+                      - name: tmp
+                        mountPath: /tmp
+                  env:
+                      - name: GF_SECURITY_ADMIN_PASSWORD__FILE
+                        value: /etc/secrets/admin-password
+                      - name: GF_SECURITY_SECRET_KEY__FILE
+                        value: /etc/secrets/secret-key
+                      - name: GF_DATABASE_HOST__FILE
+                        value: /etc/secrets/db-host
+                      - name: GF_DATABASE_NAME__FILE
+                        value: /etc/secrets/db-name
+                      - name: GF_DATABASE_USER__FILE
+                        value: /etc/secrets/db-user
+                      - name: GF_DATABASE_PASSWORD__FILE
+                        value: /etc/secrets/db-password
+                  livenessProbe:
+                      httpGet:
+                          path: /api/health
+                          port: http-grafana
+                          scheme: HTTPS
+                      initialDelaySeconds: 60
+                      timeoutSeconds: 30
+                  readinessProbe:
+                      httpGet:
+                          path: /api/health
+                          port: http-grafana
+                          scheme: HTTPS
+                      initialDelaySeconds: 10
+                      timeoutSeconds: 30
+            volumes:
+                - name: config
+                  configMap:
+                      name: grafana-config
+                - name: secrets
+                  secret:
+                      secretName: grafana-secrets
+                - name: ssl-certs
+                  secret:
+                      secretName: grafana-ssl-certs
+                - name: ssl-private
+                  secret:
+                      secretName: grafana-ssl-private
+                - name: storage
+                  persistentVolumeClaim:
+                      claimName: grafana-storage
+                - name: dashboards
+                  configMap:
+                      name: grafana-dashboards
+                - name: tmp
+                  emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: grafana
-  namespace: monitoring
-  labels:
-    app: grafana
-    compliance: "pci-dss,soc2,iso27001"
+    name: grafana
+    namespace: monitoring
+    labels:
+        app: grafana
+        compliance: 'pci-dss,soc2,iso27001'
 spec:
-  ports:
-    - port: 3000
-      protocol: TCP
-      name: http-grafana
-      targetPort: http-grafana
-  selector:
-    app: grafana
-  type: ClusterIP
+    ports:
+        - port: 3000
+          protocol: TCP
+          name: http-grafana
+          targetPort: http-grafana
+    selector:
+        app: grafana
+    type: ClusterIP
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: grafana-storage
-  namespace: monitoring
-  labels:
-    app: grafana
-    compliance: "pci-dss,soc2,iso27001"
+    name: grafana-storage
+    namespace: monitoring
+    labels:
+        app: grafana
+        compliance: 'pci-dss,soc2,iso27001'
 spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 10Gi
-  storageClassName: fast-ssd
+    accessModes:
+        - ReadWriteOnce
+    resources:
+        requests:
+            storage: 10Gi
+    storageClassName: fast-ssd

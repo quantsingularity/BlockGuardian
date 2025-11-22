@@ -1,483 +1,483 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: monitoring
-  labels:
     name: monitoring
-    compliance: "pci-dss,soc2,iso27001"
-    purpose: "monitoring-logging"
+    labels:
+        name: monitoring
+        compliance: 'pci-dss,soc2,iso27001'
+        purpose: 'monitoring-logging'
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: prometheus
-  namespace: monitoring
-  labels:
-    app: prometheus
-    compliance: "pci-dss,soc2,iso27001"
+    name: prometheus
+    namespace: monitoring
+    labels:
+        app: prometheus
+        compliance: 'pci-dss,soc2,iso27001'
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: prometheus
-  labels:
-    app: prometheus
-    compliance: "pci-dss,soc2,iso27001"
+    name: prometheus
+    labels:
+        app: prometheus
+        compliance: 'pci-dss,soc2,iso27001'
 rules:
-  - apiGroups: [""]
-    resources:
-      - nodes
-      - nodes/proxy
-      - services
-      - endpoints
-      - pods
-    verbs: ["get", "list", "watch"]
-  - apiGroups:
-      - extensions
-    resources:
-      - ingresses
-    verbs: ["get", "list", "watch"]
-  - nonResourceURLs: ["/metrics"]
-    verbs: ["get"]
+    - apiGroups: ['']
+      resources:
+          - nodes
+          - nodes/proxy
+          - services
+          - endpoints
+          - pods
+      verbs: ['get', 'list', 'watch']
+    - apiGroups:
+          - extensions
+      resources:
+          - ingresses
+      verbs: ['get', 'list', 'watch']
+    - nonResourceURLs: ['/metrics']
+      verbs: ['get']
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: prometheus
-  labels:
-    app: prometheus
-    compliance: "pci-dss,soc2,iso27001"
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: prometheus
-subjects:
-  - kind: ServiceAccount
     name: prometheus
-    namespace: monitoring
+    labels:
+        app: prometheus
+        compliance: 'pci-dss,soc2,iso27001'
+roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: prometheus
+subjects:
+    - kind: ServiceAccount
+      name: prometheus
+      namespace: monitoring
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: prometheus-config
-  namespace: monitoring
-  labels:
-    app: prometheus
-    compliance: "pci-dss,soc2,iso27001"
-data:
-  prometheus.yml: |
-    global:
-      scrape_interval: 15s
-      evaluation_interval: 15s
-      external_labels:
-        cluster: 'financial-grade-cluster'
-        environment: '{{ .Values.environment }}'
+    name: prometheus-config
+    namespace: monitoring
+    labels:
+        app: prometheus
         compliance: 'pci-dss,soc2,iso27001'
+data:
+    prometheus.yml: |
+        global:
+          scrape_interval: 15s
+          evaluation_interval: 15s
+          external_labels:
+            cluster: 'financial-grade-cluster'
+            environment: '{{ .Values.environment }}'
+            compliance: 'pci-dss,soc2,iso27001'
 
-    rule_files:
-    - "/etc/prometheus/rules/*.yml"
+        rule_files:
+        - "/etc/prometheus/rules/*.yml"
 
-    alerting:
-      alertmanagers:
-      - static_configs:
-        - targets:
-          - alertmanager:9093
+        alerting:
+          alertmanagers:
+          - static_configs:
+            - targets:
+              - alertmanager:9093
 
-    scrape_configs:
-    # Kubernetes API Server
-    - job_name: 'kubernetes-apiservers'
-      kubernetes_sd_configs:
-      - role: endpoints
-      scheme: https
-      tls_config:
-        ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-        insecure_skip_verify: true
-      bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
-      relabel_configs:
-      - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]
-        action: keep
-        regex: default;kubernetes;https
+        scrape_configs:
+        # Kubernetes API Server
+        - job_name: 'kubernetes-apiservers'
+          kubernetes_sd_configs:
+          - role: endpoints
+          scheme: https
+          tls_config:
+            ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+            insecure_skip_verify: true
+          bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+          relabel_configs:
+          - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]
+            action: keep
+            regex: default;kubernetes;https
 
-    # Kubernetes Nodes
-    - job_name: 'kubernetes-nodes'
-      kubernetes_sd_configs:
-      - role: node
-      scheme: https
-      tls_config:
-        ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-        insecure_skip_verify: true
-      bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
-      relabel_configs:
-      - action: labelmap
-        regex: __meta_kubernetes_node_label_(.+)
-      - target_label: __address__
-        replacement: kubernetes.default.svc:443
-      - source_labels: [__meta_kubernetes_node_name]
-        regex: (.+)
-        target_label: __metrics_path__
-        replacement: /api/v1/nodes/${1}/proxy/metrics
+        # Kubernetes Nodes
+        - job_name: 'kubernetes-nodes'
+          kubernetes_sd_configs:
+          - role: node
+          scheme: https
+          tls_config:
+            ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+            insecure_skip_verify: true
+          bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+          relabel_configs:
+          - action: labelmap
+            regex: __meta_kubernetes_node_label_(.+)
+          - target_label: __address__
+            replacement: kubernetes.default.svc:443
+          - source_labels: [__meta_kubernetes_node_name]
+            regex: (.+)
+            target_label: __metrics_path__
+            replacement: /api/v1/nodes/${1}/proxy/metrics
 
-    # Kubernetes Pods
-    - job_name: 'kubernetes-pods'
-      kubernetes_sd_configs:
-      - role: pod
-      relabel_configs:
-      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
-        action: keep
-        regex: true
-      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
-        action: replace
-        target_label: __metrics_path__
-        regex: (.+)
-      - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
-        action: replace
-        regex: ([^:]+)(?::\d+)?;(\d+)
-        replacement: $1:$2
-        target_label: __address__
-      - action: labelmap
-        regex: __meta_kubernetes_pod_label_(.+)
-      - source_labels: [__meta_kubernetes_namespace]
-        action: replace
-        target_label: kubernetes_namespace
-      - source_labels: [__meta_kubernetes_pod_name]
-        action: replace
-        target_label: kubernetes_pod_name
+        # Kubernetes Pods
+        - job_name: 'kubernetes-pods'
+          kubernetes_sd_configs:
+          - role: pod
+          relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: true
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+            action: replace
+            regex: ([^:]+)(?::\d+)?;(\d+)
+            replacement: $1:$2
+            target_label: __address__
+          - action: labelmap
+            regex: __meta_kubernetes_pod_label_(.+)
+          - source_labels: [__meta_kubernetes_namespace]
+            action: replace
+            target_label: kubernetes_namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            action: replace
+            target_label: kubernetes_pod_name
 
-    # Application Services
-    - job_name: 'blockguardian-backend'
-      kubernetes_sd_configs:
-      - role: endpoints
-        namespaces:
-          names:
-          - default
-          - production
-          - staging
-      relabel_configs:
-      - source_labels: [__meta_kubernetes_service_label_app]
-        action: keep
-        regex: .*-backend
-      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
-        action: keep
-        regex: true
-      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
-        action: replace
-        target_label: __metrics_path__
-        regex: (.+)
-      - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
-        action: replace
-        regex: ([^:]+)(?::\d+)?;(\d+)
-        replacement: $1:$2
-        target_label: __address__
-      - action: labelmap
-        regex: __meta_kubernetes_service_label_(.+)
-      - source_labels: [__meta_kubernetes_namespace]
-        action: replace
-        target_label: kubernetes_namespace
-      - source_labels: [__meta_kubernetes_service_name]
-        action: replace
-        target_label: kubernetes_service_name
+        # Application Services
+        - job_name: 'blockguardian-backend'
+          kubernetes_sd_configs:
+          - role: endpoints
+            namespaces:
+              names:
+              - default
+              - production
+              - staging
+          relabel_configs:
+          - source_labels: [__meta_kubernetes_service_label_app]
+            action: keep
+            regex: .*-backend
+          - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
+            action: keep
+            regex: true
+          - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
+            action: replace
+            regex: ([^:]+)(?::\d+)?;(\d+)
+            replacement: $1:$2
+            target_label: __address__
+          - action: labelmap
+            regex: __meta_kubernetes_service_label_(.+)
+          - source_labels: [__meta_kubernetes_namespace]
+            action: replace
+            target_label: kubernetes_namespace
+          - source_labels: [__meta_kubernetes_service_name]
+            action: replace
+            target_label: kubernetes_service_name
 
-    # Database Monitoring
-    - job_name: 'database-exporter'
-      static_configs:
-      - targets: ['database-exporter:9104']
-      scrape_interval: 30s
-      metrics_path: /metrics
+        # Database Monitoring
+        - job_name: 'database-exporter'
+          static_configs:
+          - targets: ['database-exporter:9104']
+          scrape_interval: 30s
+          metrics_path: /metrics
 
-    # Node Exporter
-    - job_name: 'node-exporter'
-      kubernetes_sd_configs:
-      - role: endpoints
-      relabel_configs:
-      - source_labels: [__meta_kubernetes_endpoints_name]
-        regex: 'node-exporter'
-        action: keep
+        # Node Exporter
+        - job_name: 'node-exporter'
+          kubernetes_sd_configs:
+          - role: endpoints
+          relabel_configs:
+          - source_labels: [__meta_kubernetes_endpoints_name]
+            regex: 'node-exporter'
+            action: keep
 
-    # Security Monitoring
-    - job_name: 'security-metrics'
-      static_configs:
-      - targets: ['falco-exporter:9376']
-      scrape_interval: 15s
-      metrics_path: /metrics
+        # Security Monitoring
+        - job_name: 'security-metrics'
+          static_configs:
+          - targets: ['falco-exporter:9376']
+          scrape_interval: 15s
+          metrics_path: /metrics
 
-    # Infrastructure Monitoring
-    - job_name: 'kube-state-metrics'
-      static_configs:
-      - targets: ['kube-state-metrics:8080']
+        # Infrastructure Monitoring
+        - job_name: 'kube-state-metrics'
+          static_configs:
+          - targets: ['kube-state-metrics:8080']
 
-    # cAdvisor
-    - job_name: 'kubernetes-cadvisor'
-      kubernetes_sd_configs:
-      - role: node
-      scheme: https
-      tls_config:
-        ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-        insecure_skip_verify: true
-      bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
-      relabel_configs:
-      - action: labelmap
-        regex: __meta_kubernetes_node_label_(.+)
-      - target_label: __address__
-        replacement: kubernetes.default.svc:443
-      - source_labels: [__meta_kubernetes_node_name]
-        regex: (.+)
-        target_label: __metrics_path__
-        replacement: /api/v1/nodes/${1}/proxy/metrics/cadvisor
+        # cAdvisor
+        - job_name: 'kubernetes-cadvisor'
+          kubernetes_sd_configs:
+          - role: node
+          scheme: https
+          tls_config:
+            ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+            insecure_skip_verify: true
+          bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+          relabel_configs:
+          - action: labelmap
+            regex: __meta_kubernetes_node_label_(.+)
+          - target_label: __address__
+            replacement: kubernetes.default.svc:443
+          - source_labels: [__meta_kubernetes_node_name]
+            regex: (.+)
+            target_label: __metrics_path__
+            replacement: /api/v1/nodes/${1}/proxy/metrics/cadvisor
 
-  alert_rules.yml: |
-    groups:
-    - name: financial.rules
-      rules:
-      # High Priority Security Alerts
-      - alert: SecurityViolationDetected
-        expr: increase(falco_events_total[5m]) > 0
-        for: 0m
-        labels:
-          severity: critical
-          compliance: pci-dss
-          category: security
-        annotations:
-          summary: "Security violation detected"
-          description: "Falco has detected {{ $value }} security violations in the last 5 minutes"
+    alert_rules.yml: |
+        groups:
+        - name: financial.rules
+          rules:
+          # High Priority Security Alerts
+          - alert: SecurityViolationDetected
+            expr: increase(falco_events_total[5m]) > 0
+            for: 0m
+            labels:
+              severity: critical
+              compliance: pci-dss
+              category: security
+            annotations:
+              summary: "Security violation detected"
+              description: "Falco has detected {{ $value }} security violations in the last 5 minutes"
 
-      # Infrastructure Health
-      - alert: HighCPUUsage
-        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
-        for: 5m
-        labels:
-          severity: warning
-          category: performance
-        annotations:
-          summary: "High CPU usage detected"
-          description: "CPU usage is above 80% for more than 5 minutes on {{ $labels.instance }}"
+          # Infrastructure Health
+          - alert: HighCPUUsage
+            expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+            for: 5m
+            labels:
+              severity: warning
+              category: performance
+            annotations:
+              summary: "High CPU usage detected"
+              description: "CPU usage is above 80% for more than 5 minutes on {{ $labels.instance }}"
 
-      - alert: HighMemoryUsage
-        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100 > 85
-        for: 5m
-        labels:
-          severity: warning
-          category: performance
-        annotations:
-          summary: "High memory usage detected"
-          description: "Memory usage is above 85% for more than 5 minutes on {{ $labels.instance }}"
+          - alert: HighMemoryUsage
+            expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100 > 85
+            for: 5m
+            labels:
+              severity: warning
+              category: performance
+            annotations:
+              summary: "High memory usage detected"
+              description: "Memory usage is above 85% for more than 5 minutes on {{ $labels.instance }}"
 
-      - alert: DiskSpaceLow
-        expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) * 100 < 10
-        for: 5m
-        labels:
-          severity: critical
-          category: storage
-        annotations:
-          summary: "Low disk space"
-          description: "Disk space is below 10% on {{ $labels.instance }}"
+          - alert: DiskSpaceLow
+            expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) * 100 < 10
+            for: 5m
+            labels:
+              severity: critical
+              category: storage
+            annotations:
+              summary: "Low disk space"
+              description: "Disk space is below 10% on {{ $labels.instance }}"
 
-      # Application Health
-      - alert: ApplicationDown
-        expr: up{job=~".*-backend"} == 0
-        for: 1m
-        labels:
-          severity: critical
-          category: availability
-        annotations:
-          summary: "Application is down"
-          description: "{{ $labels.job }} has been down for more than 1 minute"
+          # Application Health
+          - alert: ApplicationDown
+            expr: up{job=~".*-backend"} == 0
+            for: 1m
+            labels:
+              severity: critical
+              category: availability
+            annotations:
+              summary: "Application is down"
+              description: "{{ $labels.job }} has been down for more than 1 minute"
 
-      - alert: HighErrorRate
-        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) * 100 > 5
-        for: 5m
-        labels:
-          severity: warning
-          category: application
-        annotations:
-          summary: "High error rate detected"
-          description: "Error rate is above 5% for {{ $labels.job }}"
+          - alert: HighErrorRate
+            expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) * 100 > 5
+            for: 5m
+            labels:
+              severity: warning
+              category: application
+            annotations:
+              summary: "High error rate detected"
+              description: "Error rate is above 5% for {{ $labels.job }}"
 
-      - alert: SlowResponseTime
-        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 2
-        for: 5m
-        labels:
-          severity: warning
-          category: performance
-        annotations:
-          summary: "Slow response time"
-          description: "95th percentile response time is above 2 seconds for {{ $labels.job }}"
+          - alert: SlowResponseTime
+            expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 2
+            for: 5m
+            labels:
+              severity: warning
+              category: performance
+            annotations:
+              summary: "Slow response time"
+              description: "95th percentile response time is above 2 seconds for {{ $labels.job }}"
 
-      # Database Health
-      - alert: DatabaseConnectionsHigh
-        expr: mysql_global_status_threads_connected / mysql_global_variables_max_connections * 100 > 80
-        for: 5m
-        labels:
-          severity: warning
-          category: database
-        annotations:
-          summary: "High database connections"
-          description: "Database connections are above 80% of maximum"
+          # Database Health
+          - alert: DatabaseConnectionsHigh
+            expr: mysql_global_status_threads_connected / mysql_global_variables_max_connections * 100 > 80
+            for: 5m
+            labels:
+              severity: warning
+              category: database
+            annotations:
+              summary: "High database connections"
+              description: "Database connections are above 80% of maximum"
 
-      - alert: DatabaseSlowQueries
-        expr: rate(mysql_global_status_slow_queries[5m]) > 10
-        for: 5m
-        labels:
-          severity: warning
-          category: database
-        annotations:
-          summary: "High number of slow queries"
-          description: "Slow query rate is above 10 queries per second"
+          - alert: DatabaseSlowQueries
+            expr: rate(mysql_global_status_slow_queries[5m]) > 10
+            for: 5m
+            labels:
+              severity: warning
+              category: database
+            annotations:
+              summary: "High number of slow queries"
+              description: "Slow query rate is above 10 queries per second"
 
-      # Compliance and Audit
-      - alert: AuditLogFailure
-        expr: increase(audit_log_failures_total[5m]) > 0
-        for: 0m
-        labels:
-          severity: critical
-          compliance: all
-          category: audit
-        annotations:
-          summary: "Audit log failure detected"
-          description: "{{ $value }} audit log failures detected in the last 5 minutes"
+          # Compliance and Audit
+          - alert: AuditLogFailure
+            expr: increase(audit_log_failures_total[5m]) > 0
+            for: 0m
+            labels:
+              severity: critical
+              compliance: all
+              category: audit
+            annotations:
+              summary: "Audit log failure detected"
+              description: "{{ $value }} audit log failures detected in the last 5 minutes"
 
-      - alert: UnauthorizedAccess
-        expr: increase(failed_login_attempts_total[5m]) > 10
-        for: 0m
-        labels:
-          severity: critical
-          compliance: pci-dss
-          category: security
-        annotations:
-          summary: "Multiple failed login attempts"
-          description: "{{ $value }} failed login attempts detected in the last 5 minutes"
+          - alert: UnauthorizedAccess
+            expr: increase(failed_login_attempts_total[5m]) > 10
+            for: 0m
+            labels:
+              severity: critical
+              compliance: pci-dss
+              category: security
+            annotations:
+              summary: "Multiple failed login attempts"
+              description: "{{ $value }} failed login attempts detected in the last 5 minutes"
 
-      # Certificate Expiration
-      - alert: CertificateExpiringSoon
-        expr: (ssl_certificate_expiry_seconds - time()) / 86400 < 30
-        for: 1h
-        labels:
-          severity: warning
-          category: security
-        annotations:
-          summary: "SSL certificate expiring soon"
-          description: "SSL certificate for {{ $labels.instance }} expires in {{ $value }} days"
+          # Certificate Expiration
+          - alert: CertificateExpiringSoon
+            expr: (ssl_certificate_expiry_seconds - time()) / 86400 < 30
+            for: 1h
+            labels:
+              severity: warning
+              category: security
+            annotations:
+              summary: "SSL certificate expiring soon"
+              description: "SSL certificate for {{ $labels.instance }} expires in {{ $value }} days"
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: prometheus
-  namespace: monitoring
-  labels:
-    app: prometheus
-    compliance: "pci-dss,soc2,iso27001"
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: prometheus
-  template:
-    metadata:
-      labels:
+    name: prometheus
+    namespace: monitoring
+    labels:
         app: prometheus
-        compliance: "pci-dss,soc2,iso27001"
-      annotations:
-        prometheus.io/scrape: "true"
-        prometheus.io/port: "9090"
-    spec:
-      serviceAccountName: prometheus
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 65534
-        fsGroup: 65534
-      containers:
-        - name: prometheus
-          image: prom/prometheus:v2.45.0
-          args:
-            - "--config.file=/etc/prometheus/prometheus.yml"
-            - "--storage.tsdb.path=/prometheus/"
-            - "--storage.tsdb.retention.time=90d"
-            - "--storage.tsdb.retention.size=50GB"
-            - "--web.console.libraries=/etc/prometheus/console_libraries"
-            - "--web.console.templates=/etc/prometheus/consoles"
-            - "--web.enable-lifecycle"
-            - "--web.enable-admin-api"
-            - "--log.level=info"
-            - "--query.max-concurrency=20"
-            - "--query.timeout=2m"
-          ports:
-            - containerPort: 9090
-              name: prometheus
-          securityContext:
-            runAsNonRoot: true
-            runAsUser: 65534
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
-            capabilities:
-              drop:
-                - ALL
-          resources:
-            requests:
-              cpu: 500m
-              memory: 2Gi
-            limits:
-              cpu: 2000m
-              memory: 8Gi
-          volumeMounts:
-            - name: prometheus-config
-              mountPath: /etc/prometheus/
-            - name: prometheus-storage
-              mountPath: /prometheus/
-            - name: tmp
-              mountPath: /tmp
-          livenessProbe:
-            httpGet:
-              path: /-/healthy
-              port: 9090
-            initialDelaySeconds: 30
-            timeoutSeconds: 30
-          readinessProbe:
-            httpGet:
-              path: /-/ready
-              port: 9090
-            initialDelaySeconds: 5
-            timeoutSeconds: 5
-      volumes:
-        - name: prometheus-config
-          configMap:
-            name: prometheus-config
-        - name: prometheus-storage
-          persistentVolumeClaim:
-            claimName: prometheus-storage
-        - name: tmp
-          emptyDir: {}
+        compliance: 'pci-dss,soc2,iso27001'
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            app: prometheus
+    template:
+        metadata:
+            labels:
+                app: prometheus
+                compliance: 'pci-dss,soc2,iso27001'
+            annotations:
+                prometheus.io/scrape: 'true'
+                prometheus.io/port: '9090'
+        spec:
+            serviceAccountName: prometheus
+            securityContext:
+                runAsNonRoot: true
+                runAsUser: 65534
+                fsGroup: 65534
+            containers:
+                - name: prometheus
+                  image: prom/prometheus:v2.45.0
+                  args:
+                      - '--config.file=/etc/prometheus/prometheus.yml'
+                      - '--storage.tsdb.path=/prometheus/'
+                      - '--storage.tsdb.retention.time=90d'
+                      - '--storage.tsdb.retention.size=50GB'
+                      - '--web.console.libraries=/etc/prometheus/console_libraries'
+                      - '--web.console.templates=/etc/prometheus/consoles'
+                      - '--web.enable-lifecycle'
+                      - '--web.enable-admin-api'
+                      - '--log.level=info'
+                      - '--query.max-concurrency=20'
+                      - '--query.timeout=2m'
+                  ports:
+                      - containerPort: 9090
+                        name: prometheus
+                  securityContext:
+                      runAsNonRoot: true
+                      runAsUser: 65534
+                      allowPrivilegeEscalation: false
+                      readOnlyRootFilesystem: true
+                      capabilities:
+                          drop:
+                              - ALL
+                  resources:
+                      requests:
+                          cpu: 500m
+                          memory: 2Gi
+                      limits:
+                          cpu: 2000m
+                          memory: 8Gi
+                  volumeMounts:
+                      - name: prometheus-config
+                        mountPath: /etc/prometheus/
+                      - name: prometheus-storage
+                        mountPath: /prometheus/
+                      - name: tmp
+                        mountPath: /tmp
+                  livenessProbe:
+                      httpGet:
+                          path: /-/healthy
+                          port: 9090
+                      initialDelaySeconds: 30
+                      timeoutSeconds: 30
+                  readinessProbe:
+                      httpGet:
+                          path: /-/ready
+                          port: 9090
+                      initialDelaySeconds: 5
+                      timeoutSeconds: 5
+            volumes:
+                - name: prometheus-config
+                  configMap:
+                      name: prometheus-config
+                - name: prometheus-storage
+                  persistentVolumeClaim:
+                      claimName: prometheus-storage
+                - name: tmp
+                  emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: prometheus
-  namespace: monitoring
-  labels:
-    app: prometheus
-    compliance: "pci-dss,soc2,iso27001"
-  annotations:
-    prometheus.io/scrape: "true"
-    prometheus.io/port: "9090"
+    name: prometheus
+    namespace: monitoring
+    labels:
+        app: prometheus
+        compliance: 'pci-dss,soc2,iso27001'
+    annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '9090'
 spec:
-  selector:
-    app: prometheus
-  ports:
-    - name: prometheus
-      port: 9090
-      targetPort: 9090
-  type: ClusterIP
+    selector:
+        app: prometheus
+    ports:
+        - name: prometheus
+          port: 9090
+          targetPort: 9090
+    type: ClusterIP
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: prometheus-storage
-  namespace: monitoring
-  labels:
-    app: prometheus
-    compliance: "pci-dss,soc2,iso27001"
+    name: prometheus-storage
+    namespace: monitoring
+    labels:
+        app: prometheus
+        compliance: 'pci-dss,soc2,iso27001'
 spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 100Gi
-  storageClassName: fast-ssd
+    accessModes:
+        - ReadWriteOnce
+    resources:
+        requests:
+            storage: 100Gi
+    storageClassName: fast-ssd

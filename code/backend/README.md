@@ -110,41 +110,41 @@ blockguardian_backend/
 
 1. **Clone the repository**
 
-   ```bash
-   git clone <repository-url>
-   cd blockguardian_backend
-   ```
+    ```bash
+    git clone <repository-url>
+    cd blockguardian_backend
+    ```
 
 2. **Create virtual environment**
 
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
+    ```bash
+    python -m venv venv
+    source venv/bin/activate  # On Windows: venv\Scripts\activate
+    ```
 
 3. **Install dependencies**
 
-   ```bash
-   pip install -r requirements.txt
-   ```
+    ```bash
+    pip install -r requirements.txt
+    ```
 
 4. **Set up environment variables**
 
-   ```bash
-   cp .env.example .env
-   # Edit .env with your configuration
-   ```
+    ```bash
+    cp .env.example .env
+    # Edit .env with your configuration
+    ```
 
 5. **Initialize database**
 
-   ```bash
-   python src/database/init_db.py
-   ```
+    ```bash
+    python src/database/init_db.py
+    ```
 
 6. **Run the application**
-   ```bash
-   python src/main.py
-   ```
+    ```bash
+    python src/main.py
+    ```
 
 The application will be available at `http://localhost:5000`
 
@@ -192,58 +192,58 @@ PROMETHEUS_PORT=9090
 
 1. **Build the image**
 
-   ```bash
-   docker build -t blockguardian-backend .
-   ```
+    ```bash
+    docker build -t blockguardian-backend .
+    ```
 
 2. **Run the container**
-   ```bash
-   docker run -p 5000:5000 \
-     -e DATABASE_URL=postgresql://user:password@host/db \
-     -e SECRET_KEY=your-secret-key \
-     blockguardian-backend
-   ```
+    ```bash
+    docker run -p 5000:5000 \
+      -e DATABASE_URL=postgresql://user:password@host/db \
+      -e SECRET_KEY=your-secret-key \
+      blockguardian-backend
+    ```
 
 ### Docker Compose (Recommended)
 
 Create a `docker-compose.yml` file:
 
 ```yaml
-version: "3.8"
+version: '3.8'
 
 services:
-  app:
-    build: .
-    ports:
-      - "5000:5000"
-    environment:
-      - DATABASE_URL=postgresql://postgres:password@db:5432/blockguardian
-      - REDIS_URL=redis://redis:6379/0
-      - SECRET_KEY=your-secret-key
-    depends_on:
-      - db
-      - redis
-    volumes:
-      - ./logs:/app/logs
+    app:
+        build: .
+        ports:
+            - '5000:5000'
+        environment:
+            - DATABASE_URL=postgresql://postgres:password@db:5432/blockguardian
+            - REDIS_URL=redis://redis:6379/0
+            - SECRET_KEY=your-secret-key
+        depends_on:
+            - db
+            - redis
+        volumes:
+            - ./logs:/app/logs
 
-  db:
-    image: postgres:15
-    environment:
-      - POSTGRES_DB=blockguardian
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=password
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+    db:
+        image: postgres:15
+        environment:
+            - POSTGRES_DB=blockguardian
+            - POSTGRES_USER=postgres
+            - POSTGRES_PASSWORD=password
+        volumes:
+            - postgres_data:/var/lib/postgresql/data
+        ports:
+            - '5432:5432'
 
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
+    redis:
+        image: redis:7-alpine
+        ports:
+            - '6379:6379'
 
 volumes:
-  postgres_data:
+    postgres_data:
 ```
 
 Run with:
@@ -260,22 +260,22 @@ docker-compose up -d
 
 2. **Create Gunicorn configuration** (`gunicorn.conf.py`):
 
-   ```python
-   bind = "0.0.0.0:5000"
-   workers = 4
-   worker_class = "gevent"
-   worker_connections = 1000
-   max_requests = 1000
-   max_requests_jitter = 100
-   timeout = 30
-   keepalive = 2
-   preload_app = True
-   ```
+    ```python
+    bind = "0.0.0.0:5000"
+    workers = 4
+    worker_class = "gevent"
+    worker_connections = 1000
+    max_requests = 1000
+    max_requests_jitter = 100
+    timeout = 30
+    keepalive = 2
+    preload_app = True
+    ```
 
 3. **Run with Gunicorn**:
-   ```bash
-   gunicorn -c gunicorn.conf.py src.main:app
-   ```
+    ```bash
+    gunicorn -c gunicorn.conf.py src.main:app
+    ```
 
 ### Nginx Configuration
 
@@ -440,19 +440,19 @@ Logs are written to:
 ### Common Issues
 
 1. **Database Connection Errors**
-   - Check DATABASE_URL configuration
-   - Ensure database server is running
-   - Verify credentials and permissions
+    - Check DATABASE_URL configuration
+    - Ensure database server is running
+    - Verify credentials and permissions
 
 2. **Authentication Issues**
-   - Check JWT_SECRET_KEY configuration
-   - Verify token expiration settings
-   - Check user account status
+    - Check JWT_SECRET_KEY configuration
+    - Verify token expiration settings
+    - Check user account status
 
 3. **Performance Issues**
-   - Monitor database query performance
-   - Check Redis connection for caching
-   - Review application logs for bottlenecks
+    - Monitor database query performance
+    - Check Redis connection for caching
+    - Review application logs for bottlenecks
 
 ### Debug Mode
 

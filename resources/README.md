@@ -7,16 +7,16 @@ This directory contains supplementary materials and reference assets that suppor
 The resources directory is organized into three main categories:
 
 - **datasets/**: Sample and test data files for development and analysis
-  - **fraud_patterns.csv**: Dataset containing patterns of fraudulent blockchain transactions
-  - **transaction_history.csv**: Historical transaction data for testing and analysis
+    - **fraud_patterns.csv**: Dataset containing patterns of fraudulent blockchain transactions
+    - **transaction_history.csv**: Historical transaction data for testing and analysis
 
 - **designs/**: Visual and architectural design assets
-  - **system_architecture.png**: Visual representation of the BlockGuardian system architecture
-  - **wireframes.pdf**: UI/UX wireframes and mockups for the application interfaces
+    - **system_architecture.png**: Visual representation of the BlockGuardian system architecture
+    - **wireframes.pdf**: UI/UX wireframes and mockups for the application interfaces
 
 - **references/**: Research papers and external documentation
-  - **AI_in_DeFi_Fraud_Detection.pdf**: Research paper on AI applications in DeFi fraud detection
-  - **Blockchain_Security.pdf**: Reference documentation on blockchain security principles
+    - **AI_in_DeFi_Fraud_Detection.pdf**: Research paper on AI applications in DeFi fraud detection
+    - **Blockchain_Security.pdf**: Reference documentation on blockchain security principles
 
 ## Purpose
 

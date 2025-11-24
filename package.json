@@ -1,20 +1,25 @@
 {
-  "name": "blockguardian",
-  "version": "1.0.0",
-  "description": "BlockGuardian: A blockchain-based smart contract project.",
-  "main": "index.js",
-  "directories": {
-    "doc": "docs"
-  },
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "format": "prettier --write '**/*.sol'"
-  },
-  "keywords": ["solidity", "blockchain", "smart-contracts", "DeFi"],
-  "author": "Abrar Ahmed",
-  "license": "MIT",
-  "devDependencies": {
-    "prettier": "^3.6.2",
-    "prettier-plugin-solidity": "^2.2.0"
-  }
+    "name": "blockguardian",
+    "version": "1.0.0",
+    "description": "BlockGuardian: A blockchain-based smart contract project.",
+    "main": "index.js",
+    "directories": {
+        "doc": "docs"
+    },
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "format": "prettier --write '**/*.sol'"
+    },
+    "keywords": [
+        "solidity",
+        "blockchain",
+        "smart-contracts",
+        "DeFi"
+    ],
+    "author": "Abrar Ahmed",
+    "license": "MIT",
+    "devDependencies": {
+        "prettier": "^3.6.2",
+        "prettier-plugin-solidity": "^2.2.0"
+    }
 }

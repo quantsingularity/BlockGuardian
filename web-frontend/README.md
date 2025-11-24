@@ -7,10 +7,10 @@ This directory contains the web-based user interface for the BlockGuardian platf
 The web-frontend directory follows a standard Next.js project structure:
 
 - **components/**: Reusable React components
-  - **BlockchainExplorer.js**: Component for exploring and visualizing blockchain data
-  - **Navbar.js**: Navigation component for the application
-  - **WalletConnection.js**: UI component for connecting to blockchain wallets
-  - **WalletProvider.js**: Context provider for wallet integration
+    - **BlockchainExplorer.js**: Component for exploring and visualizing blockchain data
+    - **Navbar.js**: Navigation component for the application
+    - **WalletConnection.js**: UI component for connecting to blockchain wallets
+    - **WalletProvider.js**: Context provider for wallet integration
 
 - **pages/**: Next.js page components that define application routes
 - **styles/**: CSS and styling files, including Tailwind CSS configurations

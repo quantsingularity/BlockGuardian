@@ -23,12 +23,12 @@ This document outlines the proposed enhancements to the BlockGuardian infrastruc
 ## 3. Compute and Containerization (Kubernetes) Enhancements
 
 - **Hardened Kubernetes Cluster:** Configure Kubernetes with security best practices:
-  - **Pod Security Standards (PSS):** Enforce PSS (or Pod Security Policies if using older versions) to restrict pod capabilities and prevent privilege escalation.
-  - **Network Policies:** Implement Kubernetes Network Policies to control pod-to-pod communication, enforcing least privilege networking.
-  - **Image Security:** Use trusted, scanned container images from private registries. Implement image scanning in CI/CD pipelines to detect vulnerabilities.
-  - **Runtime Security:** Integrate runtime security tools to monitor container behavior and detect anomalies.
-  - **Secrets Management:** Utilize Kubernetes Secrets with external secrets management solutions (e.g., HashiCorp Vault, AWS Secrets Manager) for sensitive data.
-  - **Role-Based Access Control (RBAC):** Implement fine-grained RBAC for Kubernetes users and service accounts.
+    - **Pod Security Standards (PSS):** Enforce PSS (or Pod Security Policies if using older versions) to restrict pod capabilities and prevent privilege escalation.
+    - **Network Policies:** Implement Kubernetes Network Policies to control pod-to-pod communication, enforcing least privilege networking.
+    - **Image Security:** Use trusted, scanned container images from private registries. Implement image scanning in CI/CD pipelines to detect vulnerabilities.
+    - **Runtime Security:** Integrate runtime security tools to monitor container behavior and detect anomalies.
+    - **Secrets Management:** Utilize Kubernetes Secrets with external secrets management solutions (e.g., HashiCorp Vault, AWS Secrets Manager) for sensitive data.
+    - **Role-Based Access Control (RBAC):** Implement fine-grained RBAC for Kubernetes users and service accounts.
 - **Node Security:** Harden worker nodes by disabling unnecessary services, regularly patching, and implementing host-based firewalls.
 
 ## 4. Data Storage and Database Security
@@ -66,18 +66,18 @@ This document outlines the proposed enhancements to the BlockGuardian infrastruc
 ## 8. Proposed Changes to Existing Infrastructure Directory
 
 - **Terraform:**
-  - Enhance `modules/security` to include more granular security group rules, KMS key management, and IAM role definitions with least privilege.
-  - Update `modules/network` for VPC flow logging, NACLs, and private link configurations.
-  - Modify `modules/compute` and `modules/database` to enforce encryption at rest and in transit.
-  - Introduce new Terraform resources for centralized logging (e.g., CloudWatch, S3 for logs) and monitoring (e.g., CloudWatch Alarms, Prometheus/Grafana setup).
+    - Enhance `modules/security` to include more granular security group rules, KMS key management, and IAM role definitions with least privilege.
+    - Update `modules/network` for VPC flow logging, NACLs, and private link configurations.
+    - Modify `modules/compute` and `modules/database` to enforce encryption at rest and in transit.
+    - Introduce new Terraform resources for centralized logging (e.g., CloudWatch, S3 for logs) and monitoring (e.g., CloudWatch Alarms, Prometheus/Grafana setup).
 - **Ansible:**
-  - Refine existing roles (`common`, `database`, `webserver`) to implement security hardening (e.g., OS-level security configurations, user management, secure file permissions).
-  - Add new playbooks for secret management integration (e.g., fetching secrets from Vault), regular patching, and compliance checks.
-  - Implement Ansible Vault for sensitive data within playbooks.
+    - Refine existing roles (`common`, `database`, `webserver`) to implement security hardening (e.g., OS-level security configurations, user management, secure file permissions).
+    - Add new playbooks for secret management integration (e.g., fetching secrets from Vault), regular patching, and compliance checks.
+    - Implement Ansible Vault for sensitive data within playbooks.
 - **Kubernetes:**
-  - Update `base` manifests to include Network Policies, Pod Security Standards (or equivalent), and resource quotas.
-  - Enhance `app-secrets.yaml` to integrate with external secret management.
-  - Add manifests for logging agents (e.g., Fluentd/Fluent Bit), monitoring agents (e.g., Prometheus Node Exporter, cAdvisor), and potentially a SIEM agent.
-  - Introduce `ingress.yaml` enhancements for WAF integration and stricter TLS configurations.
+    - Update `base` manifests to include Network Policies, Pod Security Standards (or equivalent), and resource quotas.
+    - Enhance `app-secrets.yaml` to integrate with external secret management.
+    - Add manifests for logging agents (e.g., Fluentd/Fluent Bit), monitoring agents (e.g., Prometheus Node Exporter, cAdvisor), and potentially a SIEM agent.
+    - Introduce `ingress.yaml` enhancements for WAF integration and stricter TLS configurations.
 
 This design provides a roadmap for transforming the existing infrastructure into a robust, secure, and compliant environment suitable for financial operations. The next phases will involve the detailed implementation of these enhancements.

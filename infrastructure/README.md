@@ -113,24 +113,24 @@ Ensure you have the following tools installed:
 
 1. **Configure AWS Credentials**
 
-   ```bash
-   aws configure
-   # or use IAM roles/instance profiles
-   ```
+    ```bash
+    aws configure
+    # or use IAM roles/instance profiles
+    ```
 
 2. **Set Environment Variables**
 
-   ```bash
-   export AWS_REGION=us-east-1
-   export ENVIRONMENT=staging
-   export COMPLIANCE_MODE=financial-grade
-   ```
+    ```bash
+    export AWS_REGION=us-east-1
+    export ENVIRONMENT=staging
+    export COMPLIANCE_MODE=financial-grade
+    ```
 
 3. **Initialize Terraform Backend**
-   ```bash
-   cd terraform/environments/staging
-   terraform init
-   ```
+    ```bash
+    cd terraform/environments/staging
+    terraform init
+    ```
 
 ### Deployment
 

@@ -7,11 +7,11 @@ This directory contains the React Native mobile application for BlockGuardian, p
 The mobile-frontend directory follows a standard React Native project structure with Expo integration:
 
 - **src/**: Core application source code
-  - **components/**: Reusable UI components
-  - **screens/**: Screen components for different app views
-  - **navigation/**: Navigation configuration and routing
-  - **hooks/**: Custom React hooks for shared logic
-  - **services/**: API and service integrations
+    - **components/**: Reusable UI components
+    - **screens/**: Screen components for different app views
+    - **navigation/**: Navigation configuration and routing
+    - **hooks/**: Custom React hooks for shared logic
+    - **services/**: API and service integrations
 
 - **assets/**: Static assets like images, fonts, and icons
 - **tests/**: Test files for components and functionality

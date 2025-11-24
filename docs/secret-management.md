@@ -9,37 +9,37 @@ This document outlines the secure secret management practices implemented in the
 The CI/CD pipelines use GitHub's encrypted secrets feature to securely store sensitive information:
 
 1. **Docker Registry Credentials**
-   - `DOCKER_USERNAME`: Username for Docker Hub or private registry
-   - `DOCKER_PASSWORD`: Password for Docker Hub or private registry
+    - `DOCKER_USERNAME`: Username for Docker Hub or private registry
+    - `DOCKER_PASSWORD`: Password for Docker Hub or private registry
 
 2. **Deployment Credentials**
-   - `SSH_PRIVATE_KEY`: SSH key for secure server access
-   - `SSH_KNOWN_HOSTS`: Known hosts file content for SSH verification
-   - `PRODUCTION_SERVER_HOST`: Hostname/IP of the production server
-   - `PRODUCTION_SERVER_USER`: Username for SSH access to production server
+    - `SSH_PRIVATE_KEY`: SSH key for secure server access
+    - `SSH_KNOWN_HOSTS`: Known hosts file content for SSH verification
+    - `PRODUCTION_SERVER_HOST`: Hostname/IP of the production server
+    - `PRODUCTION_SERVER_USER`: Username for SSH access to production server
 
 3. **Blockchain Deployment**
-   - `BLOCKCHAIN_PRIVATE_KEY`: Private key for deploying smart contracts
-   - `INFURA_API_KEY`: API key for Infura blockchain node access
-   - `ETHERSCAN_API_KEY`: API key for Etherscan contract verification
+    - `BLOCKCHAIN_PRIVATE_KEY`: Private key for deploying smart contracts
+    - `INFURA_API_KEY`: API key for Infura blockchain node access
+    - `ETHERSCAN_API_KEY`: API key for Etherscan contract verification
 
 ## Best Practices Implemented
 
 1. **Least Privilege Access**
-   - Secrets are only accessible in specific workflow jobs that require them
-   - Different secrets are used for different environments (dev, staging, production)
+    - Secrets are only accessible in specific workflow jobs that require them
+    - Different secrets are used for different environments (dev, staging, production)
 
 2. **No Secret Exposure**
-   - Secrets are never logged or exposed in build outputs
-   - Debug information is carefully controlled to prevent accidental exposure
+    - Secrets are never logged or exposed in build outputs
+    - Debug information is carefully controlled to prevent accidental exposure
 
 3. **Rotation Policy**
-   - All secrets should be rotated regularly (recommended: every 90 days)
-   - Immediate rotation upon any suspected compromise
+    - All secrets should be rotated regularly (recommended: every 90 days)
+    - Immediate rotation upon any suspected compromise
 
 4. **Environment Separation**
-   - Different secrets for development, testing, and production environments
-   - Production secrets are restricted to main branch deployments only
+    - Different secrets for development, testing, and production environments
+    - Production secrets are restricted to main branch deployments only
 
 ## Local Development
 

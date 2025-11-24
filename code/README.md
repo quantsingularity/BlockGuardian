@@ -30,30 +30,30 @@ BlockGuardian follows a modern microservices architecture with clear separation 
 ### Core Components
 
 1. **Backend Services** (`/backend/`)
-   - RESTful API server built with Flask
-   - Advanced authentication and authorization
-   - Comprehensive compliance monitoring
-   - Real-time transaction processing
-   - Risk management engine
+    - RESTful API server built with Flask
+    - Advanced authentication and authorization
+    - Comprehensive compliance monitoring
+    - Real-time transaction processing
+    - Risk management engine
 
 2. **Frontend Application** (`/frontend/`)
-   - Professional React-based user interface
-   - Real-time data visualization
-   - Advanced trading interface
-   - Portfolio management dashboard
-   - Responsive design for all devices
+    - Professional React-based user interface
+    - Real-time data visualization
+    - Advanced trading interface
+    - Portfolio management dashboard
+    - Responsive design for all devices
 
 3. **Blockchain Integration** (`/blockchain/`)
-   - Smart contract implementations
-   - Decentralized transaction verification
-   - Immutable audit trails
-   - Cross-chain compatibility
+    - Smart contract implementations
+    - Decentralized transaction verification
+    - Immutable audit trails
+    - Cross-chain compatibility
 
 4. **Data Analytics** (`/data-analysis/`)
-   - Advanced portfolio analytics
-   - Risk assessment algorithms
-   - Performance attribution analysis
-   - Predictive modeling capabilities
+    - Advanced portfolio analytics
+    - Risk assessment algorithms
+    - Performance attribution analysis
+    - Predictive modeling capabilities
 
 ### System Architecture Diagram
 
@@ -208,78 +208,78 @@ Before installing BlockGuardian, ensure you have the following prerequisites:
 
 1. **Clone the Repository**
 
-   ```bash
-   git clone https://github.com/abrar2030/BlockGuardian.git
-   cd BlockGuardian/code/backend
-   ```
+    ```bash
+    git clone https://github.com/abrar2030/BlockGuardian.git
+    cd BlockGuardian/code/backend
+    ```
 
 2. **Create Virtual Environment**
 
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
+    ```bash
+    python -m venv venv
+    source venv/bin/activate  # On Windows: venv\Scripts\activate
+    ```
 
 3. **Install Dependencies**
 
-   ```bash
-   pip install -r requirements.txt
-   ```
+    ```bash
+    pip install -r requirements.txt
+    ```
 
 4. **Environment Configuration**
 
-   ```bash
-   cp .env.example .env
-   # Edit .env file with your configuration
-   ```
+    ```bash
+    cp .env.example .env
+    # Edit .env file with your configuration
+    ```
 
 5. **Database Setup**
 
-   ```bash
-   # Create database
-   createdb blockguardian
+    ```bash
+    # Create database
+    createdb blockguardian
 
-   # Run migrations
-   python manage.py db upgrade
+    # Run migrations
+    python manage.py db upgrade
 
-   # Seed initial data
-   python manage.py seed
-   ```
+    # Seed initial data
+    python manage.py seed
+    ```
 
 6. **Start Backend Server**
-   ```bash
-   python run.py
-   ```
+    ```bash
+    python run.py
+    ```
 
 ### Frontend Setup
 
 1. **Navigate to Frontend Directory**
 
-   ```bash
-   cd ../frontend
-   ```
+    ```bash
+    cd ../frontend
+    ```
 
 2. **Install Dependencies**
 
-   ```bash
-   npm install
-   # or
-   yarn install
-   ```
+    ```bash
+    npm install
+    # or
+    yarn install
+    ```
 
 3. **Environment Configuration**
 
-   ```bash
-   cp .env.local.example .env.local
-   # Edit .env.local with your configuration
-   ```
+    ```bash
+    cp .env.local.example .env.local
+    # Edit .env.local with your configuration
+    ```
 
 4. **Start Development Server**
-   ```bash
-   npm run dev
-   # or
-   yarn dev
-   ```
+    ```bash
+    npm run dev
+    # or
+    yarn dev
+    ```
 
 ### Docker Deployment
 
@@ -308,9 +308,9 @@ Authenticate user and create session.
 
 ```json
 {
-  "email": "user@example.com",
-  "password": "securepassword",
-  "mfa_token": "123456"
+    "email": "user@example.com",
+    "password": "securepassword",
+    "mfa_token": "123456"
 }
 ```
 
@@ -318,14 +318,14 @@ Authenticate user and create session.
 
 ```json
 {
-  "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
-  "refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
-  "user": {
-    "id": "uuid",
-    "email": "user@example.com",
-    "first_name": "John",
-    "last_name": "Doe"
-  }
+    "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+    "refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+    "user": {
+        "id": "uuid",
+        "email": "user@example.com",
+        "first_name": "John",
+        "last_name": "Doe"
+    }
 }
 ```
 
@@ -364,10 +364,10 @@ Create new portfolio.
 
 ```json
 {
-  "name": "Conservative Portfolio",
-  "description": "Low-risk investment portfolio",
-  "risk_level": "conservative",
-  "benchmark_symbol": "SPY"
+    "name": "Conservative Portfolio",
+    "description": "Low-risk investment portfolio",
+    "risk_level": "conservative",
+    "benchmark_symbol": "SPY"
 }
 ```
 
@@ -381,12 +381,12 @@ Place new order.
 
 ```json
 {
-  "portfolio_id": "uuid",
-  "asset_symbol": "AAPL",
-  "order_type": "market",
-  "order_side": "buy",
-  "quantity": 100,
-  "time_in_force": "day"
+    "portfolio_id": "uuid",
+    "asset_symbol": "AAPL",
+    "order_type": "market",
+    "order_side": "buy",
+    "quantity": 100,
+    "time_in_force": "day"
 }
 ```
 
@@ -425,13 +425,13 @@ The `Dashboard` component provides a comprehensive overview of user portfolios w
 **Usage:**
 
 ```jsx
-import Dashboard from "./components/Dashboard";
+import Dashboard from './components/Dashboard';
 
 <Dashboard
-  user={user}
-  portfolios={portfolios}
-  transactions={transactions}
-  marketData={marketData}
+    user={user}
+    portfolios={portfolios}
+    transactions={transactions}
+    marketData={marketData}
 />;
 ```
 
@@ -450,13 +450,13 @@ The `PortfolioManager` component offers advanced portfolio management capabiliti
 **Usage:**
 
 ```jsx
-import PortfolioManager from "./components/PortfolioManager";
+import PortfolioManager from './components/PortfolioManager';
 
 <PortfolioManager
-  portfolios={portfolios}
-  onPortfolioUpdate={handleUpdate}
-  onRebalance={handleRebalance}
-  onCreatePortfolio={handleCreate}
+    portfolios={portfolios}
+    onPortfolioUpdate={handleUpdate}
+    onRebalance={handleRebalance}
+    onCreatePortfolio={handleCreate}
 />;
 ```
 
@@ -475,14 +475,14 @@ The `TradingInterface` component provides professional trading capabilities:
 **Usage:**
 
 ```jsx
-import TradingInterface from "./components/TradingInterface";
+import TradingInterface from './components/TradingInterface';
 
 <TradingInterface
-  user={user}
-  portfolios={portfolios}
-  marketData={marketData}
-  onPlaceOrder={handlePlaceOrder}
-  onCancelOrder={handleCancelOrder}
+    user={user}
+    portfolios={portfolios}
+    marketData={marketData}
+    onPlaceOrder={handlePlaceOrder}
+    onCancelOrder={handleCancelOrder}
 />;
 ```
 

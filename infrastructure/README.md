@@ -329,34 +329,6 @@ kubectl top pods
 curl http://prometheus:9090/metrics
 ```
 
-### Support
-
-For technical support and questions:
-
-- **Documentation**: Check the `/docs` directory
-- **Logs**: Review deployment and application logs
-- **Monitoring**: Check Grafana dashboards
-- **Security Team**: Contact for security-related issues
-
-## Contributing
-
-### Development Workflow
-
-1. Create feature branch
-2. Make changes with tests
-3. Run security scans
-4. Submit pull request
-5. Peer review required
-6. Automated testing
-7. Merge to main
-
-### Security Requirements
-
-- All changes must pass security scans
-- Compliance validation required
-- Security team review for security changes
-- Documentation updates required
-
 ## License
 
 This infrastructure code is proprietary and confidential. Unauthorized access, use, or distribution is prohibited.
@@ -378,5 +350,3 @@ This infrastructure code is proprietary and confidential. Unauthorized access, u
 - Basic monitoring
 
 ---
-
-**Security Notice**: This infrastructure contains financial-grade security controls. All access is logged and monitored. Unauthorized access attempts will be reported to appropriate authorities.

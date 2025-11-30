@@ -3,12 +3,16 @@ pragma solidity ^0.8.0;
 
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
+import '@openzeppelin/contracts/utils/math/SafeMath.sol';
 
 /**
  * @title TokenizedAsset
  * @dev ERC20 token representing a tokenized real-world asset
+ * Implements asset-specific metadata, valuation, and a transfer fee mechanism.
  */
 contract TokenizedAsset is ERC20, Ownable {
+    using SafeMath for uint256;
+
     // Asset details
     string public assetSymbol;
     string public assetName;
@@ -27,12 +31,15 @@ contract TokenizedAsset is ERC20, Ownable {
 
     // Trading parameters
     bool public tradingEnabled;
-    uint256 public tradingFee; // Basis points
+    uint256 public tradingFee; // Basis points (max 500 = 5%)
+    address public feeCollector;
 
     // Events
     event AssetRevalued(uint256 oldValue, uint256 newValue, uint256 timestamp);
     event TradingStatusChanged(bool enabled);
     event PerformanceUpdated(int256 ytdReturn, uint256 timestamp);
+    event TradingFeeUpdated(uint256 newFee);
+    event FeeCollectorUpdated(address newFeeCollector);
 
     /**
      * @dev Constructor
@@ -41,10 +48,11 @@ contract TokenizedAsset is ERC20, Ownable {
      * @param _assetSymbol Underlying asset symbol
      * @param _assetName Underlying asset name
      * @param _assetType Type of asset
-     * @param _initialSupply Initial token supply
+     * @param _initialSupply Initial token supply (in base units)
      * @param _initialValue Initial asset value in USD cents
      * @param _description Asset description
      * @param _issuer Asset issuer
+     * @param _feeCollector Address to collect fees
      */
     constructor(
         string memory _name,
@@ -55,8 +63,11 @@ contract TokenizedAsset is ERC20, Ownable {
         uint256 _initialSupply,
         uint256 _initialValue,
         string memory _description,
-        string memory _issuer
+        string memory _issuer,
+        address _feeCollector
     ) ERC20(_name, _symbol) Ownable(msg.sender) {
+        require(_feeCollector != address(0), 'Invalid fee collector');
+
         assetSymbol = _assetSymbol;
         assetName = _assetName;
         assetType = _assetType;
@@ -67,16 +78,20 @@ contract TokenizedAsset is ERC20, Ownable {
         lastValuationDate = block.timestamp;
         tradingEnabled = false;
         tradingFee = 25; // Default 0.25% fee
+        feeCollector = _feeCollector;
 
         // Mint initial supply to contract creator
-        _mint(msg.sender, _initialSupply * 10 ** decimals());
+        _mint(msg.sender, _initialSupply.mul(10**decimals()));
     }
 
+    // --- Asset Management (Owner Only) ---
+
     /**
-     * @dev Update asset value
+     * @dev Update asset value (Called by a trusted oracle)
      * @param _newValue New asset value in USD cents
      */
     function updateAssetValue(uint256 _newValue) external onlyOwner {
+        require(_newValue > 0, 'Asset value must be positive');
         uint256 oldValue = assetValue;
         assetValue = _newValue;
         lastValuationDate = block.timestamp;
@@ -106,11 +121,22 @@ contract TokenizedAsset is ERC20, Ownable {
 
     /**
      * @dev Set trading fee
-     * @param _fee Trading fee in basis points
+     * @param _fee Trading fee in basis points (max 500)
      */
     function setTradingFee(uint256 _fee) external onlyOwner {
-        require(_fee <= 500, 'Fee too high'); // Max 5%
+        require(_fee <= 500, 'Fee too high (Max 5%)');
         tradingFee = _fee;
+        emit TradingFeeUpdated(_fee);
+    }
+
+    /**
+     * @dev Set fee collector
+     * @param _feeCollector Fee collector address
+     */
+    function setFeeCollector(address _feeCollector) external onlyOwner {
+        require(_feeCollector != address(0), 'Invalid fee collector');
+        feeCollector = _feeCollector;
+        emit FeeCollectorUpdated(_feeCollector);
     }
 
     /**
@@ -124,41 +150,62 @@ contract TokenizedAsset is ERC20, Ownable {
     }
 
     /**
-     * @dev Mint new tokens
+     * @dev Mint new tokens (Owner Only)
      * @param _to Recipient address
-     * @param _amount Amount to mint
+     * @param _amount Amount to mint (in base units)
      */
     function mint(address _to, uint256 _amount) external onlyOwner {
         _mint(_to, _amount);
     }
 
     /**
-     * @dev Burn tokens
-     * @param _amount Amount to burn
+     * @dev Burn tokens (Allows any token holder to burn their own tokens)
+     * @param _amount Amount to burn (in base units)
      */
     function burn(uint256 _amount) external {
         _burn(msg.sender, _amount);
     }
 
-    /**
-     * @dev Override transfer function to enforce trading rules
-     */
-    function _transfer(address sender, address recipient, uint256 amount) internal override {
-        require(tradingEnabled || sender == owner() || recipient == owner(), 'Trading not enabled');
+    // --- Core ERC20 Overrides ---
 
-        // Calculate fee if sender is not owner
-        if (sender != owner() && tradingFee > 0) {
-            uint256 fee = (amount * tradingFee) / 10000;
-            super._transfer(sender, owner(), fee);
-            super._transfer(sender, recipient, amount - fee);
+    /**
+     * @dev Override _transfer function to enforce trading rules and collect fees
+     */
+    function _transfer(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) internal override {
+        // Allow transfers by owner/fee collector regardless of trading status
+        if (sender == owner() || recipient == owner() || sender == feeCollector || recipient == feeCollector) {
+            super._transfer(sender, recipient, amount);
+            return;
+        }
+
+        // Enforce trading enabled for all other transfers
+        require(tradingEnabled, 'Trading is currently disabled for this asset');
+
+        // Calculate fee if trading fee is set
+        if (tradingFee > 0) {
+            uint256 fee = amount.mul(tradingFee).div(10000);
+            uint256 amountAfterFee = amount.sub(fee);
+
+            // 1. Transfer fee to fee collector
+            super._transfer(sender, feeCollector, fee);
+
+            // 2. Transfer remaining amount to recipient
+            super._transfer(sender, recipient, amountAfterFee);
         } else {
+            // No fee, standard transfer
             super._transfer(sender, recipient, amount);
         }
     }
 
+    // --- View Functions ---
+
     /**
      * @dev Get asset details
-     * @return Asset details as a struct
+     * @return Asset details as a tuple
      */
     function getAssetDetails()
         external
@@ -175,7 +222,8 @@ contract TokenizedAsset is ERC20, Ownable {
             int256 _yearToDateReturn,
             uint256 _lastValuationDate,
             bool _tradingEnabled,
-            uint256 _tradingFee
+            uint256 _tradingFee,
+            address _feeCollector
         )
     {
         return (
@@ -190,7 +238,8 @@ contract TokenizedAsset is ERC20, Ownable {
             yearToDateReturn,
             lastValuationDate,
             tradingEnabled,
-            tradingFee
+            tradingFee,
+            feeCollector
         );
     }
 }

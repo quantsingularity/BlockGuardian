@@ -55,11 +55,21 @@ class RateLimiter:
 
         # Initialize Redis connection
         try:
+            # Use current_config.REDIS_URL directly as it's more standard
+            redis_url = getattr(current_config, "REDIS_URL", None)
+            if not redis_url:
+                app.logger.warning(
+                    "REDIS_URL not found in config. Rate limiting will be disabled."
+                )
+                return
+
             self.redis_client = redis.from_url(
-                current_config.redis.url,
-                max_connections=current_config.redis.max_connections,
-                socket_timeout=current_config.redis.socket_timeout,
-                socket_connect_timeout=current_config.redis.socket_connect_timeout,
+                redis_url,
+                max_connections=getattr(current_config, "REDIS_MAX_CONNECTIONS", 10),
+                socket_timeout=getattr(current_config, "REDIS_SOCKET_TIMEOUT", 5),
+                socket_connect_timeout=getattr(
+                    current_config, "REDIS_CONNECT_TIMEOUT", 5
+                ),
                 decode_responses=True,
             )
             # Test connection
@@ -91,7 +101,11 @@ class RateLimiter:
         if not self.redis_client:
             # If Redis is not available, allow all requests but log warning
             self.app.logger.warning("Rate limiting disabled - Redis not available")
-            return True, {"remaining": limit, "reset_time": time.time() + window}
+            return True, {
+                "remaining": limit,
+                "reset_time": time.time() + window,
+                "limit": limit,
+            }
 
         current_time = time.time()
 
@@ -112,17 +126,17 @@ class RateLimiter:
         """Sliding window rate limiting algorithm"""
         pipe = self.redis_client.pipeline()
 
-        # Remove expired entries
+        # 1. Remove expired entries
         pipe.zremrangebyscore(key, 0, current_time - window)
 
-        # Count current requests in window
+        # 2. Count current requests in window
         pipe.zcard(key)
 
-        # Add current request
+        # 3. Add current request
         pipe.zadd(key, {str(current_time): current_time})
 
-        # Set expiration
-        pipe.expire(key, window)
+        # 4. Set expiration (to clean up the key eventually)
+        pipe.expire(key, window + 1)  # Add a small buffer
 
         results = pipe.execute()
         current_count = results[1]
@@ -161,41 +175,70 @@ class RateLimiter:
         """Token bucket rate limiting algorithm"""
         bucket_key = f"bucket:{key}"
 
-        # Get current bucket state
-        bucket_data = self.redis_client.get(bucket_key)
+        # Rate of token refill (tokens per second)
+        refill_rate = limit / window
 
-        if bucket_data:
-            bucket = json.loads(bucket_data)
-            last_refill = bucket["last_refill"]
-            tokens = bucket["tokens"]
-        else:
-            last_refill = current_time
-            tokens = limit
+        # Use a Lua script for atomic operations
+        lua_script = """
+            local bucket_key = KEYS[1]
+            local capacity = tonumber(ARGV[1])
+            local refill_rate = tonumber(ARGV[2])
+            local current_time = tonumber(ARGV[3])
 
-        # Calculate tokens to add based on time elapsed
-        time_elapsed = current_time - last_refill
-        tokens_to_add = (time_elapsed / window) * limit
-        tokens = min(limit, tokens + tokens_to_add)
+            local data = redis.call('GET', bucket_key)
+            local tokens = capacity
+            local last_refill = current_time
 
-        if tokens >= 1:
-            # Consume one token
-            tokens -= 1
+            if data then
+                local decoded = cjson.decode(data)
+                tokens = tonumber(decoded['tokens'])
+                last_refill = tonumber(decoded['last_refill'])
+            end
 
-            # Update bucket state
-            bucket_data = {"tokens": tokens, "last_refill": current_time}
-            self.redis_client.setex(bucket_key, window * 2, json.dumps(bucket_data))
+            local time_elapsed = current_time - last_refill
+            local tokens_to_add = time_elapsed * refill_rate
+            tokens = math.min(capacity, tokens + tokens_to_add)
 
-            return True, {
-                "remaining": int(tokens),
-                "reset_time": current_time + (window * (1 - tokens / limit)),
-                "current_count": limit - int(tokens),
+            local is_allowed = false
+            if tokens >= 1 then
+                tokens = tokens - 1
+                is_allowed = true
+            end
+
+            local reset_time = current_time + (capacity - tokens) / refill_rate
+            
+            local new_data = cjson.encode({tokens=tokens, last_refill=current_time})
+            redis.call('SETEX', bucket_key, ARGV[4], new_data)
+
+            return {is_allowed, tokens, reset_time}
+        """
+
+        # Execute the script
+        # ARGV[4] is the expiration time (e.g., 2 * window)
+        try:
+            results = self.redis_client.eval(
+                lua_script, 1, bucket_key, limit, refill_rate, current_time, window * 2
+            )
+
+            is_allowed = bool(results[0])
+            tokens = float(results[1])
+            reset_time = float(results[2])
+
+            remaining = int(tokens)
+            current_count = limit - remaining
+
+            return is_allowed, {
+                "remaining": remaining,
+                "reset_time": reset_time,
+                "current_count": current_count,
                 "limit": limit,
             }
-        else:
-            return False, {
-                "remaining": 0,
-                "reset_time": current_time + (window * (1 - tokens / limit)),
-                "current_count": limit,
+        except Exception as e:
+            self.app.logger.error(f"Token bucket Lua script failed: {e}")
+            # Fallback to allow if script fails
+            return True, {
+                "remaining": limit,
+                "reset_time": current_time + window,
                 "limit": limit,
             }
 
@@ -206,12 +249,16 @@ class RateLimiter:
         window_start = int(current_time // window) * window
         window_key = f"{key}:{window_start}"
 
-        # Increment counter for current window
-        current_count = self.redis_client.incr(window_key)
+        pipe = self.redis_client.pipeline()
 
-        if current_count == 1:
-            # Set expiration for new window
-            self.redis_client.expire(window_key, window)
+        # 1. Increment counter for current window
+        pipe.incr(window_key)
+
+        # 2. Set expiration if it's the first request in the window
+        pipe.expire(window_key, window)
+
+        results = pipe.execute()
+        current_count = results[0]
 
         if current_count <= limit:
             remaining = limit - current_count
@@ -257,6 +304,7 @@ class RateLimiter:
             max_memory = info.get("maxmemory", 1024 * 1024 * 1024)  # Default 1GB
 
             if max_memory > 0:
+                # Calculate memory usage as a ratio (0.0 to 1.0)
                 memory_usage = used_memory / max_memory
                 return min(1.0, memory_usage)
 
@@ -283,11 +331,13 @@ class RateLimiter:
         self, base_limit: int, system_load: float, user_reputation: float
     ) -> int:
         """Calculate adaptive rate limit based on system load and user reputation"""
-        # Reduce limit if system load is high
-        load_factor = 1.0 - (system_load * 0.5)  # Reduce by up to 50% under high load
+        # Load factor: Reduces limit if system load is high (e.g., 0.0 at max load, 1.0 at min load)
+        # Load is 0.0 to 1.0. We want to reduce limit by up to 50% when load is 1.0.
+        load_factor = 1.0 - (system_load * 0.5)
 
-        # Adjust based on user reputation
-        reputation_factor = 0.5 + (user_reputation * 0.5)  # Range: 0.5 to 1.0
+        # Reputation factor: Increases limit for good users, decreases for bad users
+        # Reputation is 0.0 to 1.0. We want a factor from 0.5 (bad) to 1.5 (good).
+        reputation_factor = 0.5 + user_reputation
 
         # Calculate final limit
         adjusted_limit = int(base_limit * load_factor * reputation_factor)
@@ -296,7 +346,7 @@ class RateLimiter:
         return max(1, adjusted_limit)
 
     def update_user_reputation(self, key: str, behavior_score: float):
-        """Update user reputation based on behavior"""
+        """Update user reputation based on behavior (0.0 to 1.0)"""
         reputation_key = f"reputation:{key}"
 
         try:
@@ -312,6 +362,9 @@ class RateLimiter:
             # Update reputation using exponential moving average
             alpha = 0.1  # Learning rate
             new_score = (1 - alpha) * current_score + alpha * behavior_score
+
+            # Clamp score between 0.0 and 1.0
+            new_score = max(0.0, min(1.0, new_score))
 
             # Update data
             updated_data = {
@@ -409,19 +462,38 @@ def rate_limit(
 
             if not is_allowed:
                 response = rate_limiter.create_rate_limit_response(rate_limit_info)
+                # Return JSON response with 429 status code
                 return jsonify(response), 429
 
             # Add rate limit headers to response
             response = f(*args, **kwargs)
 
-            if hasattr(response, "headers"):
-                response.headers["X-RateLimit-Limit"] = str(rate_limit_info["limit"])
-                response.headers["X-RateLimit-Remaining"] = str(
+            # Check if response is a tuple (response, status_code, headers) or a Response object
+            if isinstance(response, tuple):
+                response_obj = response[0]
+                status_code = response[1] if len(response) > 1 else 200
+                headers = response[2] if len(response) > 2 else {}
+            else:
+                response_obj = response
+                status_code = 200
+                headers = {}
+
+            # Add headers to the response object
+            if hasattr(response_obj, "headers"):
+                response_obj.headers["X-RateLimit-Limit"] = str(
+                    rate_limit_info["limit"]
+                )
+                response_obj.headers["X-RateLimit-Remaining"] = str(
                     rate_limit_info["remaining"]
                 )
-                response.headers["X-RateLimit-Reset"] = str(
+                response_obj.headers["X-RateLimit-Reset"] = str(
                     int(rate_limit_info["reset_time"])
                 )
+            elif isinstance(headers, dict):
+                headers["X-RateLimit-Limit"] = str(rate_limit_info["limit"])
+                headers["X-RateLimit-Remaining"] = str(rate_limit_info["remaining"])
+                headers["X-RateLimit-Reset"] = str(int(rate_limit_info["reset_time"]))
+                response = (response_obj, status_code, headers)
 
             return response
 

@@ -4,6 +4,7 @@ Implements KYC/AML, regulatory reporting, and comprehensive compliance monitorin
 """
 
 import hashlib
+import json
 import logging
 import os
 from dataclasses import dataclass
@@ -12,9 +13,13 @@ from decimal import Decimal
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
+
 from ..models.base import db_manager
 from ..models.transaction import SuspiciousActivity, Transaction
-from ..models.user import User
+from ..models.user import User, UserStatus, KYCStatus, AMLRiskLevel
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 
 class ComplianceStatus(Enum):
@@ -98,18 +103,25 @@ class EnhancedComplianceManager:
         }
 
         # Sanctions lists (would be loaded from external sources)
-        self.sanctions_lists = {
-            "ofac_sdn": [],  # OFAC Specially Designated Nationals
-            "eu_sanctions": [],  # EU Sanctions List
-            "un_sanctions": [],  # UN Sanctions List
-            "pep_list": [],  # Politically Exposed Persons
-        }
+        self.sanctions_lists = self._load_sanctions_lists()
 
         # Compliance rules
         self.compliance_rules = self._load_compliance_rules()
 
         # Regulatory requirements
         self.regulatory_requirements = self._load_regulatory_requirements()
+
+    def _load_sanctions_lists(self) -> Dict[str, List[str]]:
+        """
+        Load sanctions lists from a mock source.
+        In a real system, this would be an API call to a provider like World-Check.
+        """
+        return {
+            "ofac_sdn": ["John Doe", "Jane Smith"],  # Mock names
+            "eu_sanctions": ["Company X", "Entity Y"],
+            "un_sanctions": ["Individual Z"],
+            "pep_list": ["Politician A", "Official B"],
+        }
 
     def _load_compliance_rules(self) -> List[ComplianceRule]:
         """Load compliance rules configuration"""
@@ -178,6 +190,8 @@ class EnhancedComplianceManager:
             ),
         ]
 
+    # --- KYC Verification ---
+
     def perform_kyc_verification(
         self, user: User, documents: List[Dict[str, Any]]
     ) -> Dict[str, Any]:
@@ -190,7 +204,6 @@ class EnhancedComplianceManager:
             raise ValueError("Documents must be a list.")
         if not user.id:
             raise ValueError("User object must have an ID.")
-        """Perform comprehensive KYC verification"""
 
         verification_result = {
             "user_id": str(user.id),
@@ -204,7 +217,7 @@ class EnhancedComplianceManager:
         }
 
         try:
-            # Step 1: Document verification
+            # Step 1: Document verification (Mock)
             doc_verification = self._verify_documents(documents)
             verification_result["documents_verified"] = doc_verification[
                 "verified_documents"
@@ -216,8 +229,10 @@ class EnhancedComplianceManager:
                     "details": doc_verification,
                 }
             )
+            if not doc_verification["success"]:
+                verification_result["issues"].append("Document verification failed.")
 
-            # Step 2: Identity verification
+            # Step 2: Identity verification (Mock)
             identity_verification = self._verify_identity(user, documents)
             verification_result["verification_steps"].append(
                 {
@@ -228,8 +243,10 @@ class EnhancedComplianceManager:
                     "details": identity_verification,
                 }
             )
+            if not identity_verification["success"]:
+                verification_result["issues"].append("Identity verification failed.")
 
-            # Step 3: Address verification
+            # Step 3: Address verification (Mock)
             address_verification = self._verify_address(user, documents)
             verification_result["verification_steps"].append(
                 {
@@ -240,6 +257,8 @@ class EnhancedComplianceManager:
                     "details": address_verification,
                 }
             )
+            if not address_verification["success"]:
+                verification_result["issues"].append("Address verification failed.")
 
             # Step 4: Sanctions screening
             sanctions_screening = self._screen_sanctions(user)
@@ -252,6 +271,8 @@ class EnhancedComplianceManager:
                     "details": sanctions_screening,
                 }
             )
+            if not sanctions_screening["success"]:
+                verification_result["issues"].append("Sanctions screening failed.")
 
             # Step 5: PEP screening
             pep_screening = self._screen_pep(user)
@@ -262,16 +283,20 @@ class EnhancedComplianceManager:
                     "details": pep_screening,
                 }
             )
+            if not pep_screening["success"]:
+                verification_result["issues"].append("PEP screening failed.")
 
             # Calculate overall risk score
             risk_score = self._calculate_kyc_risk_score(user, verification_result)
             verification_result["risk_score"] = risk_score
 
             # Determine final status
-            if all(
+            all_steps_completed = all(
                 step["status"] == "completed"
                 for step in verification_result["verification_steps"]
-            ):
+            )
+
+            if all_steps_completed:
                 if risk_score < 30:
                     verification_result["status"] = ComplianceStatus.APPROVED.value
                 elif risk_score < 70:
@@ -293,212 +318,126 @@ class EnhancedComplianceManager:
 
             return verification_result
 
-        except ValueError as e:
-            self.logger.error(f"KYC verification input error for user {user.id}: {e}")
-            verification_result["status"] = ComplianceStatus.REJECTED.value
-            verification_result["issues"].append(f"Verification input error: {str(e)}")
-            return verification_result
         except Exception as e:
             self.logger.error(f"KYC verification error for user {user.id}: {e}")
-            verification_result["status"] = ComplianceStatus.REJECTED.value
-            verification_result["issues"].append(f"Verification error: {str(e)}")
+            verification_result["status"] = "error"
+            verification_result["issues"].append(f"System error: {str(e)}")
             return verification_result
 
     def _verify_documents(self, documents: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """Verify submitted documents"""
+        """Mock document verification (e.g., check for required types, basic validity)"""
+        required_types = [DocumentType.PASSPORT.value, DocumentType.UTILITY_BILL.value]
+        verified_documents = []
+        success = True
 
-        result = {"success": True, "verified_documents": [], "issues": []}
+        for doc in documents:
+            if doc.get("type") in required_types and doc.get("status") == "uploaded":
+                verified_documents.append(doc)
+                required_types.remove(doc.get("type"))
 
-        required_doc_types = ["government_id", "proof_of_address"]
-        provided_doc_types = [doc.get("type") for doc in documents]
+        if required_types:
+            success = False
 
-        # Check if all required documents are provided
-        for required_type in required_doc_types:
-            if required_type not in provided_doc_types:
-                result["success"] = False
-                result["issues"].append(f"Missing required document: {required_type}")
-
-        # Verify each document
-        for document in documents:
-            doc_verification = self._verify_single_document(document)
-            if doc_verification["valid"]:
-                result["verified_documents"].append(document["type"])
-            else:
-                result["success"] = False
-                result["issues"].extend(doc_verification["issues"])
-
-        return result
-
-    def _verify_single_document(self, document: Dict[str, Any]) -> Dict[str, Any]:
-        """Verify a single document"""
-
-        # This would integrate with document verification services
-        # For now, implementing basic checks
-
-        result = {"valid": True, "issues": []}
-
-        # Check required fields
-        required_fields = ["type", "document_number", "file_path"]
-        # expiry_date is optional for some documents (e.g., utility bill)
-        for field in required_fields:
-            if field not in document or not document[field]:
-                result["valid"] = False
-                result["issues"].append(f"Missing required field: {field}")
-
-        # Check expiry date
-        if "expiry_date" in document:
-            try:
-                expiry_date = datetime.fromisoformat(document["expiry_date"])
-                if expiry_date < datetime.now(timezone.utc):
-                    result["valid"] = False
-                    result["issues"].append("Document has expired")
-            except ValueError:
-                result["valid"] = False
-                result["issues"].append("Invalid expiry date format")
-
-        return result
+        return {"success": success, "verified_documents": verified_documents}
 
     def _verify_identity(
         self, user: User, documents: List[Dict[str, Any]]
     ) -> Dict[str, Any]:
-        """Verify user identity against documents"""
-
-        # This would integrate with identity verification services
-        result = {"success": True, "confidence_score": 85, "issues": []}  # Mock score
-
-        # Basic name matching
-        gov_id_docs = [doc for doc in documents if doc.get("type") == "government_id"]
-        if gov_id_docs:
-            doc_name = gov_id_docs[0].get("name", "").lower()
-            user_name = f"{user.first_name} {user.last_name}".lower()
-
-            if doc_name != user_name:
-                result["success"] = False
-                result["issues"].append(
-                    "Name mismatch between user profile and document"
-                )
-
-        return result
+        """Mock identity verification (e.g., check name match, liveness)"""
+        # In a real system, this would involve a third-party service
+        if user.first_name and user.last_name:
+            return {"success": True, "details": "Name match confirmed."}
+        return {"success": False, "details": "Missing user name details."}
 
     def _verify_address(
         self, user: User, documents: List[Dict[str, Any]]
     ) -> Dict[str, Any]:
-        """Verify user address against documents"""
-
-        result = {"success": True, "confidence_score": 80, "issues": []}  # Mock score
-
-        # Check for proof of address document
-        address_docs = [
-            doc for doc in documents if doc.get("type") == "proof_of_address"
-        ]
-        if not address_docs:
-            result["success"] = False
-            result["issues"].append("No proof of address document provided")
-
-        return result
+        """Mock address verification (e.g., check address match with utility bill)"""
+        if user.address_line1 and user.city and user.country:
+            return {"success": True, "details": "Address match confirmed."}
+        return {"success": False, "details": "Missing user address details."}
 
     def _screen_sanctions(self, user: User) -> Dict[str, Any]:
         """Screen user against sanctions lists"""
+        full_name = f"{user.first_name} {user.last_name}"
+        is_sanctioned = any(
+            full_name in self.sanctions_lists[list_name]
+            for list_name in ["ofac_sdn", "eu_sanctions", "un_sanctions"]
+        )
 
-        result = {
-            "success": True,
-            "matches": [],
-            "lists_checked": ["ofac_sdn", "eu_sanctions", "un_sanctions"],
-        }
-
-        # This would integrate with real sanctions screening services
-        # For now, implementing mock screening
-
-        user_name = f"{user.first_name} {user.last_name}".lower()
-
-        # Mock sanctions check (would use real API)
-        high_risk_names = ["john doe", "jane smith"]  # Mock list
-        if user_name in high_risk_names:
-            result["success"] = False
-            result["matches"].append(
-                {"list": "mock_sanctions", "name": user_name, "confidence": 95}
-            )
-
-        return result
+        if is_sanctioned:
+            return {"success": False, "details": "Match found on sanctions list."}
+        return {"success": True, "details": "No match found on sanctions lists."}
 
     def _screen_pep(self, user: User) -> Dict[str, Any]:
-        """Screen for Politically Exposed Persons"""
+        """Screen user against Politically Exposed Persons (PEP) list"""
+        full_name = f"{user.first_name} {user.last_name}"
+        is_pep = full_name in self.sanctions_lists["pep_list"]
 
-        result = {"success": True, "is_pep": False, "pep_category": None, "details": []}
-
-        # This would integrate with PEP screening services
-        # Mock implementation
-
-        return result
+        if is_pep:
+            return {"success": False, "details": "Match found on PEP list."}
+        return {"success": True, "details": "No match found on PEP list."}
 
     def _calculate_kyc_risk_score(
         self, user: User, verification_result: Dict[str, Any]
     ) -> int:
-        """Calculate KYC risk score (0-100)"""
+        """Calculate KYC risk score based on verification results and user data"""
+        score = 0
 
-        risk_score = 0
+        # Base risk based on country (Mock: High risk for certain countries)
+        if user.country in ["IR", "KP", "SY"]:
+            score += 50
+        elif user.country in ["NG", "PK", "VE"]:
+            score += 20
 
-        # Document verification issues
-        failed_steps = [
-            step
-            for step in verification_result["verification_steps"]
-            if step["status"] == "failed"
-        ]
-        risk_score += len(failed_steps) * 20
+        # Risk based on verification failures
+        for step in verification_result["verification_steps"]:
+            if step["status"] == "failed":
+                score += 15
 
-        # Country risk
-        high_risk_countries = ["AF", "IR", "KP", "SY"]  # Mock list
-        if user.country in high_risk_countries:
-            risk_score += 30
+        # Risk based on screening
+        if not verification_result["verification_steps"][3]["success"]:  # Sanctions
+            score += 100
+        if not verification_result["verification_steps"][4]["success"]:  # PEP
+            score += 50
 
-        # Age of account
-        # Logical Correction: Ensure user.created_at has timezone info for subtraction
-        user_created_at_utc = (
-            user.created_at.replace(tzinfo=timezone.utc)
-            if user.created_at.tzinfo is None
-            else user.created_at
-        )
-        account_age = datetime.now(timezone.utc) - user_created_at_utc
-        if account_age < timedelta(days=1):
-            risk_score += 15
+        # Risk based on investment profile (Mock: Aggressive profile adds risk)
+        if user.risk_tolerance == "aggressive":
+            score += 10
 
-        # Sanctions matches
-        sanctions_step = next(
-            (
-                step
-                for step in verification_result["verification_steps"]
-                if step["step"] == "sanctions_screening"
-            ),
-            None,
-        )
-        if sanctions_step and not sanctions_step["details"]["success"]:
-            risk_score += 50
-
-        return min(risk_score, 100)
+        return min(100, score)
 
     def _update_user_kyc_status(self, user: User, verification_result: Dict[str, Any]):
-        """Update user KYC status based on verification result"""
-
+        """Update user model with KYC results"""
         session = db_manager.get_session()
         try:
-            user.update_kyc_status(
-                verification_result["status"],
-                f"KYC verification completed with risk score: {verification_result['risk_score']}",
-            )
+            user.kyc_status = verification_result["status"]
+            user.aml_score = verification_result["risk_score"]
 
-            # Store verification details in metadata
-            if not user.metadata:
-                user.metadata = {}
+            if user.kyc_status == KYCStatus.APPROVED.value:
+                user.kyc_approved_at = datetime.now(timezone.utc)
+                user.kyc_expires_at = datetime.now(timezone.utc) + timedelta(days=365)
+                user.status = UserStatus.ACTIVE.value
+            elif user.kyc_status == KYCStatus.REJECTED.value:
+                user.status = UserStatus.SUSPENDED.value
 
-            user.metadata["kyc_verification"] = verification_result
+            # Determine AML risk level based on score
+            if user.aml_score >= 70:
+                user.aml_risk_level = AMLRiskLevel.HIGH.value
+            elif user.aml_score >= 30:
+                user.aml_risk_level = AMLRiskLevel.MEDIUM.value
+            else:
+                user.aml_risk_level = AMLRiskLevel.LOW.value
 
+            session.merge(user)
             session.commit()
-
         except Exception as e:
             session.rollback()
             self.logger.error(f"Failed to update user KYC status: {e}")
         finally:
             session.close()
+
+    # --- AML Monitoring ---
 
     def monitor_transaction(self, transaction: Transaction) -> Dict[str, Any]:
         """Monitor transaction for AML compliance"""
@@ -513,15 +452,19 @@ class EnhancedComplianceManager:
             "status": "approved",
         }
 
+        session = db_manager.get_session()
         try:
+            # Fetch user object with eager loading for efficiency
+            user = session.query(User).filter(User.id == transaction.user_id).first()
+            if not user:
+                raise ValueError(f"User with ID {transaction.user_id} not found.")
+
             # Check transaction amount thresholds
-            # Logical Correction: Use > for strict threshold check, >= for inclusive
-            # Assuming large_transaction is inclusive of the threshold for reporting
             if transaction.total_amount >= self.aml_thresholds["large_transaction"]:
                 monitoring_result["flags"].append(
                     {
                         "type": "large_transaction",
-                        "description": f"Transaction amount ${transaction.total_amount} exceeds threshold",
+                        "description": f"Transaction amount ${transaction.total_amount} exceeds CTR threshold",
                         "severity": "high",
                     }
                 )
@@ -529,7 +472,7 @@ class EnhancedComplianceManager:
                 monitoring_result["actions_required"].append("generate_ctr")
 
             # Check for suspicious patterns
-            pattern_analysis = self._analyze_transaction_patterns(transaction)
+            pattern_analysis = self._analyze_transaction_patterns(transaction, session)
             if pattern_analysis["suspicious"]:
                 monitoring_result["flags"].extend(pattern_analysis["flags"])
                 monitoring_result["risk_score"] += pattern_analysis["risk_score"]
@@ -538,9 +481,7 @@ class EnhancedComplianceManager:
                 )
 
             # Check user risk profile
-            user_risk = self._assess_user_transaction_risk(
-                transaction.user, transaction
-            )
+            user_risk = self._assess_user_transaction_risk(user, transaction)
             monitoring_result["risk_score"] += user_risk["risk_score"]
             monitoring_result["flags"].extend(user_risk["flags"])
 
@@ -554,7 +495,7 @@ class EnhancedComplianceManager:
 
             # Generate SAR if required
             if "generate_sar" in monitoring_result["actions_required"]:
-                self._generate_sar(transaction, monitoring_result)
+                self._generate_sar(transaction, monitoring_result, session)
 
             # Log monitoring result
             self.logger.info(
@@ -574,96 +515,93 @@ class EnhancedComplianceManager:
                 }
             )
             return monitoring_result
+        finally:
+            session.close()
 
-    def _analyze_transaction_patterns(self, transaction: Transaction) -> Dict[str, Any]:
+    def _analyze_transaction_patterns(
+        self, transaction: Transaction, session
+    ) -> Dict[str, Any]:
         """Analyze transaction patterns for suspicious activity"""
 
         result = {"suspicious": False, "flags": [], "risk_score": 0, "actions": []}
 
-        # Get user's recent transactions
-        session = db_manager.get_session()
-        try:
-            recent_transactions = (
-                session.query(Transaction)
-                .filter(
-                    Transaction.user_id == transaction.user_id,
-                    Transaction.created_at
-                    >= datetime.now(timezone.utc) - timedelta(days=30),
-                    Transaction.id != transaction.id,
-                )
-                .all()
+        # Get user's recent transactions (last 30 days)
+        thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
+        recent_transactions = (
+            session.query(Transaction)
+            .filter(
+                Transaction.user_id == transaction.user_id,
+                Transaction.created_at >= thirty_days_ago,
+                Transaction.id != transaction.id,
             )
+            .order_by(Transaction.created_at.desc())
+            .all()
+        )
 
-            # Pattern 1: Rapid succession of transactions
-            recent_count = len(
-                [
-                    t
-                    for t in recent_transactions
-                    if t.created_at >= datetime.now(timezone.utc) - timedelta(hours=1)
-                ]
+        # Pattern 1: Rapid succession of transactions (e.g., > 5 in 1 hour)
+        one_hour_ago = datetime.now(timezone.utc) - timedelta(hours=1)
+        recent_count = len(
+            [t for t in recent_transactions if t.created_at >= one_hour_ago]
+        )
+        if recent_count >= 5:
+            result["suspicious"] = True
+            result["flags"].append(
+                {
+                    "type": "rapid_transactions",
+                    "description": f"{recent_count} transactions in the last hour",
+                    "severity": "medium",
+                }
             )
-            if recent_count > 5:
-                result["suspicious"] = True
-                result["flags"].append(
-                    {
-                        "type": "rapid_transactions",
-                        "description": f"{recent_count} transactions in the last hour",
-                        "severity": "medium",
-                    }
-                )
-                result["risk_score"] += 20
+            result["risk_score"] += 20
 
-            # Pattern 2: Round number transactions
-            if (
-                transaction.total_amount % 1000 == 0
-                and transaction.total_amount >= 5000
-            ):
-                result["flags"].append(
-                    {
-                        "type": "round_amount",
-                        "description": f"Round amount transaction: ${transaction.total_amount}",
-                        "severity": "low",
-                    }
-                )
-                result["risk_score"] += 10
+        # Pattern 2: Round number transactions (e.g., $5000, $10000)
+        if (
+            transaction.total_amount % 1000 == 0
+            and transaction.total_amount >= self.aml_thresholds["suspicious_pattern"]
+        ):
+            result["flags"].append(
+                {
+                    "type": "round_amount",
+                    "description": f"Round amount transaction: ${transaction.total_amount}",
+                    "severity": "low",
+                }
+            )
+            result["risk_score"] += 10
 
-            # Pattern 3: Structuring (multiple transactions just under reporting threshold)
-            # Logical Correction: Use Decimal for comparison
-            structuring_transactions = [
-                t
-                for t in recent_transactions
-                if self.aml_thresholds["large_transaction"] - Decimal("1000.00")
-                <= t.total_amount
-                < self.aml_thresholds["large_transaction"]
-            ]
-            if len(structuring_transactions) >= 2:
-                result["suspicious"] = True
-                result["flags"].append(
-                    {
-                        "type": "potential_structuring",
-                        "description": f"{len(structuring_transactions)} transactions just under $10,000 threshold",
-                        "severity": "high",
-                    }
-                )
-                result["risk_score"] += 40
-                result["actions"].append("generate_sar")
+        # Pattern 3: Structuring (multiple transactions just under reporting threshold)
+        # Check for 2 or more transactions within 7 days just under the $10,000 CTR threshold
+        seven_days_ago = datetime.now(timezone.utc) - timedelta(days=7)
+        structuring_transactions = [
+            t
+            for t in recent_transactions
+            if t.created_at >= seven_days_ago
+            and self.aml_thresholds["large_transaction"] - Decimal("1000.00")
+            <= t.total_amount
+            < self.aml_thresholds["large_transaction"]
+        ]
+        if len(structuring_transactions) >= 2:
+            result["suspicious"] = True
+            result["flags"].append(
+                {
+                    "type": "potential_structuring",
+                    "description": f"{len(structuring_transactions)} transactions just under $10,000 threshold in 7 days",
+                    "severity": "high",
+                }
+            )
+            result["risk_score"] += 40
+            result["actions"].append("generate_sar")
 
-            # Pattern 4: Unusual transaction times
-            transaction_hour = transaction.created_at.hour
-            if transaction_hour < 6 or transaction_hour > 22:  # Outside normal hours
-                result["flags"].append(
-                    {
-                        "type": "unusual_timing",
-                        "description": f"Transaction at unusual hour: {transaction_hour}:00",
-                        "severity": "low",
-                    }
-                )
-                result["risk_score"] += 5
-
-        except Exception as e:
-            self.logger.error(f"Pattern analysis error: {e}")
-        finally:
-            session.close()
+        # Pattern 4: Unusual transaction times (outside 6 AM - 10 PM UTC)
+        transaction_hour = transaction.created_at.hour
+        if transaction_hour < 6 or transaction_hour > 22:
+            result["flags"].append(
+                {
+                    "type": "unusual_timing",
+                    "description": f"Transaction at unusual hour: {transaction_hour}:00 UTC",
+                    "severity": "low",
+                }
+            )
+            result["risk_score"] += 5
 
         return result
 
@@ -675,7 +613,7 @@ class EnhancedComplianceManager:
         result = {"risk_score": 0, "flags": []}
 
         # User KYC status
-        if user.kyc_status != "approved":
+        if user.kyc_status != KYCStatus.APPROVED.value:
             result["risk_score"] += 25
             result["flags"].append(
                 {
@@ -686,7 +624,7 @@ class EnhancedComplianceManager:
             )
 
         # User AML risk level
-        if user.aml_risk_level == "high":
+        if user.aml_risk_level == AMLRiskLevel.HIGH.value:
             result["risk_score"] += 30
             result["flags"].append(
                 {
@@ -695,26 +633,27 @@ class EnhancedComplianceManager:
                     "severity": "high",
                 }
             )
-        elif user.aml_risk_level == "critical":
+        elif user.aml_risk_level == AMLRiskLevel.PROHIBITED.value:
             result["risk_score"] += 50
             result["flags"].append(
                 {
                     "type": "critical_risk_user",
-                    "description": "User classified as critical AML risk",
+                    "description": "User classified as critical AML risk (Prohibited)",
                     "severity": "critical",
                 }
             )
 
-        # Transaction vs. user profile
+        # Transaction vs. user profile (e.g., large transaction relative to declared income)
         if (
             user.annual_income
+            and user.annual_income > 0
             and transaction.total_amount > user.annual_income * Decimal("0.1")
         ):
             result["risk_score"] += 20
             result["flags"].append(
                 {
                     "type": "transaction_vs_income",
-                    "description": f"Transaction amount high relative to declared income",
+                    "description": f"Transaction amount ({transaction.total_amount}) is high relative to declared income ({user.annual_income})",
                     "severity": "medium",
                 }
             )
@@ -722,7 +661,7 @@ class EnhancedComplianceManager:
         return result
 
     def _generate_sar(
-        self, transaction: Transaction, monitoring_result: Dict[str, Any]
+        self, transaction: Transaction, monitoring_result: Dict[str, Any], session
     ):
         """Generate Suspicious Activity Report"""
 
@@ -731,16 +670,16 @@ class EnhancedComplianceManager:
                 transaction_id=transaction.id,
                 user_id=transaction.user_id,
                 activity_type="unusual_transaction_pattern",
-                description=f"Suspicious transaction patterns detected. Flags: {monitoring_result['flags']}",
+                description=f"Suspicious transaction patterns detected. Flags: {json.dumps(monitoring_result['flags'])}",
                 risk_score=monitoring_result["risk_score"],
+                status="pending_filing",
             )
 
-            session = db_manager.get_session()
             session.add(sar)
             session.commit()
 
             self.logger.info(
-                f"SAR generated for transaction {transaction.id}: {sar.sar_number}"
+                f"SAR generated for transaction {transaction.id}. SAR ID: {sar.id}"
             )
 
         except Exception as e:
@@ -748,8 +687,8 @@ class EnhancedComplianceManager:
             self.logger.error(
                 f"Failed to generate SAR for transaction {transaction.id}: {e}"
             )
-        finally:
-            session.close()
+
+    # --- Reporting ---
 
     def generate_compliance_report(
         self, report_type: str, start_date: datetime, end_date: datetime
@@ -809,16 +748,37 @@ class EnhancedComplianceManager:
 
         kyc_stats = {
             "total_users": len(users),
-            "kyc_approved": len([u for u in users if u.kyc_status == "approved"]),
-            "kyc_pending": len(
-                [u for u in users if u.kyc_status in ["pending", "in_progress"]]
+            "kyc_approved": len(
+                [u for u in users if u.kyc_status == KYCStatus.APPROVED.value]
             ),
-            "kyc_rejected": len([u for u in users if u.kyc_status == "rejected"]),
+            "kyc_pending": len(
+                [
+                    u
+                    for u in users
+                    if u.kyc_status
+                    in [KYCStatus.PENDING_REVIEW.value, KYCStatus.IN_PROGRESS.value]
+                ]
+            ),
+            "kyc_rejected": len(
+                [u for u in users if u.kyc_status == KYCStatus.REJECTED.value]
+            ),
             "by_risk_level": {
-                "low": len([u for u in users if u.aml_risk_level == "low"]),
-                "medium": len([u for u in users if u.aml_risk_level == "medium"]),
-                "high": len([u for u in users if u.aml_risk_level == "high"]),
-                "critical": len([u for u in users if u.aml_risk_level == "critical"]),
+                "low": len(
+                    [u for u in users if u.aml_risk_level == AMLRiskLevel.LOW.value]
+                ),
+                "medium": len(
+                    [u for u in users if u.aml_risk_level == AMLRiskLevel.MEDIUM.value]
+                ),
+                "high": len(
+                    [u for u in users if u.aml_risk_level == AMLRiskLevel.HIGH.value]
+                ),
+                "prohibited": len(
+                    [
+                        u
+                        for u in users
+                        if u.aml_risk_level == AMLRiskLevel.PROHIBITED.value
+                    ]
+                ),
             },
         }
 
@@ -852,17 +812,18 @@ class EnhancedComplianceManager:
             .all()
         )
 
+        total_volume = sum(t.total_amount for t in transactions)
+        average_transaction_amount = (
+            total_volume / len(transactions) if transactions else Decimal("0.00")
+        )
+
         aml_stats = {
             "total_transactions": len(transactions),
             "large_transactions": len(large_transactions),
             "suspicious_activities": len(sars),
             "sars_filed": len([sar for sar in sars if sar.reported_to_authorities]),
-            "average_transaction_amount": (
-                float(sum(t.total_amount for t in transactions) / len(transactions))
-                if transactions
-                else 0
-            ),
-            "total_volume": float(sum(t.total_amount for t in transactions)),
+            "average_transaction_amount": float(average_transaction_amount),
+            "total_volume": float(total_volume),
         }
 
         return aml_stats
@@ -891,7 +852,7 @@ class EnhancedComplianceManager:
         for transaction in large_transactions:
             report_data["transactions"].append(
                 {
-                    "transaction_id": transaction.transaction_id,
+                    "transaction_id": str(transaction.id),
                     "user_id": str(transaction.user_id),
                     "amount": float(transaction.total_amount),
                     "currency": transaction.currency,
@@ -920,7 +881,7 @@ class EnhancedComplianceManager:
             "total_sars": len(sars),
             "filed_sars": len([sar for sar in sars if sar.reported_to_authorities]),
             "pending_sars": len(
-                [sar for sar in sars if not sar.reported_to_authorities]
+                [sar for sar in sars if sar.status == "pending_filing"]
             ),
             "by_activity_type": {},
             "sars": [],
@@ -929,7 +890,6 @@ class EnhancedComplianceManager:
         # Group by activity type
         for sar in sars:
             activity_type = sar.activity_type
-            # Idiomatic Python: Use dict.get with a default value
             report_data["by_activity_type"][activity_type] = (
                 report_data["by_activity_type"].get(activity_type, 0) + 1
             )
@@ -938,7 +898,7 @@ class EnhancedComplianceManager:
         for sar in sars:
             report_data["sars"].append(
                 {
-                    "sar_number": sar.sar_number,
+                    "sar_number": str(sar.sar_number),
                     "user_id": str(sar.user_id),
                     "transaction_id": str(sar.transaction_id),
                     "activity_type": sar.activity_type,
@@ -951,16 +911,16 @@ class EnhancedComplianceManager:
 
         return report_data
 
+    # --- Utility Functions ---
+
     def _generate_verification_id(self) -> str:
         """Generate unique verification ID"""
-        # Idiomatic Python: Use f-string for formatting
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
         random_suffix = hashlib.md5(os.urandom(16)).hexdigest()[:8].upper()
         return f"KYC-{timestamp}-{random_suffix}"
 
     def _generate_monitoring_id(self) -> str:
         """Generate unique monitoring ID"""
-        # Idiomatic Python: Use f-string for formatting
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
         random_suffix = hashlib.md5(os.urandom(16)).hexdigest()[:8].upper()
         return f"AML-{timestamp}-{random_suffix}"

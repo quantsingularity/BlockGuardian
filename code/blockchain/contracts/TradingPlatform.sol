@@ -4,19 +4,23 @@ pragma solidity ^0.8.0;
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
+import '@openzeppelin/contracts/utils/math/SafeMath.sol';
 
 /**
  * @title TradingPlatform
  * @dev Smart contract for secure trading of tokenized assets
+ * Implements a simple order book (limit orders only) and trade execution.
  */
 contract TradingPlatform is Ownable, ReentrancyGuard {
+    using SafeMath for uint256;
+
     // Order structure
     struct Order {
         uint256 id;
         address maker;
         address tokenAddress;
-        uint256 amount;
-        uint256 price; // In USD cents
+        uint256 amount; // Remaining amount to be filled
+        uint256 price; // Price per token in USD cents
         bool isBuyOrder;
         uint256 timestamp;
         bool isActive;
@@ -31,7 +35,7 @@ contract TradingPlatform is Ownable, ReentrancyGuard {
         address seller;
         address tokenAddress;
         uint256 amount;
-        uint256 price; // In USD cents
+        uint256 price; // Execution price in USD cents
         uint256 timestamp;
     }
 
@@ -64,7 +68,7 @@ contract TradingPlatform is Ownable, ReentrancyGuard {
         bool isBuyOrder
     );
     event OrderCancelled(uint256 indexed orderId);
-    event OrderFilled(uint256 indexed orderId, uint256 indexed tradeId);
+    event OrderFilled(uint256 indexed orderId, uint256 indexed tradeId, uint256 filledAmount);
     event TradeExecuted(
         uint256 indexed tradeId,
         address indexed buyer,
@@ -81,11 +85,11 @@ contract TradingPlatform is Ownable, ReentrancyGuard {
 
     /**
      * @dev Constructor
-     * @param _tradingFee Initial trading fee in basis points
+     * @param _tradingFee Initial trading fee in basis points (max 100)
      * @param _feeCollector Address to collect fees
      */
     constructor(uint256 _tradingFee, address _feeCollector) Ownable(msg.sender) {
-        require(_tradingFee <= 100, 'Fee too high'); // Max 1%
+        require(_tradingFee <= 100, 'Fee too high (Max 1%)');
         require(_feeCollector != address(0), 'Invalid fee collector');
 
         tradingFee = _tradingFee;
@@ -94,6 +98,8 @@ contract TradingPlatform is Ownable, ReentrancyGuard {
         orderIdCounter = 1;
         tradeIdCounter = 1;
     }
+
+    // --- Trading Operations ---
 
     /**
      * @dev Create a new order
@@ -117,12 +123,16 @@ contract TradingPlatform is Ownable, ReentrancyGuard {
         // For sell orders, check token balance and approval
         if (!_isBuyOrder) {
             IERC20 token = IERC20(_tokenAddress);
-            require(token.balanceOf(msg.sender) >= _amount, 'Insufficient token balance');
+            // The contract must have approval to move the tokens from the seller
             require(
                 token.allowance(msg.sender, address(this)) >= _amount,
-                'Insufficient token allowance'
+                'Insufficient token allowance for sell order'
             );
         }
+        // NOTE: For buy orders, the collateral (e.g., stablecoin) is assumed to be handled
+        // by a separate mechanism or is implicit (e.g., ETH/WETH).
+        // For simplicity, we assume the price is in USD cents and the collateral is available
+        // or handled off-chain.
 
         // Create order
         uint256 orderId = orderIdCounter++;
@@ -147,7 +157,7 @@ contract TradingPlatform is Ownable, ReentrancyGuard {
 
         emit OrderCreated(orderId, msg.sender, _tokenAddress, _amount, _price, _isBuyOrder);
 
-        // Try to match order
+        // Try to match order immediately
         matchOrder(orderId);
 
         return orderId;
@@ -160,10 +170,13 @@ contract TradingPlatform is Ownable, ReentrancyGuard {
     function cancelOrder(uint256 _orderId) external nonReentrant {
         Order storage order = orders[_orderId];
 
+        require(order.id != 0, 'Order not found');
         require(order.maker == msg.sender, 'Not order maker');
         require(order.isActive, 'Order not active');
 
         order.isActive = false;
+
+        // TODO: Handle token/collateral refund if necessary (e.g., if buy order locked collateral)
 
         emit OrderCancelled(_orderId);
     }
@@ -179,7 +192,7 @@ contract TradingPlatform is Ownable, ReentrancyGuard {
             return;
         }
 
-        // Find matching orders
+        // Iterate through all existing orders to find a match
         for (uint256 i = 1; i < orderIdCounter; i++) {
             if (i == _orderId) {
                 continue;
@@ -215,9 +228,14 @@ contract TradingPlatform is Ownable, ReentrancyGuard {
             }
 
             // Execute trade
-            executeTrade(order.isBuyOrder ? _orderId : i, order.isBuyOrder ? i : _orderId);
+            // The order with the lower price (sell order) dictates the trade price
+            if (order.isBuyOrder) {
+                executeTrade(_orderId, i, matchingOrder.price);
+            } else {
+                executeTrade(i, _orderId, order.price);
+            }
 
-            // If order is fully filled, stop matching
+            // If the original order is fully filled, stop matching
             if (!order.isActive) {
                 break;
             }
@@ -228,8 +246,13 @@ contract TradingPlatform is Ownable, ReentrancyGuard {
      * @dev Execute trade between buy and sell orders
      * @param _buyOrderId Buy order ID
      * @param _sellOrderId Sell order ID
+     * @param _tradePrice Execution price
      */
-    function executeTrade(uint256 _buyOrderId, uint256 _sellOrderId) internal {
+    function executeTrade(
+        uint256 _buyOrderId,
+        uint256 _sellOrderId,
+        uint256 _tradePrice
+    ) internal {
         Order storage buyOrder = orders[_buyOrderId];
         Order storage sellOrder = orders[_sellOrderId];
 
@@ -237,32 +260,41 @@ contract TradingPlatform is Ownable, ReentrancyGuard {
         require(buyOrder.isBuyOrder && !sellOrder.isBuyOrder, 'Invalid order types');
         require(buyOrder.tokenAddress == sellOrder.tokenAddress, 'Token mismatch');
 
-        // Determine trade amount and price
+        // Determine trade amount
         uint256 tradeAmount = buyOrder.amount < sellOrder.amount
             ? buyOrder.amount
             : sellOrder.amount;
-        uint256 tradePrice = sellOrder.price; // Use sell order price
 
         // Calculate total value and fee
-        uint256 totalValue = tradeAmount * tradePrice;
-        uint256 fee = (totalValue * tradingFee) / 10000;
+        uint256 totalValue = tradeAmount.mul(_tradePrice);
+        uint256 fee = totalValue.mul(tradingFee).div(10000);
 
-        // Transfer tokens from seller to buyer
+        // --- Token Transfer Logic ---
+
+        // 1. Transfer tokens from seller to buyer
         IERC20 token = IERC20(buyOrder.tokenAddress);
         require(
             token.transferFrom(sellOrder.maker, buyOrder.maker, tradeAmount),
             'Token transfer failed'
         );
 
-        // Transfer fee to fee collector
-        if (fee > 0) {
-            // Fee is paid by both parties
-            // Implementation depends on how fees are collected (e.g., separate token, off-chain)
-        }
+        // 2. Transfer collateral (e.g., stablecoin) from buyer to seller
+        // This part is simplified. In a real DEX, this would involve a second token (e.g., USDC).
+        // For this implementation, we assume the collateral is handled off-chain or by a separate contract.
+        // We will simulate the fee collection here.
+
+        // 3. Collect fee (paid by the seller for simplicity)
+        // In a real system, fees are usually deducted from the collateral or the asset.
+        // We assume the fee is deducted from the seller's collateral/stablecoin.
+        // Since we don't have the collateral token address, we'll skip the actual transfer
+        // and assume the fee is tracked off-chain or paid in the asset token.
+        // For a more complete implementation, a collateral token would be needed.
+
+        // --- Update Orders and Record Trade ---
 
         // Update order amounts
-        buyOrder.amount -= tradeAmount;
-        sellOrder.amount -= tradeAmount;
+        buyOrder.amount = buyOrder.amount.sub(tradeAmount);
+        sellOrder.amount = sellOrder.amount.sub(tradeAmount);
 
         // Deactivate filled orders
         if (buyOrder.amount == 0) {
@@ -284,7 +316,7 @@ contract TradingPlatform is Ownable, ReentrancyGuard {
             seller: sellOrder.maker,
             tokenAddress: buyOrder.tokenAddress,
             amount: tradeAmount,
-            price: tradePrice,
+            price: _tradePrice,
             timestamp: block.timestamp
         });
 
@@ -293,17 +325,19 @@ contract TradingPlatform is Ownable, ReentrancyGuard {
         userTrades[sellOrder.maker].push(tradeId);
 
         // Emit events
-        emit OrderFilled(_buyOrderId, tradeId);
-        emit OrderFilled(_sellOrderId, tradeId);
+        emit OrderFilled(_buyOrderId, tradeId, tradeAmount);
+        emit OrderFilled(_sellOrderId, tradeId, tradeAmount);
         emit TradeExecuted(
             tradeId,
             buyOrder.maker,
             sellOrder.maker,
             buyOrder.tokenAddress,
             tradeAmount,
-            tradePrice
+            _tradePrice
         );
     }
+
+    // --- Platform Settings (Owner Only) ---
 
     /**
      * @dev Whitelist token
@@ -311,6 +345,7 @@ contract TradingPlatform is Ownable, ReentrancyGuard {
      */
     function whitelistToken(address _tokenAddress) external onlyOwner {
         require(_tokenAddress != address(0), 'Invalid token address');
+        require(!whitelistedTokens[_tokenAddress], 'Token already whitelisted');
 
         whitelistedTokens[_tokenAddress] = true;
 
@@ -341,13 +376,11 @@ contract TradingPlatform is Ownable, ReentrancyGuard {
 
     /**
      * @dev Set trading fee
-     * @param _tradingFee Trading fee in basis points
+     * @param _tradingFee Trading fee in basis points (max 100)
      */
     function setTradingFee(uint256 _tradingFee) external onlyOwner {
-        require(_tradingFee <= 100, 'Fee too high'); // Max 1%
-
+        require(_tradingFee <= 100, 'Fee too high (Max 1%)');
         tradingFee = _tradingFee;
-
         emit TradingFeeUpdated(_tradingFee);
     }
 
@@ -357,16 +390,14 @@ contract TradingPlatform is Ownable, ReentrancyGuard {
      */
     function setFeeCollector(address _feeCollector) external onlyOwner {
         require(_feeCollector != address(0), 'Invalid fee collector');
-
         feeCollector = _feeCollector;
-
         emit FeeCollectorUpdated(_feeCollector);
     }
 
+    // --- View Functions ---
+
     /**
      * @dev Get user buy orders
-     * @param _user User address
-     * @return orderIds Array of order IDs
      */
     function getUserBuyOrders(address _user) external view returns (uint256[] memory) {
         return userBuyOrders[_user];
@@ -374,8 +405,6 @@ contract TradingPlatform is Ownable, ReentrancyGuard {
 
     /**
      * @dev Get user sell orders
-     * @param _user User address
-     * @return orderIds Array of order IDs
      */
     function getUserSellOrders(address _user) external view returns (uint256[] memory) {
         return userSellOrders[_user];
@@ -383,8 +412,6 @@ contract TradingPlatform is Ownable, ReentrancyGuard {
 
     /**
      * @dev Get user trades
-     * @param _user User address
-     * @return tradeIds Array of trade IDs
      */
     function getUserTrades(address _user) external view returns (uint256[] memory) {
         return userTrades[_user];
@@ -392,11 +419,6 @@ contract TradingPlatform is Ownable, ReentrancyGuard {
 
     /**
      * @dev Get active orders for token
-     * @param _tokenAddress Token contract address
-     * @param _isBuyOrder Whether to get buy or sell orders
-     * @param _startIndex Start index
-     * @param _count Number of orders to return
-     * @return activeOrders Array of active orders
      */
     function getActiveOrders(
         address _tokenAddress,
@@ -421,12 +443,12 @@ contract TradingPlatform is Ownable, ReentrancyGuard {
             return new Order[](0);
         }
 
-        uint256 endIndex = _startIndex + _count;
+        uint256 endIndex = _startIndex.add(_count);
         if (endIndex > activeCount) {
             endIndex = activeCount;
         }
 
-        uint256 resultCount = endIndex - _startIndex;
+        uint256 resultCount = endIndex.sub(_startIndex);
         Order[] memory result = new Order[](resultCount);
 
         uint256 currentIndex = 0;

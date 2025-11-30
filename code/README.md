@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-BlockGuardian represents a cutting-edge financial services platform designed to meet the stringent requirements of modern investment management and regulatory compliance. This comprehensive version incorporates enterprise-grade security, comprehensive compliance frameworks, and professional-quality user interfaces that align with industry best practices for financial technology solutions.
+BlockGuardian represents a **cutting-edge financial services platform** designed to meet the stringent requirements of modern investment management and regulatory compliance. This comprehensive version incorporates enterprise-grade security, robust compliance frameworks, and professional-quality user interfaces that align with industry best practices for financial technology solutions.
 
 The platform provides a complete ecosystem for portfolio management, trading operations, risk assessment, and regulatory compliance, making it suitable for institutional investors, wealth management firms, and fintech companies seeking to deliver sophisticated financial services to their clients.
 
@@ -11,49 +11,24 @@ The platform provides a complete ecosystem for portfolio management, trading ope
 - [Architecture Overview](#architecture-overview)
 - [Key Features](#key-features)
 - [Technology Stack](#technology-stack)
-- [Security & Compliance](#security--compliance)
+- [Security & Compliance Framework](#security--compliance-framework)
+- [Performance Metrics](#performance-metrics)
 - [Installation & Setup](#installation--setup)
 - [API Documentation](#api-documentation)
-- [Frontend Components](#frontend-components)
 - [Database Schema](#database-schema)
 - [Testing Strategy](#testing-strategy)
-- [Deployment Guide](#deployment-guide)
-- [Performance Metrics](#performance-metrics)
-- [Regulatory Compliance](#regulatory-compliance)
-- [Contributing Guidelines](#contributing-guidelines)
 - [License](#license)
 
 ## Architecture Overview
 
-BlockGuardian follows a modern microservices architecture with clear separation of concerns, ensuring scalability, maintainability, and regulatory compliance. The system is designed with the following architectural principles:
+BlockGuardian follows a modern microservices architecture with clear separation of concerns, ensuring scalability, maintainability, and regulatory compliance. The system is structured around four core components:
 
-### Core Components
-
-1. **Backend Services** (`/backend/`)
-    - RESTful API server built with Flask
-    - Advanced authentication and authorization
-    - Comprehensive compliance monitoring
-    - Real-time transaction processing
-    - Risk management engine
-
-2. **Frontend Application** (`/frontend/`)
-    - Professional React-based user interface
-    - Real-time data visualization
-    - Advanced trading interface
-    - Portfolio management dashboard
-    - Responsive design for all devices
-
-3. **Blockchain Integration** (`/blockchain/`)
-    - Smart contract implementations
-    - Decentralized transaction verification
-    - Immutable audit trails
-    - Cross-chain compatibility
-
-4. **Data Analytics** (`/data-analysis/`)
-    - Advanced portfolio analytics
-    - Risk assessment algorithms
-    - Performance attribution analysis
-    - Predictive modeling capabilities
+| Component | Directory | Primary Function | Key Technologies |
+| :--- | :--- | :--- | :--- |
+| **Backend Services** | `code/backend/` | RESTful API, business logic, compliance, security, and data management. | Flask, PostgreSQL, Redis |
+| **Frontend Application** | `code/frontend/` | Professional React-based user interface for trading and portfolio management. | React, Next.js, Tailwind CSS |
+| **Blockchain Integration** | `code/blockchain/` | Smart contract implementation for tokenization, DeFi, and on-chain portfolio management. | Solidity, Hardhat, Web3.py |
+| **Data Analytics** | `code/data-analysis/` | Advanced portfolio analytics, risk assessment, and predictive modeling. | Python, Pandas, Jupyter |
 
 ### System Architecture Diagram
 
@@ -75,122 +50,73 @@ BlockGuardian follows a modern microservices architecture with clear separation 
 
 ## Key Features
 
-### Portfolio Management
+The platform is built on a foundation of robust financial and regulatory capabilities, summarized in the table below:
 
-- **Multi-Portfolio Support**: Manage multiple investment portfolios with different strategies and risk profiles
-- **Real-Time Valuation**: Live portfolio valuation with real-time market data integration
-- **Performance Analytics**: Comprehensive performance attribution and risk-adjusted returns analysis
-- **Asset Allocation**: Dynamic asset allocation with rebalancing recommendations
-- **Benchmark Comparison**: Performance comparison against custom and standard benchmarks
-
-### Trading Operations
-
-- **Advanced Order Management**: Support for market, limit, stop, and complex order types
-- **Real-Time Execution**: Low-latency order execution with smart routing
-- **Risk Controls**: Pre-trade risk checks and position limits enforcement
-- **Trade Settlement**: Automated trade settlement and reconciliation
-- **Transaction Cost Analysis**: Comprehensive TCA with execution quality metrics
-
-### Compliance & Risk Management
-
-- **KYC/AML Compliance**: Automated customer verification and anti-money laundering monitoring
-- **Regulatory Reporting**: Automated generation of regulatory reports (CTR, SAR, etc.)
-- **Risk Assessment**: Real-time risk monitoring with customizable risk limits
-- **Audit Trail**: Immutable audit trails for all transactions and system activities
-- **Sanctions Screening**: Real-time screening against global sanctions lists
-
-### Security Features
-
-- **Multi-Factor Authentication**: Advanced MFA with TOTP and backup codes
-- **Session Management**: Secure session handling with Redis-based storage
-- **Encryption**: End-to-end encryption for sensitive data
-- **Access Controls**: Role-based access control with granular permissions
-- **Security Monitoring**: Real-time security event monitoring and alerting
+| Category | Feature | Description | Status |
+| :--- | :--- | :--- | :--- |
+| **Portfolio Management** | Multi-Portfolio Support | Manage multiple investment portfolios with distinct strategies and risk profiles. | Implemented |
+| | Real-Time Valuation | Live portfolio valuation with real-time market data integration. | Implemented |
+| | Asset Allocation | Dynamic asset allocation with rebalancing recommendations. | Implemented |
+| **Trading Operations** | Advanced Order Management | Support for market, limit, stop, and complex order types. | Implemented |
+| | Real-Time Execution | Low-latency order execution with smart routing and risk controls. | Implemented |
+| | Decentralized Exchange (DEX) | On-chain trading platform for tokenized assets with order matching. | Implemented |
+| **Compliance (KYC/AML)** | Enhanced Compliance Manager | Automated customer verification, sanctions screening, and anti-money laundering monitoring. | Implemented |
+| | Regulatory Reporting | Automated generation of regulatory reports (CTR, SAR, etc.). | Implemented |
+| | Immutable Audit Trail | Comprehensive, database-backed audit logging for all transactions and system activities. | Implemented |
+| **Security** | Multi-Factor Authentication | Advanced MFA with TOTP and backup codes. | Implemented |
+| | Adaptive Rate Limiting | Enterprise-grade rate limiting to prevent API abuse and DDoS attacks. | Implemented |
+| | Data Protection | End-to-end encryption for sensitive data and secure session management. | Implemented |
+| **Blockchain** | Tokenized Assets | ERC20 standard for representing real-world assets with built-in fee mechanisms. | Implemented |
+| | DeFi Integration | Smart contracts for managing investment strategies and yield claiming in decentralized finance. | Implemented |
+| **Data Analytics** | Preprocessing Pipeline | Robust data loading and preprocessing with feature engineering for time-series and behavioral analysis. | Implemented |
 
 ## Technology Stack
 
-### Backend Technologies
+BlockGuardian leverages a modern, high-performance technology stack to ensure scalability and reliability.
 
-- **Framework**: Flask 2.3+ with Flask-RESTful
-- **Database**: PostgreSQL 14+ with SQLAlchemy ORM
-- **Caching**: Redis 7+ for session management and caching
-- **Authentication**: JWT tokens with Flask-JWT-Extended
-- **Security**: Werkzeug security utilities, bcrypt password hashing
-- **Compliance**: Custom compliance engine with configurable rules
-- **API Documentation**: Swagger/OpenAPI 3.0 specification
+| Component | Technology | Version | Purpose |
+| :--- | :--- | :--- | :--- |
+| **Backend Framework** | Flask | 2.3+ | RESTful API development and core business logic. |
+| **Database** | PostgreSQL | 14+ | Primary data persistence with transactional integrity. |
+| **Caching/Messaging** | Redis | 7+ | Session management, caching, and rate limiting. |
+| **ORM** | SQLAlchemy | Latest | Object-Relational Mapping for secure database interaction. |
+| **Frontend Framework** | React | 18+ | User interface development with functional components. |
+| **Styling** | Tailwind CSS | 3+ | Utility-first CSS framework for responsive design. |
+| **Smart Contracts** | Solidity | 0.8+ | Development of secure and efficient smart contracts. |
+| **Blockchain Tools** | Hardhat/Web3.py | Latest | Development, testing, and deployment of smart contracts. |
+| **Data Science** | Pandas/Numpy | Latest | Data manipulation, analysis, and feature engineering. |
+| **Containerization** | Docker/Compose | Latest | Environment consistency and simplified deployment. |
 
-### Frontend Technologies
+## Security & Compliance Framework
 
-- **Framework**: React 18+ with functional components and hooks
-- **Styling**: Tailwind CSS 3+ for responsive design
-- **Charts**: Recharts for financial data visualization
-- **State Management**: React Context API and custom hooks
-- **Build Tool**: Next.js 13+ for optimized production builds
-- **Testing**: Jest and React Testing Library
+The platform is engineered with a **security-first** approach, integrating robust controls across all layers of the application.
 
-### Infrastructure & DevOps
+| Area | Control | Description |
+| :--- | :--- | :--- |
+| **Authentication** | Multi-Factor Auth (MFA) | TOTP-based MFA with secure secret management. |
+| | Password Hashing | Industry-standard hashing (e.g., bcrypt/PBKDF2) with salt. |
+| **Authorization** | Role-Based Access Control (RBAC) | Granular permissions enforced at the API level. |
+| **Data Protection** | Encryption (At Rest/In Transit) | AES-256 for storage and TLS 1.3 for communication. |
+| **Abuse Prevention** | Adaptive Rate Limiting | Dynamic rate control based on user reputation and system load. |
+| **Compliance** | KYC/AML Manager | Automated identity verification and anti-money laundering checks. |
+| | Sanctions Screening | Real-time screening against global sanctions lists. |
+| **Auditability** | Immutable Audit Logging | Comprehensive, time-stamped record of all critical system events. |
+| **Regulatory** | Automated Reporting | Support for generating CTR, SAR, and other regulatory reports. |
 
-- **Containerization**: Docker with multi-stage builds
-- **Orchestration**: Docker Compose for local development
-- **CI/CD**: GitHub Actions for automated testing and deployment
-- **Monitoring**: Prometheus and Grafana for system monitoring
-- **Logging**: Structured logging with ELK stack integration
-- **Security Scanning**: Automated vulnerability scanning with Snyk
+## Performance Metrics
 
-### Blockchain Technologies
+BlockGuardian is designed for high performance and scalability, targeting the following metrics:
 
-- **Smart Contracts**: Solidity 0.8+ for Ethereum compatibility
-- **Web3 Integration**: Web3.py for blockchain interactions
-- **Networks**: Support for Ethereum, Polygon, and other EVM chains
-- **Wallet Integration**: MetaMask and WalletConnect support
-
-## Security & Compliance
-
-### Security Framework
-
-BlockGuardian implements a comprehensive security framework that meets or exceeds industry standards for financial services:
-
-#### Authentication & Authorization
-
-- **Multi-Factor Authentication (MFA)**: TOTP-based MFA with backup codes
-- **Session Security**: Secure session management with automatic timeout
-- **Password Policy**: Enforced strong password requirements
-- **Account Lockout**: Automatic account lockout after failed attempts
-- **Device Fingerprinting**: Device-based security controls
-
-#### Data Protection
-
-- **Encryption at Rest**: AES-256 encryption for sensitive data storage
-- **Encryption in Transit**: TLS 1.3 for all network communications
-- **Key Management**: Secure key rotation and management
-- **Data Masking**: PII masking in logs and non-production environments
-- **Backup Security**: Encrypted backups with secure key management
-
-#### Network Security
-
-- **API Rate Limiting**: Configurable rate limits to prevent abuse
-- **CORS Protection**: Strict CORS policies for web security
-- **Input Validation**: Comprehensive input validation and sanitization
-- **SQL Injection Prevention**: Parameterized queries and ORM usage
-- **XSS Protection**: Content Security Policy and output encoding
-
-### Compliance Framework
-
-#### Regulatory Standards
-
-- **BSA/AML**: Bank Secrecy Act and Anti-Money Laundering compliance
-- **KYC**: Know Your Customer verification procedures
-- **GDPR**: General Data Protection Regulation compliance
-- **SOX**: Sarbanes-Oxley Act compliance for financial reporting
-- **PCI DSS**: Payment Card Industry Data Security Standard
-
-#### Monitoring & Reporting
-
-- **Transaction Monitoring**: Real-time AML transaction monitoring
-- **Suspicious Activity Reporting**: Automated SAR generation and filing
-- **Regulatory Reporting**: Automated CTR and other regulatory reports
-- **Audit Logging**: Comprehensive audit trails for all activities
-- **Compliance Dashboard**: Real-time compliance monitoring dashboard
+| Metric Category | Target Metric | Description |
+| :--- | :--- | :--- |
+| **API Response Time** | Trading Operations: < 100ms | Critical for low-latency order execution. |
+| | Authentication: < 200ms | Fast user login and session creation. |
+| | Portfolio Data: < 500ms | Quick retrieval of complex portfolio data. |
+| **Database Performance** | Query P95: < 50ms | 95th percentile query response time. |
+| | Transactions: 1M/day | Capacity to handle 1 million transactions daily. |
+| **Frontend Performance** | Initial Load Time: < 3s | Fast time-to-content for the user interface. |
+| | Time to Interactive: < 5s | Quick responsiveness for user interaction. |
+| **Scalability** | Concurrent Users: 10,000 | Target for simultaneous active users. |
 
 ## Installation & Setup
 
@@ -281,8 +207,6 @@ Before installing BlockGuardian, ensure you have the following prerequisites:
     yarn dev
     ```
 
-### Docker Deployment
-
 For containerized deployment:
 
 ```bash
@@ -298,197 +222,34 @@ docker-compose down
 
 ## API Documentation
 
-### Authentication Endpoints
+The API is structured around key financial services, providing secure and efficient access to portfolio, trading, and compliance functions.
 
-#### POST /api/auth/login
+| Endpoint Category | Method | Path | Description |
+| :--- | :--- | :--- | :--- |
+| **Authentication** | `POST` | `/api/auth/login` | Authenticate user and issue JWT tokens. |
+| | `POST` | `/api/auth/logout` | Invalidate user session and refresh token. |
+| **Portfolio** | `GET` | `/api/portfolios` | Retrieve a list of the user's managed portfolios. |
+| | `POST` | `/api/portfolios` | Create a new investment portfolio. |
+| **Trading** | `POST` | `/api/orders` | Place a new trade order (market, limit, etc.). |
+| | `DELETE` | `/api/orders/{order_id}` | Cancel a pending trade order. |
+| **Compliance** | `POST` | `/api/compliance/kyc/verify` | Submit documents for KYC verification. |
+| | `GET` | `/api/compliance/reports/{report_type}` | Generate and retrieve regulatory compliance reports. |
 
-Authenticate user and create session.
-
-**Request Body:**
-
-```json
-{
-    "email": "user@example.com",
-    "password": "securepassword",
-    "mfa_token": "123456"
-}
-```
-
-**Response:**
-
-```json
-{
-    "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
-    "refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
-    "user": {
-        "id": "uuid",
-        "email": "user@example.com",
-        "first_name": "John",
-        "last_name": "Doe"
-    }
-}
-```
-
-#### POST /api/auth/logout
-
-Logout user and invalidate session.
-
-### Portfolio Management Endpoints
-
-#### GET /api/portfolios
-
-Retrieve user's portfolios.
-
-**Response:**
-
-```json
-{
-  "portfolios": [
-    {
-      "id": "uuid",
-      "name": "Growth Portfolio",
-      "total_value": 125000.50,
-      "unrealized_pnl": 12500.25,
-      "realized_pnl": 2500.75,
-      "holdings": [...]
-    }
-  ]
-}
-```
-
-#### POST /api/portfolios
-
-Create new portfolio.
-
-**Request Body:**
-
-```json
-{
-    "name": "Conservative Portfolio",
-    "description": "Low-risk investment portfolio",
-    "risk_level": "conservative",
-    "benchmark_symbol": "SPY"
-}
-```
-
-### Trading Endpoints
-
-#### POST /api/orders
-
-Place new order.
-
-**Request Body:**
-
-```json
-{
-    "portfolio_id": "uuid",
-    "asset_symbol": "AAPL",
-    "order_type": "market",
-    "order_side": "buy",
-    "quantity": 100,
-    "time_in_force": "day"
-}
-```
-
-#### GET /api/orders
-
-Retrieve user's orders.
-
-#### DELETE /api/orders/{order_id}
-
-Cancel pending order.
-
-### Compliance Endpoints
-
-#### POST /api/compliance/kyc/verify
-
-Submit KYC verification documents.
-
-#### GET /api/compliance/reports/{report_type}
-
-Generate compliance reports.
-
-## Frontend Components
-
-### Dashboard Component
-
-The `Dashboard` component provides a comprehensive overview of user portfolios with real-time data visualization:
-
-**Features:**
-
-- Real-time portfolio valuation
-- Performance charts with multiple timeframes
-- Asset allocation visualization
-- Recent transactions display
-- Market overview with news integration
-
-**Usage:**
-
-```jsx
-import Dashboard from './components/Dashboard';
-
-<Dashboard
-    user={user}
-    portfolios={portfolios}
-    transactions={transactions}
-    marketData={marketData}
-/>;
-```
-
-### Portfolio Manager Component
-
-The `PortfolioManager` component offers advanced portfolio management capabilities:
-
-**Features:**
-
-- Multi-portfolio management
-- Performance analytics and attribution
-- Risk analysis and recommendations
-- Portfolio rebalancing tools
-- Customizable settings and preferences
-
-**Usage:**
-
-```jsx
-import PortfolioManager from './components/PortfolioManager';
-
-<PortfolioManager
-    portfolios={portfolios}
-    onPortfolioUpdate={handleUpdate}
-    onRebalance={handleRebalance}
-    onCreatePortfolio={handleCreate}
-/>;
-```
-
-### Trading Interface Component
-
-The `TradingInterface` component provides professional trading capabilities:
-
-**Features:**
-
-- Real-time market data and charts
-- Advanced order management
-- Risk controls and position monitoring
-- Account summary and buying power
-- Order confirmation and execution
-
-**Usage:**
-
-```jsx
-import TradingInterface from './components/TradingInterface';
-
-<TradingInterface
-    user={user}
-    portfolios={portfolios}
-    marketData={marketData}
-    onPlaceOrder={handlePlaceOrder}
-    onCancelOrder={handleCancelOrder}
-/>;
-```
+Detailed request and response schemas are available in the [Swagger/OpenAPI 3.0 specification](#technology-stack).
 
 ## Database Schema
 
-### Core Tables
+The database schema is built on PostgreSQL, ensuring transactional integrity and high availability. The core tables are summarized below, with full SQL definitions provided for reference.
+
+| Table Name | Primary Purpose | Key Fields |
+| :--- | :--- | :--- |
+| `users` | User authentication, profile, and compliance status. | `id`, `email`, `kyc_status`, `aml_risk_level` |
+| `portfolios` | Investment portfolio details and asset allocation. | `id`, `user_id`, `total_value`, `risk_level` |
+| `transactions` | Record of all financial transactions and trades. | `id`, `user_id`, `asset_symbol`, `total_amount` |
+| `suspicious_activities` | Records flagged activities for AML reporting (SAR). | `id`, `user_id`, `sar_number`, `risk_score` |
+| `audit_logs` | Immutable record of all critical system and user events. | `id`, `timestamp`, `event_type`, `user_id` |
+
+### Core Tables (SQL Snippets)
 
 #### users
 
@@ -562,183 +323,18 @@ CREATE TABLE transactions (
 );
 ```
 
-### Compliance Tables
-
-#### suspicious_activities
-
-```sql
-CREATE TABLE suspicious_activities (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES users(id),
-    transaction_id UUID REFERENCES transactions(id),
-    sar_number VARCHAR(50) UNIQUE NOT NULL,
-    activity_type VARCHAR(50) NOT NULL,
-    description TEXT NOT NULL,
-    risk_score INTEGER NOT NULL,
-    status VARCHAR(20) DEFAULT 'pending',
-    reported_to_authorities BOOLEAN DEFAULT false,
-    reported_at TIMESTAMP WITH TIME ZONE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    metadata JSONB
-);
-```
-
 ## Testing Strategy
 
-### Backend Testing
+A rigorous testing strategy is employed across the entire platform to ensure code quality, security, and compliance.
 
-#### Unit Tests
-
-- **Model Tests**: Comprehensive testing of database models and relationships
-- **Service Tests**: Business logic and service layer testing
-- **API Tests**: Endpoint testing with various scenarios
-- **Security Tests**: Authentication and authorization testing
-
-#### Integration Tests
-
-- **Database Integration**: Testing database operations and transactions
-- **External API Integration**: Testing third-party service integrations
-- **Compliance Integration**: Testing compliance workflows and reporting
-
-#### Performance Tests
-
-- **Load Testing**: API performance under various load conditions
-- **Stress Testing**: System behavior under extreme conditions
-- **Scalability Testing**: Performance with increasing data volumes
-
-### Frontend Testing
-
-#### Component Tests
-
-- **Unit Tests**: Individual component functionality testing
-- **Integration Tests**: Component interaction testing
-- **Snapshot Tests**: UI consistency and regression testing
-
-#### End-to-End Tests
-
-- **User Workflows**: Complete user journey testing
-- **Cross-Browser Testing**: Compatibility across different browsers
-- **Mobile Responsiveness**: Testing on various device sizes
-
-### Test Coverage Requirements
-
-- **Backend**: Minimum 90% code coverage
-- **Frontend**: Minimum 85% code coverage
-- **Critical Paths**: 100% coverage for security and compliance features
-
-## Performance Metrics
-
-### System Performance Targets
-
-#### API Response Times
-
-- **Authentication**: < 200ms
-- **Portfolio Data**: < 500ms
-- **Trading Operations**: < 100ms
-- **Compliance Checks**: < 1000ms
-
-#### Database Performance
-
-- **Query Response Time**: < 50ms for 95th percentile
-- **Connection Pool**: Optimal connection management
-- **Index Optimization**: Proper indexing for all queries
-
-#### Frontend Performance
-
-- **Initial Load Time**: < 3 seconds
-- **Time to Interactive**: < 5 seconds
-- **Largest Contentful Paint**: < 2.5 seconds
-
-### Scalability Metrics
-
-#### Concurrent Users
-
-- **Target**: 10,000 concurrent users
-- **Peak Load**: 50,000 concurrent users
-- **Response Time**: Maintain < 1 second under peak load
-
-#### Data Volume
-
-- **Transactions**: 1 million transactions per day
-- **Users**: 100,000 active users
-- **Storage**: Efficient data archiving and retrieval
-
-## Regulatory Compliance
-
-### Compliance Monitoring
-
-BlockGuardian implements comprehensive compliance monitoring to ensure adherence to financial regulations:
-
-#### Anti-Money Laundering (AML)
-
-- **Transaction Monitoring**: Real-time monitoring of all transactions
-- **Pattern Detection**: Advanced algorithms to detect suspicious patterns
-- **Risk Scoring**: Dynamic risk scoring based on user behavior
-- **Reporting**: Automated SAR generation and filing
-
-#### Know Your Customer (KYC)
-
-- **Identity Verification**: Multi-step identity verification process
-- **Document Verification**: Automated document analysis and verification
-- **Ongoing Monitoring**: Continuous monitoring of customer risk profiles
-- **Additional Due Diligence**: Additional verification for high-risk customers
-
-#### Regulatory Reporting
-
-- **Currency Transaction Reports (CTR)**: Automated CTR generation for large transactions
-- **Suspicious Activity Reports (SAR)**: Automated SAR filing for suspicious activities
-- **Regulatory Filings**: Automated generation of required regulatory filings
-- **Audit Trails**: Comprehensive audit trails for all compliance activities
-
-### Data Privacy & Protection
-
-#### GDPR Compliance
-
-- **Data Minimization**: Collect only necessary personal data
-- **Consent Management**: Clear consent mechanisms for data processing
-- **Right to Erasure**: Automated data deletion upon request
-- **Data Portability**: Export user data in standard formats
-
-#### Data Security
-
-- **Encryption**: End-to-end encryption for all sensitive data
-- **Access Controls**: Role-based access control with audit logging
-- **Data Masking**: PII masking in non-production environments
-- **Secure Backup**: Encrypted backups with secure key management
-
-## Contributing Guidelines
-
-### Development Workflow
-
-1. **Fork the Repository**: Create a personal fork of the main repository
-2. **Create Feature Branch**: Create a new branch for your feature or bug fix
-3. **Write Tests**: Ensure comprehensive test coverage for new code
-4. **Code Review**: Submit pull request for peer review
-5. **CI/CD Pipeline**: Ensure all automated tests pass
-6. **Documentation**: Update documentation for new features
-
-### Code Standards
-
-#### Backend Standards
-
-- **PEP 8**: Follow Python PEP 8 style guidelines
-- **Type Hints**: Use type hints for all function parameters and returns
-- **Docstrings**: Comprehensive docstrings for all classes and functions
-- **Error Handling**: Proper exception handling and logging
-
-#### Frontend Standards
-
-- **ESLint**: Follow ESLint configuration for code consistency
-- **Component Structure**: Consistent component structure and naming
-- **PropTypes**: Define PropTypes for all component props
-- **Accessibility**: Ensure WCAG 2.1 AA compliance
-
-### Security Guidelines
-
-- **Security Review**: All code changes require security review
-- **Dependency Scanning**: Regular scanning for vulnerable dependencies
-- **Secret Management**: No hardcoded secrets in source code
-- **Input Validation**: Comprehensive input validation and sanitization
+| Test Type | Component | Coverage Goal | Description |
+| :--- | :--- | :--- | :--- |
+| **Unit Tests** | Backend (Models, Services) | 90% | Isolated testing of business logic and data models. |
+| | Frontend (Components) | 85% | Testing individual component functionality and rendering. |
+| **Integration Tests** | Backend (API, DB, Compliance) | High | Testing interactions between modules and external services. |
+| **End-to-End (E2E)** | Frontend (User Workflows) | Critical Paths | Simulating complete user journeys and cross-browser compatibility. |
+| **Performance Tests** | Backend (API) | N/A | Load and stress testing to ensure scalability under peak load. |
+| **Security Tests** | All | 100% (Critical) | Authentication, authorization, and vulnerability scanning. |
 
 ## License
 

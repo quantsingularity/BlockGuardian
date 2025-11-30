@@ -1,79 +1,153 @@
-# Placeholder for data loading and preprocessing script
 import pandas as pd
+from datetime import timedelta
+import os
+import logging
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
+
+# Define the expected path for the raw data files
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+RESOURCES_DIR = os.path.join(BASE_DIR, "resources", "datasets")
+TRANSACTION_FILE = os.path.join(RESOURCES_DIR, "transaction_history.csv")
+FRAUD_FILE = os.path.join(RESOURCES_DIR, "fraud_patterns.csv")
 
 
-def load_data(file_path):
-    """Loads data from a CSV file."""
-    print(f"Loading data from {file_path}...")
+def load_data(file_path: str) -> pd.DataFrame:
+    """Loads data from a CSV file with error handling."""
+    logger.info(f"Attempting to load data from {file_path}")
     try:
         df = pd.read_csv(file_path)
-        print("Data loaded successfully.")
+        logger.info(f"Data loaded successfully. Shape: {df.shape}")
         return df
     except FileNotFoundError:
-        print(f"Error: File not found at {file_path}")
-        return None
+        logger.error(
+            f"Error: File not found at {file_path}. Please ensure the file exists."
+        )
+        return pd.DataFrame()
+    except Exception as e:
+        logger.error(f"An error occurred while loading data from {file_path}: {e}")
+        return pd.DataFrame()
 
 
-def preprocess_data(df):
-    """Basic preprocessing steps."""
-    print("Preprocessing data...")
-    if df is None:
-        print("No data to preprocess.")
-        return None
-    # Example: Handle missing values by dropping rows with any NAs
-    df_cleaned = df.dropna()
-    print(f"Original rows: {len(df)}, Rows after dropping NAs: {len(df_cleaned)}")
-    # Example: Convert a column to a specific type if needed
-    # if 'timestamp_column' in df_cleaned.columns:
-    #     df_cleaned['timestamp_column'] = pd.to_datetime(df_cleaned['timestamp_column'])
-    print("Data preprocessing complete.")
-    return df_cleaned
+def preprocess_transactions(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Performs comprehensive preprocessing on the transaction history data.
+    - Cleans column names.
+    - Converts data types (datetime, categorical).
+    - Feature engineering for time-series and user behavior analysis.
+    """
+    if df.empty:
+        return df
+
+    logger.info("Starting transaction data preprocessing and feature engineering.")
+
+    # 1. Clean column names (e.g., lowercase, replace spaces with underscores)
+    df.columns = df.columns.str.lower().str.replace(" ", "_")
+
+    # 2. Convert data types
+    if "timestamp" in df.columns:
+        df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce", utc=True)
+        df = df.dropna(subset=["timestamp"])
+
+    if "user_id" in df.columns:
+        df["user_id"] = df["user_id"].astype("category")
+
+    if "amount" in df.columns:
+        # Ensure amount is numeric, coercing errors to NaN
+        df["amount"] = pd.to_numeric(df["amount"], errors="coerce")
+        df = df.dropna(subset=["amount"])
+
+    # 3. Feature Engineering (Time-based)
+    if "timestamp" in df.columns:
+        df["hour_of_day"] = df["timestamp"].dt.hour
+        df["day_of_week"] = df["timestamp"].dt.dayofweek
+        df["is_weekend"] = df["day_of_week"].apply(lambda x: 1 if x >= 5 else 0)
+        df["transaction_month"] = df["timestamp"].dt.month
+
+    # 4. Feature Engineering (Behavioral/Aggregated)
+    # Sort by user and time for rolling window features
+    df = df.sort_values(["user_id", "timestamp"]).reset_index(drop=True)
+
+    # Time since last transaction for the user
+    df["time_since_last_txn"] = (
+        df.groupby("user_id")["timestamp"].diff().dt.total_seconds().fillna(0)
+    )
+
+    # Rolling window features (e.g., last 1 hour, last 24 hours)
+    for window in [timedelta(hours=1), timedelta(hours=24), timedelta(days=7)]:
+        window_str = f"{int(window.total_seconds() / 3600)}h"
+
+        # Count of transactions in the window
+        df[f"txn_count_{window_str}"] = (
+            df.groupby("user_id")["timestamp"]
+            .rolling(window=window, on="timestamp", closed="left")
+            .count()
+            .reset_index(level=0, drop=True)
+            .fillna(0)
+        )
+
+        # Mean amount in the window
+        df[f"mean_amount_{window_str}"] = (
+            df.groupby("user_id")["amount"]
+            .rolling(window=window, on="timestamp", closed="left")
+            .mean()
+            .reset_index(level=0, drop=True)
+            .fillna(0)
+        )
+
+        # Max amount in the window
+        df[f"max_amount_{window_str}"] = (
+            df.groupby("user_id")["amount"]
+            .rolling(window=window, on="timestamp", closed="left")
+            .max()
+            .reset_index(level=0, drop=True)
+            .fillna(0)
+        )
+
+    # 5. Handling Missing Values (Post-Feature Engineering)
+    # Fill remaining NaNs with 0 (assuming features like mean_amount_Xh will be 0 if no prior transactions)
+    df = df.fillna(0)
+
+    logger.info(f"Preprocessing complete. Final shape: {df.shape}")
+    return df
+
+
+def main():
+    """Main function to load, preprocess, and demonstrate data readiness."""
+
+    # Load transaction data
+    transaction_df = load_data(TRANSACTION_FILE)
+
+    if transaction_df.empty:
+        logger.warning("No transaction data loaded. Cannot proceed with preprocessing.")
+        return
+
+    # Preprocess transaction data
+    processed_df = preprocess_transactions(transaction_df.copy())
+
+    # Load fraud patterns data (for reference/joining in later analysis steps)
+    fraud_df = load_data(FRAUD_FILE)
+
+    logger.info("\n--- Processed Transaction Data Sample ---")
+    print(processed_df.head().to_markdown(index=False))
+
+    logger.info("\n--- Fraud Patterns Data Sample ---")
+    if not fraud_df.empty:
+        print(fraud_df.head().to_markdown(index=False))
+    else:
+        print("No fraud patterns data loaded.")
+
+    # Example of saving the processed data (optional, but good practice)
+    # PROCESSED_FILE = os.path.join(RESOURCES_DIR, 'processed_transactions.csv')
+    # processed_df.to_csv(PROCESSED_FILE, index=False)
+    # logger.info(f"\nProcessed data saved to {PROCESSED_FILE}")
 
 
 if __name__ == "__main__":
-    # Example usage:
-    # Assuming you have data in ../data/transaction_history.csv relative to this script's location
-    # For the actual project, the data path might be different, e.g., from resources/datasets
-    # Adjust the path as per your project structure and where you place the data.
-    raw_data_path = (
-        "../data/transaction_history.csv"  # Adjust if your data is elsewhere
-    )
-
-    # Create dummy data if it doesn't exist for demonstration
-    try:
-        pd.read_csv(raw_data_path)
-    except FileNotFoundError:
-        print(f"Creating dummy data at {raw_data_path} as it was not found.")
-        dummy_df = pd.DataFrame(
-            {
-                "transaction_id": range(1, 11),
-                "user_id": [101, 102, 101, 103, 102, 104, 101, 105, 103, 102],
-                "amount": [100, 200, 50, 150, 10, 600, 20, 300, 90, 120],
-                "timestamp": pd.to_datetime(
-                    [
-                        "2023-01-01 10:00:00",
-                        "2023-01-01 10:05:00",
-                        "2023-01-01 10:10:00",
-                        "2023-01-01 11:00:00",
-                        "2023-01-01 11:05:00",
-                        "2023-01-01 11:10:00",
-                        "2023-01-02 10:00:00",
-                        "2023-01-02 10:05:00",
-                        "2023-01-02 10:10:00",
-                        "2023-01-02 11:00:00",
-                    ]
-                ),
-                "fraud_flag": [0, 0, 1, 0, 0, 1, 0, 0, 0, 1],
-            }
-        )
-        dummy_df.to_csv(raw_data_path, index=False)
-
-    df_raw = load_data(raw_data_path)
-    if df_raw is not None:
-        df_processed = preprocess_data(df_raw.copy())
-        if df_processed is not None:
-            print("Processed data head:")
-            print(df_processed.head())
-            # You could save the processed data here
-            # df_processed.to_csv("../data/processed_transactions.csv", index=False)
-            # print("Processed data saved to ../data/processed_transactions.csv")
+    # Note: The original repository structure suggests data files are in resources/datasets.
+    # The script assumes this structure.
+    main()

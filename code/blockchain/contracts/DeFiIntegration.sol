@@ -4,12 +4,16 @@ pragma solidity ^0.8.0;
 import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+import '@openzeppelin/contracts/utils/math/SafeMath.sol';
 
 /**
  * @title DeFiIntegration
  * @dev Smart contract for DeFi integrations and yield strategies
+ * Implements deposit, withdrawal, yield claiming, and strategy management.
  */
 contract DeFiIntegration is Ownable, ReentrancyGuard {
+    using SafeMath for uint256;
+
     // Strategy structure
     struct Strategy {
         uint256 id;
@@ -22,7 +26,7 @@ contract DeFiIntegration is Ownable, ReentrancyGuard {
         uint256 apy; // Basis points (e.g., 5% = 500)
         uint256 risk; // 1-5 scale (1 = lowest, 5 = highest)
         uint256 lockPeriod; // In seconds
-        uint256 minInvestment; // Minimum investment amount
+        uint256 minInvestment; // Minimum investment amount (in asset tokens)
         uint256 maxInvestment; // Maximum investment amount (0 = no limit)
         bool isActive;
     }
@@ -32,11 +36,11 @@ contract DeFiIntegration is Ownable, ReentrancyGuard {
         uint256 id;
         address investor;
         uint256 strategyId;
-        uint256 amount;
+        uint256 amount; // Amount of asset tokens deposited
         uint256 startTime;
         uint256 endTime; // 0 if ongoing
-        uint256 initialValue; // In USD cents
-        uint256 currentValue; // In USD cents
+        uint256 initialValue; // In asset tokens
+        uint256 currentValue; // In asset tokens (tracked by off-chain oracle/keeper)
         bool isActive;
     }
 
@@ -45,7 +49,7 @@ contract DeFiIntegration is Ownable, ReentrancyGuard {
         uint256 id;
         uint256 investmentId;
         address investor;
-        uint256 amount;
+        uint256 amount; // Amount of asset tokens claimed
         uint256 timestamp;
     }
 
@@ -62,7 +66,7 @@ contract DeFiIntegration is Ownable, ReentrancyGuard {
     uint256 private yieldClaimIdCounter;
 
     // Platform settings
-    uint256 public platformFee; // Basis points
+    uint256 public platformFee; // Basis points (max 100 = 1%)
     address public feeCollector;
     bool public investmentsEnabled;
 
@@ -102,11 +106,11 @@ contract DeFiIntegration is Ownable, ReentrancyGuard {
 
     /**
      * @dev Constructor
-     * @param _platformFee Initial platform fee in basis points
+     * @param _platformFee Initial platform fee in basis points (max 100)
      * @param _feeCollector Address to collect fees
      */
     constructor(uint256 _platformFee, address _feeCollector) Ownable(msg.sender) {
-        require(_platformFee <= 100, 'Fee too high'); // Max 1%
+        require(_platformFee <= 100, 'Fee too high (Max 1%)');
         require(_feeCollector != address(0), 'Invalid fee collector');
 
         platformFee = _platformFee;
@@ -117,18 +121,20 @@ contract DeFiIntegration is Ownable, ReentrancyGuard {
         yieldClaimIdCounter = 1;
     }
 
+    // --- Strategy Management (Owner Only) ---
+
     /**
      * @dev Create a new investment strategy
      * @param _name Strategy name
      * @param _description Strategy description
-     * @param _protocolAddress Protocol contract address
+     * @param _protocolAddress Protocol contract address (e.g., Aave, Compound)
      * @param _protocolName Protocol name
-     * @param _assetAddress Asset contract address
+     * @param _assetAddress Asset contract address (e.g., DAI, USDC)
      * @param _assetSymbol Asset symbol
      * @param _apy Expected APY in basis points
      * @param _risk Risk level (1-5)
      * @param _lockPeriod Lock period in seconds
-     * @param _minInvestment Minimum investment amount
+     * @param _minInvestment Minimum investment amount (in asset tokens)
      * @param _maxInvestment Maximum investment amount (0 = no limit)
      * @return strategyId New strategy ID
      */
@@ -145,9 +151,10 @@ contract DeFiIntegration is Ownable, ReentrancyGuard {
         uint256 _minInvestment,
         uint256 _maxInvestment
     ) external onlyOwner returns (uint256) {
-        require(_risk >= 1 && _risk <= 5, 'Invalid risk level');
+        require(_risk >= 1 && _risk <= 5, 'Invalid risk level (1-5)');
         require(_assetAddress != address(0), 'Invalid asset address');
         require(_protocolAddress != address(0), 'Invalid protocol address');
+        require(_minInvestment <= _maxInvestment || _maxInvestment == 0, 'Invalid min/max investment');
 
         uint256 strategyId = strategyIdCounter++;
 
@@ -195,8 +202,10 @@ contract DeFiIntegration is Ownable, ReentrancyGuard {
     ) external onlyOwner {
         Strategy storage strategy = strategies[_strategyId];
 
+        require(strategy.id != 0, 'Strategy not found');
         require(strategy.isActive, 'Strategy not active');
-        require(_risk >= 1 && _risk <= 5, 'Invalid risk level');
+        require(_risk >= 1 && _risk <= 5, 'Invalid risk level (1-5)');
+        require(_minInvestment <= _maxInvestment || _maxInvestment == 0, 'Invalid min/max investment');
 
         strategy.name = _name;
         strategy.description = _description;
@@ -216,50 +225,54 @@ contract DeFiIntegration is Ownable, ReentrancyGuard {
     function deactivateStrategy(uint256 _strategyId) external onlyOwner {
         Strategy storage strategy = strategies[_strategyId];
 
-        require(strategy.isActive, 'Strategy not active');
+        require(strategy.id != 0, 'Strategy not found');
+        require(strategy.isActive, 'Strategy already inactive');
 
         strategy.isActive = false;
 
         emit StrategyDeactivated(_strategyId);
     }
 
+    // --- Investment Operations ---
+
     /**
      * @dev Create a new investment
      * @param _strategyId Strategy ID
-     * @param _amount Investment amount
+     * @param _amount Investment amount (in asset tokens)
      * @return investmentId New investment ID
      */
     function createInvestment(
         uint256 _strategyId,
         uint256 _amount
     ) external nonReentrant returns (uint256) {
-        require(investmentsEnabled, 'Investments not enabled');
+        require(investmentsEnabled, 'Investments not enabled by platform');
 
         Strategy storage strategy = strategies[_strategyId];
 
+        require(strategy.id != 0, 'Strategy not found');
         require(strategy.isActive, 'Strategy not active');
-        require(_amount >= strategy.minInvestment, 'Amount below minimum');
+        require(_amount >= strategy.minInvestment, 'Amount below minimum investment');
         require(
             strategy.maxInvestment == 0 || _amount <= strategy.maxInvestment,
-            'Amount above maximum'
+            'Amount above maximum investment'
         );
 
-        // Transfer tokens from investor to contract
+        // 1. Transfer tokens from investor to contract
         IERC20 token = IERC20(strategy.assetAddress);
         require(token.transferFrom(msg.sender, address(this), _amount), 'Token transfer failed');
 
-        // Calculate platform fee
-        uint256 fee = (_amount * platformFee) / 10000;
+        // 2. Calculate platform fee
+        uint256 fee = _amount.mul(platformFee).div(10000);
 
-        // Transfer fee to fee collector
+        // 3. Transfer fee to fee collector
         if (fee > 0) {
             require(token.transfer(feeCollector, fee), 'Fee transfer failed');
         }
 
-        // Calculate initial investment amount after fee
-        uint256 investmentAmount = _amount - fee;
+        // 4. Calculate final investment amount
+        uint256 investmentAmount = _amount.sub(fee);
 
-        // Create investment record
+        // 5. Create investment record
         uint256 investmentId = investmentIdCounter++;
 
         investments[investmentId] = Investment({
@@ -270,12 +283,16 @@ contract DeFiIntegration is Ownable, ReentrancyGuard {
             startTime: block.timestamp,
             endTime: 0,
             initialValue: investmentAmount,
-            currentValue: investmentAmount,
+            currentValue: investmentAmount, // Initial value is the same as amount
             isActive: true
         });
 
-        // Add to user investments
+        // 6. Add to user investments
         userInvestments[msg.sender].push(investmentId);
+
+        // TODO: Integrate with the actual DeFi protocol (e.g., deposit tokens)
+        // For this implementation, we assume the tokens are held in this contract
+        // and the off-chain system handles the actual protocol interaction.
 
         emit InvestmentCreated(investmentId, msg.sender, _strategyId, investmentAmount);
 
@@ -283,17 +300,21 @@ contract DeFiIntegration is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev Update investment value
+     * @dev Update investment value (Called by a trusted off-chain oracle/keeper)
+     * This function is crucial for tracking the actual value of the investment
+     * which might fluctuate due to yield generation or impermanent loss.
      * @param _investmentId Investment ID
-     * @param _currentValue Current investment value
+     * @param _currentValue Current investment value (in asset tokens)
      */
     function updateInvestmentValue(
         uint256 _investmentId,
         uint256 _currentValue
-    ) external onlyOwner {
+    ) external onlyOwner { // Only owner (trusted keeper) can update
         Investment storage investment = investments[_investmentId];
 
+        require(investment.id != 0, 'Investment not found');
         require(investment.isActive, 'Investment not active');
+        require(_currentValue > 0, 'Current value must be positive');
 
         investment.currentValue = _currentValue;
 
@@ -301,62 +322,62 @@ contract DeFiIntegration is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev Close investment
+     * @dev Close investment and withdraw funds
      * @param _investmentId Investment ID
-     * @param _finalValue Final investment value
      */
-    function closeInvestment(uint256 _investmentId, uint256 _finalValue) external nonReentrant {
+    function closeInvestment(uint256 _investmentId) external nonReentrant {
         Investment storage investment = investments[_investmentId];
 
-        require(investment.isActive, 'Investment not active');
-        require(investment.investor == msg.sender || owner() == msg.sender, 'Not authorized');
+        require(investment.id != 0, 'Investment not found');
+        require(investment.investor == msg.sender, 'Not the investor');
+        require(investment.isActive, 'Investment already closed');
 
-        // If not owner, check lock period
-        if (msg.sender != owner()) {
-            Strategy storage strategy = strategies[investment.strategyId];
-            require(
-                block.timestamp >= investment.startTime + strategy.lockPeriod,
-                'Lock period not ended'
-            );
-        }
+        Strategy storage strategy = strategies[investment.strategyId];
 
-        // Update investment
+        // Check lock period
+        require(
+            block.timestamp >= investment.startTime.add(strategy.lockPeriod),
+            'Investment is still locked'
+        );
+
+        // Final value is the current tracked value
+        uint256 finalValue = investment.currentValue;
+
+        // Update investment status
         investment.isActive = false;
         investment.endTime = block.timestamp;
-        investment.currentValue = _finalValue;
 
         // Transfer tokens back to investor
-        IERC20 token = IERC20(strategies[investment.strategyId].assetAddress);
-        require(token.transfer(investment.investor, _finalValue), 'Token transfer failed');
+        IERC20 token = IERC20(strategy.assetAddress);
+        require(token.transfer(investment.investor, finalValue), 'Token withdrawal failed');
 
-        emit InvestmentClosed(_investmentId, _finalValue);
+        emit InvestmentClosed(_investmentId, finalValue);
     }
 
     /**
      * @dev Claim yield from investment
+     * This function allows claiming only the *profit* (currentValue - initialValue).
+     * The principal remains in the investment until closeInvestment is called.
      * @param _investmentId Investment ID
-     * @param _amount Amount to claim
      * @return yieldClaimId New yield claim ID
      */
-    function claimYield(
-        uint256 _investmentId,
-        uint256 _amount
-    ) external nonReentrant returns (uint256) {
+    function claimYield(uint256 _investmentId) external nonReentrant returns (uint256) {
         Investment storage investment = investments[_investmentId];
 
+        require(investment.id != 0, 'Investment not found');
+        require(investment.investor == msg.sender, 'Not the investor');
         require(investment.isActive, 'Investment not active');
-        require(investment.investor == msg.sender, 'Not investor');
 
-        // Calculate available yield
-        uint256 availableYield = investment.currentValue - investment.initialValue;
-        require(availableYield >= _amount, 'Insufficient yield');
+        // Calculate available yield (profit)
+        uint256 availableYield = investment.currentValue.sub(investment.initialValue);
+        require(availableYield > 0, 'No yield available to claim');
 
-        // Update investment value
-        investment.currentValue -= _amount;
+        // Reset the initial value to the current value (reinvesting the principal)
+        investment.initialValue = investment.currentValue;
 
         // Transfer yield to investor
         IERC20 token = IERC20(strategies[investment.strategyId].assetAddress);
-        require(token.transfer(msg.sender, _amount), 'Token transfer failed');
+        require(token.transfer(msg.sender, availableYield), 'Yield transfer failed');
 
         // Create yield claim record
         uint256 yieldClaimId = yieldClaimIdCounter++;
@@ -365,27 +386,27 @@ contract DeFiIntegration is Ownable, ReentrancyGuard {
             id: yieldClaimId,
             investmentId: _investmentId,
             investor: msg.sender,
-            amount: _amount,
+            amount: availableYield,
             timestamp: block.timestamp
         });
 
         // Add to user yield claims
         userYieldClaims[msg.sender].push(yieldClaimId);
 
-        emit YieldClaimed(yieldClaimId, msg.sender, _investmentId, _amount);
+        emit YieldClaimed(yieldClaimId, msg.sender, _investmentId, availableYield);
 
         return yieldClaimId;
     }
 
+    // --- Platform Settings (Owner Only) ---
+
     /**
      * @dev Set platform fee
-     * @param _platformFee Platform fee in basis points
+     * @param _platformFee Platform fee in basis points (max 100)
      */
     function setPlatformFee(uint256 _platformFee) external onlyOwner {
-        require(_platformFee <= 100, 'Fee too high'); // Max 1%
-
+        require(_platformFee <= 100, 'Fee too high (Max 1%)');
         platformFee = _platformFee;
-
         emit PlatformFeeUpdated(_platformFee);
     }
 
@@ -395,9 +416,7 @@ contract DeFiIntegration is Ownable, ReentrancyGuard {
      */
     function setFeeCollector(address _feeCollector) external onlyOwner {
         require(_feeCollector != address(0), 'Invalid fee collector');
-
         feeCollector = _feeCollector;
-
         emit FeeCollectorUpdated(_feeCollector);
     }
 
@@ -407,9 +426,10 @@ contract DeFiIntegration is Ownable, ReentrancyGuard {
      */
     function setInvestmentsEnabled(bool _enabled) external onlyOwner {
         investmentsEnabled = _enabled;
-
         emit InvestmentsStatusChanged(_enabled);
     }
+
+    // --- View Functions ---
 
     /**
      * @dev Get user investments
@@ -442,7 +462,7 @@ contract DeFiIntegration is Ownable, ReentrancyGuard {
         // Count active strategies
         uint256 activeCount = 0;
         for (uint256 i = 1; i < strategyIdCounter; i++) {
-            if (strategies[i].isActive) {
+            if (strategies[i].id != 0 && strategies[i].isActive) {
                 activeCount++;
             }
         }
@@ -451,19 +471,19 @@ contract DeFiIntegration is Ownable, ReentrancyGuard {
             return new Strategy[](0);
         }
 
-        uint256 endIndex = _startIndex + _count;
+        uint256 endIndex = _startIndex.add(_count);
         if (endIndex > activeCount) {
             endIndex = activeCount;
         }
 
-        uint256 resultCount = endIndex - _startIndex;
+        uint256 resultCount = endIndex.sub(_startIndex);
         Strategy[] memory result = new Strategy[](resultCount);
 
         uint256 currentIndex = 0;
         uint256 resultIndex = 0;
 
         for (uint256 i = 1; i < strategyIdCounter && resultIndex < resultCount; i++) {
-            if (strategies[i].isActive) {
+            if (strategies[i].id != 0 && strategies[i].isActive) {
                 if (currentIndex >= _startIndex && currentIndex < endIndex) {
                     result[resultIndex] = strategies[i];
                     resultIndex++;
@@ -488,7 +508,7 @@ contract DeFiIntegration is Ownable, ReentrancyGuard {
         // Count active investments
         uint256 activeCount = 0;
         for (uint256 i = 0; i < userInvestmentIds.length; i++) {
-            if (investments[userInvestmentIds[i]].isActive) {
+            if (investments[userInvestmentIds[i]].id != 0 && investments[userInvestmentIds[i]].isActive) {
                 activeCount++;
             }
         }
@@ -498,7 +518,7 @@ contract DeFiIntegration is Ownable, ReentrancyGuard {
 
         for (uint256 i = 0; i < userInvestmentIds.length && resultIndex < activeCount; i++) {
             uint256 investmentId = userInvestmentIds[i];
-            if (investments[investmentId].isActive) {
+            if (investments[investmentId].id != 0 && investments[investmentId].isActive) {
                 result[resultIndex] = investments[investmentId];
                 resultIndex++;
             }

@@ -7,13 +7,10 @@ import logging
 from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
-
 from sqlalchemy import Column, DateTime, Enum as SQLEnum, Integer, String, Text, Index
 from sqlalchemy.dialects.postgresql import JSONB
-
 from ..models.base import db_manager
 
-# Configure logging for the audit system itself
 logger = logging.getLogger(__name__)
 
 
@@ -48,7 +45,6 @@ class AuditLog(db_manager.Base):
     """SQLAlchemy model for the Audit Log"""
 
     __tablename__ = "audit_logs"
-
     id = Column(Integer, primary_key=True, index=True)
     timestamp = Column(
         DateTime(timezone=True), default=datetime.now(timezone.utc), nullable=False
@@ -56,20 +52,18 @@ class AuditLog(db_manager.Base):
     event_type = Column(SQLEnum(AuditEventType), nullable=False, index=True)
     user_id = Column(Integer, index=True)
     username = Column(String(255))
-    ip_address = Column(String(45))  # IPv4 or IPv6
+    ip_address = Column(String(45))
     resource_type = Column(String(255), index=True)
     resource_id = Column(String(255), index=True)
-    details = Column(JSONB)  # Store structured data about the event
+    details = Column(JSONB)
     message = Column(Text, nullable=False)
-    success = Column(Integer, default=1)  # 1 for success, 0 for failure
-
-    # Indexes for performance
+    success = Column(Integer, default=1)
     __table_args__ = (
         Index("idx_audit_user_time", "user_id", "timestamp"),
         Index("idx_audit_type_time", "event_type", "timestamp"),
     )
 
-    def __repr__(self):
+    def __repr__(self) -> Any:
         return f"<AuditLog(id={self.id}, event_type='{self.event_type.value}', user_id={self.user_id})>"
 
 
@@ -79,16 +73,13 @@ class AuditLogger:
     Ensures logs are immutable and stored securely in the database.
     """
 
-    def __init__(self):
+    def __init__(self) -> Any:
         self.logger = logging.getLogger(__name__)
-        # Ensure the table is created if it doesn't exist
         self._ensure_table_exists()
 
-    def _ensure_table_exists(self):
+    def _ensure_table_exists(self) -> Any:
         """Creates the AuditLog table if it does not exist."""
         try:
-            # This is a simplified approach. In a real Flask/SQLAlchemy app,
-            # Alembic migrations would handle this. We rely on the base manager.
             db_manager.Base.metadata.create_all(db_manager.engine)
         except Exception as e:
             self.logger.error(f"Failed to ensure AuditLog table exists: {e}")
@@ -124,7 +115,6 @@ class AuditLogger:
         """
         if not message:
             message = f"Event type: {event_type.value}"
-
         log_entry = AuditLog(
             event_type=event_type,
             user_id=user_id,
@@ -136,7 +126,6 @@ class AuditLogger:
             message=message,
             success=1 if success else 0,
         )
-
         session = db_manager.get_session()
         try:
             session.add(log_entry)
@@ -178,7 +167,6 @@ class AuditLogger:
         session = db_manager.get_session()
         try:
             query = session.query(AuditLog)
-
             if event_type:
                 query = query.filter(AuditLog.event_type == event_type)
             if user_id:
@@ -187,7 +175,6 @@ class AuditLogger:
                 query = query.filter(AuditLog.timestamp >= start_date)
             if end_date:
                 query = query.filter(AuditLog.timestamp <= end_date)
-
             logs = (
                 query.order_by(AuditLog.timestamp.desc())
                 .limit(limit)
@@ -209,7 +196,6 @@ class AuditLogger:
         """
         session = db_manager.get_session()
         try:
-            # Use a simple case-insensitive search on the message field
             search_pattern = f"%{search_term}%"
             logs = (
                 session.query(AuditLog)
@@ -226,5 +212,4 @@ class AuditLogger:
             session.close()
 
 
-# Global instance
 audit_logger = AuditLogger()

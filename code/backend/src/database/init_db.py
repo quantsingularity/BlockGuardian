@@ -9,9 +9,7 @@ import sys
 from datetime import datetime, timedelta
 from decimal import Decimal
 
-# Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
-
 from src.config import get_config
 from src.models.ai_models import AIModel, ModelStatus, ModelType
 from src.models.base import Base, db_manager
@@ -19,16 +17,14 @@ from src.models.portfolio import Asset, AssetType, Portfolio, PortfolioType, Ris
 from src.models.user import AMLRiskLevel, KYCStatus, User, UserStatus, UserTier, db
 from src.security.auth import UserRole, auth_manager
 from src.security.encryption import encryption_manager
-
 from core.logging import get_logger
 
 logger = get_logger(__name__)
 
 
-def create_database_schema():
+def create_database_schema() -> Any:
     """Create all database tables"""
     try:
-        # Create all tables
         Base.metadata.create_all(db_manager.engine)
         logging.info("Database schema created successfully")
         return True
@@ -37,11 +33,10 @@ def create_database_schema():
         return False
 
 
-def create_indexes():
+def create_indexes() -> Any:
     """Create additional database indexes for performance"""
     try:
         with db_manager.engine.connect() as conn:
-            # User indexes
             conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_users_email_status ON users(email, status)"
             )
@@ -51,16 +46,12 @@ def create_indexes():
             conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_users_last_login ON users(last_login)"
             )
-
-            # Portfolio indexes
             conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_portfolios_owner_active ON portfolios(owner_id, is_active)"
             )
             conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_portfolios_type_status ON portfolios(portfolio_type, is_active)"
             )
-
-            # Transaction indexes
             conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_transactions_user_date ON transactions(user_id, created_at)"
             )
@@ -70,41 +61,31 @@ def create_indexes():
             conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_transactions_status_type ON transactions(status, transaction_type)"
             )
-
-            # Asset indexes
             conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_assets_symbol_active ON assets(symbol, is_active)"
             )
             conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_assets_type_tradeable ON assets(asset_type, is_tradeable)"
             )
-
-            # Holdings indexes
             conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_holdings_portfolio_active ON portfolio_holdings(portfolio_id, is_active)"
             )
             conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_holdings_asset_active ON portfolio_holdings(asset_id, is_active)"
             )
-
-            # AI model indexes
             conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_ai_models_type_status ON ai_models(model_type, status)"
             )
             conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_predictions_model_timestamp ON model_predictions(model_id, prediction_timestamp)"
             )
-
-            # Fraud detection indexes
             conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_fraud_user_timestamp ON fraud_detections(user_id, created_at)"
             )
             conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_fraud_risk_level ON fraud_detections(risk_level)"
             )
-
             conn.commit()
-
         logging.info("Database indexes created successfully")
         return True
     except Exception as e:
@@ -112,18 +93,14 @@ def create_indexes():
         return False
 
 
-def create_admin_user():
+def create_admin_user() -> Any:
     """Create default admin user"""
     try:
         session = db_manager.get_session()
-
-        # Check if admin user already exists
         admin_user = (
             session.query(User).filter(User.email == "admin@blockguardian.com").first()
         )
-
         if not admin_user:
-            # Create admin user
             admin_user = User(
                 email="admin@blockguardian.com",
                 username="admin",
@@ -136,21 +113,14 @@ def create_admin_user():
                 aml_risk_level=AMLRiskLevel.LOW,
                 country="US",
             )
-
-            # Set password
             admin_user.set_password("AdminPassword123!")
-
-            # Approve KYC
             admin_user.kyc_approved_at = datetime.utcnow()
             admin_user.kyc_expires_at = datetime.utcnow() + timedelta(days=365)
-
             session.add(admin_user)
             session.commit()
-
             logging.info("Admin user created successfully")
         else:
             logging.info("Admin user already exists")
-
         session.close()
         return True
     except Exception as e:
@@ -158,12 +128,10 @@ def create_admin_user():
         return False
 
 
-def create_sample_assets():
+def create_sample_assets() -> Any:
     """Create sample assets for testing"""
     try:
         session = db_manager.get_session()
-
-        # Sample assets data
         sample_assets = [
             {
                 "symbol": "AAPL",
@@ -250,22 +218,17 @@ def create_sample_assets():
                 "is_tradeable": True,
             },
         ]
-
-        # Create assets if they don't exist
         for asset_data in sample_assets:
             existing_asset = (
                 session.query(Asset)
                 .filter(Asset.symbol == asset_data["symbol"])
                 .first()
             )
-
             if not existing_asset:
                 asset = Asset(**asset_data)
                 session.add(asset)
-
         session.commit()
         session.close()
-
         logging.info("Sample assets created successfully")
         return True
     except Exception as e:
@@ -273,12 +236,10 @@ def create_sample_assets():
         return False
 
 
-def create_sample_ai_models():
+def create_sample_ai_models() -> Any:
     """Create sample AI models for testing"""
     try:
         session = db_manager.get_session()
-
-        # Sample AI models
         sample_models = [
             {
                 "name": "Fraud Detection Model v1.0",
@@ -316,7 +277,7 @@ def create_sample_ai_models():
                 "status": ModelStatus.DEPLOYED,
                 "accuracy": 0.88,
                 "precision": 0.85,
-                "recall": 0.90,
+                "recall": 0.9,
                 "f1_score": 0.87,
                 "auc_score": 0.92,
                 "hyperparameters": {
@@ -343,7 +304,7 @@ def create_sample_ai_models():
                 "description": "LSTM model for predicting asset price movements",
                 "status": ModelStatus.TESTING,
                 "accuracy": 0.72,
-                "precision": 0.70,
+                "precision": 0.7,
                 "recall": 0.75,
                 "f1_score": 0.72,
                 "auc_score": 0.78,
@@ -366,8 +327,6 @@ def create_sample_ai_models():
                 "target_column": "future_price",
             },
         ]
-
-        # Create models if they don't exist
         for model_data in sample_models:
             existing_model = (
                 session.query(AIModel)
@@ -377,14 +336,11 @@ def create_sample_ai_models():
                 )
                 .first()
             )
-
             if not existing_model:
                 model = AIModel(**model_data)
                 session.add(model)
-
         session.commit()
         session.close()
-
         logging.info("Sample AI models created successfully")
         return True
     except Exception as e:
@@ -392,18 +348,14 @@ def create_sample_ai_models():
         return False
 
 
-def create_demo_user():
+def create_demo_user() -> Any:
     """Create demo user for testing"""
     try:
         session = db_manager.get_session()
-
-        # Check if demo user already exists
         demo_user = (
             session.query(User).filter(User.email == "demo@blockguardian.com").first()
         )
-
         if not demo_user:
-            # Create demo user
             demo_user = User(
                 email="demo@blockguardian.com",
                 username="demo_user",
@@ -418,18 +370,11 @@ def create_demo_user():
                 city="New York",
                 state="NY",
             )
-
-            # Set password
             demo_user.set_password("DemoPassword123!")
-
-            # Approve KYC
             demo_user.kyc_approved_at = datetime.utcnow()
             demo_user.kyc_expires_at = datetime.utcnow() + timedelta(days=365)
-
             session.add(demo_user)
             session.commit()
-
-            # Create demo portfolio
             demo_portfolio = Portfolio(
                 name="Demo Portfolio",
                 description="Sample portfolio for demonstration",
@@ -441,14 +386,11 @@ def create_demo_user():
                 cash_balance=Decimal("10000.00"),
                 total_value=Decimal("10000.00"),
             )
-
             session.add(demo_portfolio)
             session.commit()
-
             logging.info("Demo user and portfolio created successfully")
         else:
             logging.info("Demo user already exists")
-
         session.close()
         return True
     except Exception as e:
@@ -456,56 +398,39 @@ def create_demo_user():
         return False
 
 
-def initialize_database():
+def initialize_database() -> Any:
     """Main function to initialize the database"""
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
     )
-
     logging.info("Starting database initialization...")
-
-    # Initialize database manager
     from flask import Flask
 
     app = Flask(__name__)
-
-    # Load configuration
     config = get_config("development")
     app.config.from_object(config)
     app.config["SQLALCHEMY_DATABASE_URI"] = (
         f"sqlite:///{os.path.join(os.path.dirname(__file__), 'app.db')}"
     )
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-
     with app.app_context():
-        # Initialize components
         db.init_app(app)
         db_manager.init_app(app)
         auth_manager.init_app(app)
         encryption_manager.init_app(app)
-
-        # Create database schema
         if not create_database_schema():
             logging.error("Database initialization failed")
             return False
-
-        # Create indexes
         if not create_indexes():
             logging.warning("Some indexes may not have been created")
-
-        # Create initial data
         if not create_admin_user():
             logging.warning("Admin user creation failed")
-
         if not create_sample_assets():
             logging.warning("Sample assets creation failed")
-
         if not create_sample_ai_models():
             logging.warning("Sample AI models creation failed")
-
         if not create_demo_user():
             logging.warning("Demo user creation failed")
-
         logging.info("Database initialization completed successfully")
         return True
 

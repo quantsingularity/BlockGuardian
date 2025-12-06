@@ -6,7 +6,6 @@ Implements comprehensive portfolio operations, asset management, and transaction
 import json
 from datetime import datetime, timedelta
 from decimal import Decimal
-
 from flask import Blueprint, g, jsonify, request
 from src.models.base import db_manager, paginate_query
 from src.models.portfolio import (
@@ -28,15 +27,13 @@ portfolio_bp = Blueprint("portfolio", __name__)
 @portfolio_bp.route("/", methods=["GET"])
 @jwt_required
 @rate_limit(limit=100, window=3600, scope=RateLimitScope.PER_USER)
-def get_portfolios():
+def get_portfolios() -> Any:
     """Get user's portfolios"""
     try:
         page = request.args.get("page", 1, type=int)
         per_page = min(request.args.get("per_page", 20, type=int), 100)
-
         session = db_manager.get_session()
         try:
-            # Query user's portfolios
             query = (
                 session.query(Portfolio)
                 .filter(
@@ -44,43 +41,31 @@ def get_portfolios():
                 )
                 .order_by(Portfolio.created_at.desc())
             )
-
-            # Paginate results
             result = paginate_query(query, page, per_page)
-
-            # Convert to dictionaries
             portfolios = []
             for portfolio in result["items"]:
                 portfolio_dict = portfolio.to_dict()
                 portfolio_dict["asset_allocation"] = portfolio.get_asset_allocation()
                 portfolio_dict["risk_violations"] = portfolio.check_risk_limits()
                 portfolios.append(portfolio_dict)
-
             result["items"] = portfolios
-
-            return jsonify(result), 200
-
+            return (jsonify(result), 200)
         finally:
             session.close()
-
     except Exception:
-        return jsonify({"error": "Failed to get portfolios"}), 500
+        return (jsonify({"error": "Failed to get portfolios"}), 500)
 
 
 @portfolio_bp.route("/", methods=["POST"])
 @jwt_required
 @permission_required(Permission.CREATE_PORTFOLIO)
 @rate_limit(limit=10, window=3600, scope=RateLimitScope.PER_USER)
-def create_portfolio():
+def create_portfolio() -> Any:
     """Create a new portfolio"""
     try:
         data = security_validator.validate_json_input(request.get_json())
-
-        # Validate required fields
         if "name" not in data:
-            return jsonify({"error": "Portfolio name is required"}), 400
-
-        # Check for security threats
+            return (jsonify({"error": "Portfolio name is required"}), 400)
         threats = security_validator.check_security_threats(json.dumps(data))
         if threats:
             audit_logger.log_security_alert(
@@ -88,20 +73,15 @@ def create_portfolio():
                 user_id=g.current_user_id,
                 details={"threats": threats},
             )
-            return jsonify({"error": "Invalid input detected"}), 400
-
+            return (jsonify({"error": "Invalid input detected"}), 400)
         session = db_manager.get_session()
         try:
-            # Check if user exists and can create portfolios
             user = session.query(User).get(g.current_user_id)
             if not user:
-                return jsonify({"error": "User not found"}), 404
-
+                return (jsonify({"error": "User not found"}), 404)
             can_trade, message = user.can_trade()
             if not can_trade:
-                return jsonify({"error": f"Cannot create portfolio: {message}"}), 403
-
-            # Create portfolio
+                return (jsonify({"error": f"Cannot create portfolio: {message}"}), 403)
             portfolio = Portfolio(
                 name=data["name"],
                 description=data.get("description"),
@@ -111,19 +91,14 @@ def create_portfolio():
                 risk_level=data.get("risk_level", "moderate"),
                 investment_objective=data.get("investment_objective"),
             )
-
-            # Set risk management parameters
             if "max_position_size" in data:
                 portfolio.max_position_size = float(data["max_position_size"])
             if "max_sector_allocation" in data:
                 portfolio.max_sector_allocation = float(data["max_sector_allocation"])
             if "stop_loss_threshold" in data:
                 portfolio.stop_loss_threshold = float(data["stop_loss_threshold"])
-
             session.add(portfolio)
             session.commit()
-
-            # Log portfolio creation
             audit_logger.log_financial_event(
                 event_type=audit_logger.AuditEventType.PORTFOLIO_CREATED,
                 user_id=g.current_user_id,
@@ -133,7 +108,6 @@ def create_portfolio():
                     "portfolio_type": portfolio.portfolio_type.value,
                 },
             )
-
             return (
                 jsonify(
                     {
@@ -143,20 +117,18 @@ def create_portfolio():
                 ),
                 201,
             )
-
         finally:
             session.close()
-
     except ValidationError as e:
-        return jsonify({"error": e.message, "field": e.field}), 400
+        return (jsonify({"error": e.message, "field": e.field}), 400)
     except Exception:
-        return jsonify({"error": "Failed to create portfolio"}), 500
+        return (jsonify({"error": "Failed to create portfolio"}), 500)
 
 
 @portfolio_bp.route("/<int:portfolio_id>", methods=["GET"])
 @jwt_required
 @permission_required(Permission.READ_PORTFOLIO)
-def get_portfolio(portfolio_id):
+def get_portfolio(portfolio_id: Any) -> Any:
     """Get portfolio details"""
     try:
         session = db_manager.get_session()
@@ -170,42 +142,32 @@ def get_portfolio(portfolio_id):
                 )
                 .first()
             )
-
             if not portfolio:
-                return jsonify({"error": "Portfolio not found"}), 404
-
-            # Get portfolio data
+                return (jsonify({"error": "Portfolio not found"}), 404)
             portfolio_dict = portfolio.to_dict()
             portfolio_dict["asset_allocation"] = portfolio.get_asset_allocation()
             portfolio_dict["risk_violations"] = portfolio.check_risk_limits()
-
-            # Get holdings
             holdings = []
             for holding in portfolio.holdings.filter_by(is_active=True):
                 holding_dict = holding.to_dict()
                 holding_dict["asset"] = holding.asset.to_dict()
                 holdings.append(holding_dict)
-
             portfolio_dict["holdings"] = holdings
-
-            return jsonify(portfolio_dict), 200
-
+            return (jsonify(portfolio_dict), 200)
         finally:
             session.close()
-
     except Exception:
-        return jsonify({"error": "Failed to get portfolio"}), 500
+        return (jsonify({"error": "Failed to get portfolio"}), 500)
 
 
 @portfolio_bp.route("/<int:portfolio_id>", methods=["PUT"])
 @jwt_required
 @permission_required(Permission.UPDATE_PORTFOLIO)
 @rate_limit(limit=20, window=3600, scope=RateLimitScope.PER_USER)
-def update_portfolio(portfolio_id):
+def update_portfolio(portfolio_id: Any) -> Any:
     """Update portfolio settings"""
     try:
         data = security_validator.validate_json_input(request.get_json())
-
         session = db_manager.get_session()
         try:
             portfolio = (
@@ -217,11 +179,8 @@ def update_portfolio(portfolio_id):
                 )
                 .first()
             )
-
             if not portfolio:
-                return jsonify({"error": "Portfolio not found"}), 404
-
-            # Update allowed fields
+                return (jsonify({"error": "Portfolio not found"}), 404)
             allowed_fields = [
                 "name",
                 "description",
@@ -233,16 +192,12 @@ def update_portfolio(portfolio_id):
                 "auto_rebalance",
                 "rebalance_frequency",
             ]
-
             updated_fields = []
             for field in allowed_fields:
                 if field in data:
                     setattr(portfolio, field, data[field])
                     updated_fields.append(field)
-
             session.commit()
-
-            # Log portfolio update
             audit_logger.log_financial_event(
                 event_type=audit_logger.AuditEventType.PORTFOLIO_UPDATED,
                 user_id=g.current_user_id,
@@ -251,7 +206,6 @@ def update_portfolio(portfolio_id):
                     "updated_fields": updated_fields,
                 },
             )
-
             return (
                 jsonify(
                     {
@@ -261,20 +215,18 @@ def update_portfolio(portfolio_id):
                 ),
                 200,
             )
-
         finally:
             session.close()
-
     except ValidationError as e:
-        return jsonify({"error": e.message, "field": e.field}), 400
+        return (jsonify({"error": e.message, "field": e.field}), 400)
     except Exception:
-        return jsonify({"error": "Failed to update portfolio"}), 500
+        return (jsonify({"error": "Failed to update portfolio"}), 500)
 
 
 @portfolio_bp.route("/<int:portfolio_id>/transactions", methods=["GET"])
 @jwt_required
 @permission_required(Permission.READ_PORTFOLIO)
-def get_portfolio_transactions(portfolio_id):
+def get_portfolio_transactions(portfolio_id: Any) -> Any:
     """Get portfolio transaction history"""
     try:
         page = request.args.get("page", 1, type=int)
@@ -282,10 +234,8 @@ def get_portfolio_transactions(portfolio_id):
         transaction_type = request.args.get("type")
         start_date = request.args.get("start_date")
         end_date = request.args.get("end_date")
-
         session = db_manager.get_session()
         try:
-            # Verify portfolio ownership
             portfolio = (
                 session.query(Portfolio)
                 .filter(
@@ -294,73 +244,52 @@ def get_portfolio_transactions(portfolio_id):
                 )
                 .first()
             )
-
             if not portfolio:
-                return jsonify({"error": "Portfolio not found"}), 404
-
-            # Build query
+                return (jsonify({"error": "Portfolio not found"}), 404)
             query = (
                 session.query(Transaction)
                 .filter(Transaction.portfolio_id == portfolio_id)
                 .order_by(Transaction.created_at.desc())
             )
-
-            # Apply filters
             if transaction_type:
                 query = query.filter(Transaction.transaction_type == transaction_type)
-
             if start_date:
                 start_dt = datetime.fromisoformat(start_date)
                 query = query.filter(Transaction.created_at >= start_dt)
-
             if end_date:
                 end_dt = datetime.fromisoformat(end_date)
                 query = query.filter(Transaction.created_at <= end_dt)
-
-            # Paginate results
             result = paginate_query(query, page, per_page)
-
-            # Convert to dictionaries
             transactions = []
             for transaction in result["items"]:
                 transaction_dict = transaction.to_dict()
                 if transaction.asset:
                     transaction_dict["asset"] = transaction.asset.to_dict()
                 transactions.append(transaction_dict)
-
             result["items"] = transactions
-
-            return jsonify(result), 200
-
+            return (jsonify(result), 200)
         finally:
             session.close()
-
     except Exception:
-        return jsonify({"error": "Failed to get transactions"}), 500
+        return (jsonify({"error": "Failed to get transactions"}), 500)
 
 
 @portfolio_bp.route("/<int:portfolio_id>/buy", methods=["POST"])
 @jwt_required
 @permission_required(Permission.EXECUTE_TRADE)
 @rate_limit(limit=50, window=3600, scope=RateLimitScope.PER_USER)
-def buy_asset(portfolio_id):
+def buy_asset(portfolio_id: Any) -> Any:
     """Buy an asset for the portfolio"""
     try:
         data = security_validator.validate_json_input(request.get_json())
-
-        # Validate required fields
         required_fields = ["asset_symbol", "quantity", "price"]
         for field in required_fields:
             if field not in data:
-                return jsonify({"error": f"{field} is required"}), 400
-
-        # Validate financial amounts
+                return (jsonify({"error": f"{field} is required"}), 400)
         quantity = security_validator.validate_financial_amount(data["quantity"])
         price = security_validator.validate_financial_amount(data["price"])
-
         session = db_manager.get_session()
         try:
-            # Verify portfolio ownership
             portfolio = (
                 session.query(Portfolio)
                 .filter(
@@ -370,39 +299,26 @@ def buy_asset(portfolio_id):
                 )
                 .first()
             )
-
             if not portfolio:
-                return jsonify({"error": "Portfolio not found"}), 404
-
-            # Check if user can trade
+                return (jsonify({"error": "Portfolio not found"}), 404)
             user = session.query(User).get(g.current_user_id)
             can_trade, message = user.can_trade()
             if not can_trade:
-                return jsonify({"error": f"Cannot execute trade: {message}"}), 403
-
-            # Find or create asset
+                return (jsonify({"error": f"Cannot execute trade: {message}"}), 403)
             asset = (
                 session.query(Asset)
                 .filter(Asset.symbol == data["asset_symbol"].upper())
                 .first()
             )
-
             if not asset:
-                return jsonify({"error": "Asset not found"}), 404
-
+                return (jsonify({"error": "Asset not found"}), 404)
             if not asset.is_tradeable:
-                return jsonify({"error": "Asset is not tradeable"}), 400
-
-            # Calculate transaction amount
+                return (jsonify({"error": "Asset is not tradeable"}), 400)
             total_amount = quantity * price
-            fee = total_amount * Decimal("0.001")  # 0.1% fee
+            fee = total_amount * Decimal("0.001")
             net_amount = total_amount + fee
-
-            # Check if portfolio has sufficient cash
             if portfolio.cash_balance < net_amount:
-                return jsonify({"error": "Insufficient cash balance"}), 400
-
-            # Check position size limits
+                return (jsonify({"error": "Insufficient cash balance"}), 400)
             portfolio_value = portfolio.calculate_total_value()
             if portfolio_value > 0:
                 position_percentage = float(total_amount) / float(portfolio_value)
@@ -415,8 +331,6 @@ def buy_asset(portfolio_id):
                         ),
                         400,
                     )
-
-            # Create transaction
             transaction = Transaction(
                 transaction_type=TransactionType.BUY,
                 user_id=g.current_user_id,
@@ -429,14 +343,8 @@ def buy_asset(portfolio_id):
                 net_amount=net_amount,
                 currency=portfolio.base_currency,
             )
-
-            # Execute transaction
             transaction.execute()
-
-            # Update portfolio cash balance
             portfolio.cash_balance -= net_amount
-
-            # Update or create holding
             holding = (
                 session.query(PortfolioHolding)
                 .filter(
@@ -446,7 +354,6 @@ def buy_asset(portfolio_id):
                 )
                 .first()
             )
-
             if holding:
                 holding.add_shares(quantity, price)
             else:
@@ -460,16 +367,9 @@ def buy_asset(portfolio_id):
                 )
                 holding.update_valuation()
                 session.add(holding)
-
-            # Update portfolio metrics
             portfolio.update_portfolio_metrics()
-
-            # Complete transaction
             transaction.complete()
-
             session.commit()
-
-            # Log trade execution
             audit_logger.log_financial_event(
                 event_type=audit_logger.AuditEventType.TRADE_EXECUTED,
                 user_id=g.current_user_id,
@@ -483,7 +383,6 @@ def buy_asset(portfolio_id):
                     "total_amount": float(total_amount),
                 },
             )
-
             return (
                 jsonify(
                     {
@@ -494,38 +393,30 @@ def buy_asset(portfolio_id):
                 ),
                 201,
             )
-
         finally:
             session.close()
-
     except ValidationError as e:
-        return jsonify({"error": e.message, "field": e.field}), 400
+        return (jsonify({"error": e.message, "field": e.field}), 400)
     except Exception:
-        return jsonify({"error": "Failed to execute buy order"}), 500
+        return (jsonify({"error": "Failed to execute buy order"}), 500)
 
 
 @portfolio_bp.route("/<int:portfolio_id>/sell", methods=["POST"])
 @jwt_required
 @permission_required(Permission.EXECUTE_TRADE)
 @rate_limit(limit=50, window=3600, scope=RateLimitScope.PER_USER)
-def sell_asset(portfolio_id):
+def sell_asset(portfolio_id: Any) -> Any:
     """Sell an asset from the portfolio"""
     try:
         data = security_validator.validate_json_input(request.get_json())
-
-        # Validate required fields
         required_fields = ["asset_symbol", "quantity", "price"]
         for field in required_fields:
             if field not in data:
-                return jsonify({"error": f"{field} is required"}), 400
-
-        # Validate financial amounts
+                return (jsonify({"error": f"{field} is required"}), 400)
         quantity = security_validator.validate_financial_amount(data["quantity"])
         price = security_validator.validate_financial_amount(data["price"])
-
         session = db_manager.get_session()
         try:
-            # Verify portfolio ownership
             portfolio = (
                 session.query(Portfolio)
                 .filter(
@@ -535,27 +426,19 @@ def sell_asset(portfolio_id):
                 )
                 .first()
             )
-
             if not portfolio:
-                return jsonify({"error": "Portfolio not found"}), 404
-
-            # Check if user can trade
+                return (jsonify({"error": "Portfolio not found"}), 404)
             user = session.query(User).get(g.current_user_id)
             can_trade, message = user.can_trade()
             if not can_trade:
-                return jsonify({"error": f"Cannot execute trade: {message}"}), 403
-
-            # Find asset
+                return (jsonify({"error": f"Cannot execute trade: {message}"}), 403)
             asset = (
                 session.query(Asset)
                 .filter(Asset.symbol == data["asset_symbol"].upper())
                 .first()
             )
-
             if not asset:
-                return jsonify({"error": "Asset not found"}), 404
-
-            # Find holding
+                return (jsonify({"error": "Asset not found"}), 404)
             holding = (
                 session.query(PortfolioHolding)
                 .filter(
@@ -565,19 +448,13 @@ def sell_asset(portfolio_id):
                 )
                 .first()
             )
-
             if not holding:
-                return jsonify({"error": "No holding found for this asset"}), 404
-
+                return (jsonify({"error": "No holding found for this asset"}), 404)
             if holding.quantity < quantity:
-                return jsonify({"error": "Insufficient shares to sell"}), 400
-
-            # Calculate transaction amount
+                return (jsonify({"error": "Insufficient shares to sell"}), 400)
             total_amount = quantity * price
-            fee = total_amount * Decimal("0.001")  # 0.1% fee
+            fee = total_amount * Decimal("0.001")
             net_amount = total_amount - fee
-
-            # Create transaction
             transaction = Transaction(
                 transaction_type=TransactionType.SELL,
                 user_id=g.current_user_id,
@@ -590,26 +467,13 @@ def sell_asset(portfolio_id):
                 net_amount=net_amount,
                 currency=portfolio.base_currency,
             )
-
-            # Execute transaction
             transaction.execute()
-
-            # Update holding and calculate realized P&L
             realized_pnl = holding.remove_shares(quantity, price)
-
-            # Update portfolio cash balance and realized P&L
             portfolio.cash_balance += net_amount
             portfolio.realized_pnl += realized_pnl
-
-            # Update portfolio metrics
             portfolio.update_portfolio_metrics()
-
-            # Complete transaction
             transaction.complete()
-
             session.commit()
-
-            # Log trade execution
             audit_logger.log_financial_event(
                 event_type=audit_logger.AuditEventType.TRADE_EXECUTED,
                 user_id=g.current_user_id,
@@ -624,7 +488,6 @@ def sell_asset(portfolio_id):
                     "realized_pnl": float(realized_pnl),
                 },
             )
-
             return (
                 jsonify(
                     {
@@ -636,24 +499,21 @@ def sell_asset(portfolio_id):
                 ),
                 201,
             )
-
         finally:
             session.close()
-
     except ValidationError as e:
-        return jsonify({"error": e.message, "field": e.field}), 400
+        return (jsonify({"error": e.message, "field": e.field}), 400)
     except Exception:
-        return jsonify({"error": "Failed to execute sell order"}), 500
+        return (jsonify({"error": "Failed to execute sell order"}), 500)
 
 
 @portfolio_bp.route("/<int:portfolio_id>/performance", methods=["GET"])
 @jwt_required
 @permission_required(Permission.READ_PORTFOLIO)
-def get_portfolio_performance(portfolio_id):
+def get_portfolio_performance(portfolio_id: Any) -> Any:
     """Get portfolio performance metrics"""
     try:
         days = request.args.get("days", 30, type=int)
-
         session = db_manager.get_session()
         try:
             portfolio = (
@@ -664,11 +524,8 @@ def get_portfolio_performance(portfolio_id):
                 )
                 .first()
             )
-
             if not portfolio:
-                return jsonify({"error": "Portfolio not found"}), 404
-
-            # Get performance snapshots
+                return (jsonify({"error": "Portfolio not found"}), 404)
             start_date = datetime.utcnow() - timedelta(days=days)
             snapshots = (
                 portfolio.performance_snapshots.filter(
@@ -677,16 +534,13 @@ def get_portfolio_performance(portfolio_id):
                 .order_by(portfolio.performance_snapshots.c.snapshot_date.asc())
                 .all()
             )
-
-            # Calculate performance metrics
             current_value = float(portfolio.total_value)
             total_return = float(portfolio.realized_pnl + portfolio.unrealized_pnl)
             total_return_percent = (
-                (total_return / float(portfolio.invested_amount)) * 100
+                total_return / float(portfolio.invested_amount) * 100
                 if portfolio.invested_amount > 0
                 else 0
             )
-
             performance_data = []
             for snapshot in snapshots:
                 performance_data.append(
@@ -697,7 +551,6 @@ def get_portfolio_performance(portfolio_id):
                         "realized_pnl": float(snapshot.realized_pnl),
                     }
                 )
-
             return (
                 jsonify(
                     {
@@ -716,50 +569,36 @@ def get_portfolio_performance(portfolio_id):
                 ),
                 200,
             )
-
         finally:
             session.close()
-
     except Exception:
-        return jsonify({"error": "Failed to get portfolio performance"}), 500
+        return (jsonify({"error": "Failed to get portfolio performance"}), 500)
 
 
 @portfolio_bp.route("/assets/search", methods=["GET"])
 @jwt_required
 @permission_required(Permission.READ_MARKET_DATA)
-def search_assets():
+def search_assets() -> Any:
     """Search for tradeable assets"""
     try:
         query = request.args.get("q", "").strip()
         asset_type = request.args.get("type")
         limit = min(request.args.get("limit", 20, type=int), 100)
-
         if len(query) < 2:
-            return jsonify({"error": "Query must be at least 2 characters"}), 400
-
+            return (jsonify({"error": "Query must be at least 2 characters"}), 400)
         session = db_manager.get_session()
         try:
-            # Build search query
             search_query = session.query(Asset).filter(
                 Asset.is_active == True, Asset.is_tradeable == True
             )
-
-            # Add text search
             search_query = search_query.filter(
-                (Asset.symbol.ilike(f"%{query}%")) | (Asset.name.ilike(f"%{query}%"))
+                Asset.symbol.ilike(f"%{query}%") | Asset.name.ilike(f"%{query}%")
             )
-
-            # Filter by asset type
             if asset_type:
                 search_query = search_query.filter(Asset.asset_type == asset_type)
-
-            # Limit results
             assets = search_query.limit(limit).all()
-
-            return jsonify({"assets": [asset.to_dict() for asset in assets]}), 200
-
+            return (jsonify({"assets": [asset.to_dict() for asset in assets]}), 200)
         finally:
             session.close()
-
     except Exception:
-        return jsonify({"error": "Failed to search assets"}), 500
+        return (jsonify({"error": "Failed to search assets"}), 500)

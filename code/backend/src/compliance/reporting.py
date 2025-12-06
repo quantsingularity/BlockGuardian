@@ -8,7 +8,6 @@ import enum
 import io
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
-
 from sqlalchemy import (
     JSON,
     Boolean,
@@ -65,47 +64,33 @@ class ComplianceReport(Base, AuditMixin, TimestampMixin):
     """Compliance report model"""
 
     __tablename__ = "compliance_reports"
-
-    # Report identification
     report_id = Column(String(255), unique=True, nullable=False, index=True)
     report_type = Column(Enum(ReportType), nullable=False, index=True)
     report_name = Column(String(255), nullable=False)
     description = Column(Text)
-
-    # Report parameters
     start_date = Column(DateTime, nullable=False)
     end_date = Column(DateTime, nullable=False)
-    filters = Column(JSON)  # Report filters and parameters
-
-    # Report status
+    filters = Column(JSON)
     status = Column(Enum(ReportStatus), default=ReportStatus.PENDING, nullable=False)
     generated_at = Column(DateTime)
     generated_by = Column(Integer, ForeignKey("users.id"), nullable=False)
-
-    # Report content
-    report_data = Column(JSON)  # Report results
-    file_path = Column(String(500))  # Path to generated file
-    file_format = Column(String(20))  # csv, pdf, json
-
-    # Regulatory submission
-    submitted_to = Column(String(100))  # Regulatory body
+    report_data = Column(JSON)
+    file_path = Column(String(500))
+    file_format = Column(String(20))
+    submitted_to = Column(String(100))
     submission_date = Column(DateTime)
     submission_reference = Column(String(255))
-
-    # Error handling
     error_message = Column(Text)
     retry_count = Column(Integer, default=0)
 
-    def __repr__(self):
+    def __repr__(self) -> Any:
         return f"<ComplianceReport {self.report_id} - {self.report_type.value}>"
 
-    def generate(self):
+    def generate(self) -> Any:
         """Generate the compliance report"""
         self.status = ReportStatus.GENERATING
         self.generated_at = datetime.utcnow()
-
         try:
-            # Generate report based on type
             if self.report_type == ReportType.SUSPICIOUS_ACTIVITY:
                 self.report_data = self._generate_suspicious_activity_report()
             elif self.report_type == ReportType.LARGE_TRANSACTION:
@@ -120,10 +105,7 @@ class ComplianceReport(Base, AuditMixin, TimestampMixin):
                 self.report_data = self._generate_audit_trail_report()
             else:
                 raise ValueError(f"Unsupported report type: {self.report_type}")
-
             self.status = ReportStatus.COMPLETED
-
-            # Add audit entry
             self.add_audit_entry(
                 "report_generated",
                 {
@@ -132,12 +114,9 @@ class ComplianceReport(Base, AuditMixin, TimestampMixin):
                     "record_count": len(self.report_data.get("records", [])),
                 },
             )
-
         except Exception as e:
             self.status = ReportStatus.FAILED
             self.error_message = str(e)
-
-            # Add audit entry
             self.add_audit_entry(
                 "report_generation_failed",
                 {"report_id": self.report_id, "error": str(e)},
@@ -147,7 +126,6 @@ class ComplianceReport(Base, AuditMixin, TimestampMixin):
         """Generate suspicious activity report"""
         session = db_manager.get_session()
         try:
-            # Query suspicious transactions and activities
             from src.models.ai_models import FraudDetection
 
             suspicious_activities = (
@@ -159,7 +137,6 @@ class ComplianceReport(Base, AuditMixin, TimestampMixin):
                 )
                 .all()
             )
-
             records = []
             for activity in suspicious_activities:
                 record = {
@@ -173,7 +150,6 @@ class ComplianceReport(Base, AuditMixin, TimestampMixin):
                     "detection_date": activity.created_at.isoformat(),
                 }
                 records.append(record)
-
             return {
                 "report_type": "Suspicious Activity Report",
                 "period": f"{self.start_date.date()} to {self.end_date.date()}",
@@ -202,7 +178,6 @@ class ComplianceReport(Base, AuditMixin, TimestampMixin):
         """Generate large transaction report"""
         session = db_manager.get_session()
         try:
-            # Query large transactions (>$10,000)
             large_transactions = (
                 session.query(Transaction)
                 .filter(
@@ -213,7 +188,6 @@ class ComplianceReport(Base, AuditMixin, TimestampMixin):
                 )
                 .all()
             )
-
             records = []
             for transaction in large_transactions:
                 record = {
@@ -233,7 +207,6 @@ class ComplianceReport(Base, AuditMixin, TimestampMixin):
                     ),
                 }
                 records.append(record)
-
             return {
                 "report_type": "Large Transaction Report",
                 "period": f"{self.start_date.date()} to {self.end_date.date()}",
@@ -241,9 +214,9 @@ class ComplianceReport(Base, AuditMixin, TimestampMixin):
                 "total_records": len(records),
                 "records": records,
                 "summary": {
-                    "total_amount": sum(float(r["amount"]) for r in records),
+                    "total_amount": sum((float(r["amount"]) for r in records)),
                     "average_amount": (
-                        sum(float(r["amount"]) for r in records) / len(records)
+                        sum((float(r["amount"]) for r in records)) / len(records)
                         if records
                         else 0
                     ),
@@ -259,7 +232,6 @@ class ComplianceReport(Base, AuditMixin, TimestampMixin):
         """Generate KYC status report"""
         session = db_manager.get_session()
         try:
-            # Query users with KYC information
             users = (
                 session.query(User)
                 .filter(
@@ -267,7 +239,6 @@ class ComplianceReport(Base, AuditMixin, TimestampMixin):
                 )
                 .all()
             )
-
             records = []
             for user in users:
                 record = {
@@ -291,7 +262,6 @@ class ComplianceReport(Base, AuditMixin, TimestampMixin):
                     "registration_date": user.created_at.isoformat(),
                 }
                 records.append(record)
-
             return {
                 "report_type": "KYC Status Report",
                 "period": f"{self.start_date.date()} to {self.end_date.date()}",
@@ -327,7 +297,6 @@ class ComplianceReport(Base, AuditMixin, TimestampMixin):
         """Generate AML monitoring report"""
         session = db_manager.get_session()
         try:
-            # Query AML-related data
             from src.models.ai_models import RiskAssessment
 
             risk_assessments = (
@@ -338,7 +307,6 @@ class ComplianceReport(Base, AuditMixin, TimestampMixin):
                 )
                 .all()
             )
-
             records = []
             for assessment in risk_assessments:
                 record = {
@@ -352,7 +320,6 @@ class ComplianceReport(Base, AuditMixin, TimestampMixin):
                     "compliance_flags": assessment.compliance_flags,
                 }
                 records.append(record)
-
             return {
                 "report_type": "AML Monitoring Report",
                 "period": f"{self.start_date.date()} to {self.end_date.date()}",
@@ -371,7 +338,7 @@ class ComplianceReport(Base, AuditMixin, TimestampMixin):
                         ]
                     ),
                     "average_risk_score": (
-                        sum(float(r["overall_risk_score"]) for r in records)
+                        sum((float(r["overall_risk_score"]) for r in records))
                         / len(records)
                         if records
                         else 0
@@ -385,7 +352,6 @@ class ComplianceReport(Base, AuditMixin, TimestampMixin):
         """Generate transaction monitoring report"""
         session = db_manager.get_session()
         try:
-            # Query all transactions in period
             transactions = (
                 session.query(Transaction)
                 .filter(
@@ -394,7 +360,6 @@ class ComplianceReport(Base, AuditMixin, TimestampMixin):
                 )
                 .all()
             )
-
             records = []
             for transaction in transactions:
                 record = {
@@ -419,15 +384,14 @@ class ComplianceReport(Base, AuditMixin, TimestampMixin):
                     ),
                 }
                 records.append(record)
-
             return {
                 "report_type": "Transaction Monitoring Report",
                 "period": f"{self.start_date.date()} to {self.end_date.date()}",
                 "total_records": len(records),
                 "records": records,
                 "summary": {
-                    "total_volume": sum(float(r["amount"]) for r in records),
-                    "total_fees": sum(float(r["fee"]) for r in records),
+                    "total_volume": sum((float(r["amount"]) for r in records)),
+                    "total_fees": sum((float(r["fee"]) for r in records)),
                     "transaction_types": self._count_by_field(
                         records, "transaction_type"
                     ),
@@ -445,8 +409,6 @@ class ComplianceReport(Base, AuditMixin, TimestampMixin):
 
     def _generate_audit_trail_report(self) -> Dict[str, Any]:
         """Generate audit trail report"""
-        # This would query audit logs from the audit system
-        # For now, return a placeholder structure
         return {
             "report_type": "Audit Trail Report",
             "period": f"{self.start_date.date()} to {self.end_date.date()}",
@@ -472,17 +434,13 @@ class ComplianceReport(Base, AuditMixin, TimestampMixin):
         """Export report to CSV format"""
         if not self.report_data or "records" not in self.report_data:
             raise ValueError("No report data available for export")
-
         records = self.report_data["records"]
         if not records:
             raise ValueError("No records to export")
-
-        # Create CSV content
         output = io.StringIO()
         writer = csv.DictWriter(output, fieldnames=records[0].keys())
         writer.writeheader()
         writer.writerows(records)
-
         return output.getvalue()
 
 
@@ -490,64 +448,46 @@ class ComplianceViolation(Base, AuditMixin, TimestampMixin):
     """Compliance violation tracking"""
 
     __tablename__ = "compliance_violations"
-
-    # Violation identification
     violation_id = Column(String(255), unique=True, nullable=False, index=True)
     violation_type = Column(Enum(ComplianceViolationType), nullable=False, index=True)
-    severity = Column(String(20), nullable=False)  # low, medium, high, critical
-
-    # Related entities
+    severity = Column(String(20), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), index=True)
     transaction_id = Column(Integer, ForeignKey("transactions.id"), index=True)
     portfolio_id = Column(Integer, ForeignKey("portfolios.id"), index=True)
-
-    # Violation details
     description = Column(Text, nullable=False)
-    violation_data = Column(JSON)  # Detailed violation information
-    regulatory_reference = Column(String(255))  # Relevant regulation/rule
-
-    # Detection information
-    detected_by = Column(String(100))  # system, manual, external
-    detection_method = Column(String(100))  # ai_model, rule_engine, manual_review
-    detection_confidence = Column(Float)  # 0.0 to 1.0
-
-    # Status and resolution
-    status = Column(
-        String(50), default="open", nullable=False
-    )  # open, investigating, resolved, false_positive
+    violation_data = Column(JSON)
+    regulatory_reference = Column(String(255))
+    detected_by = Column(String(100))
+    detection_method = Column(String(100))
+    detection_confidence = Column(Float)
+    status = Column(String(50), default="open", nullable=False)
     assigned_to = Column(Integer, ForeignKey("users.id"))
     resolution_date = Column(DateTime)
     resolution_notes = Column(Text)
-
-    # Regulatory reporting
     reported_to_regulator = Column(Boolean, default=False)
     reporting_deadline = Column(DateTime)
     reported_at = Column(DateTime)
     regulatory_response = Column(Text)
 
-    def __repr__(self):
+    def __repr__(self) -> Any:
         return (
             f"<ComplianceViolation {self.violation_id} - {self.violation_type.value}>"
         )
 
-    def assign_to_investigator(self, investigator_id: int):
+    def assign_to_investigator(self, investigator_id: int) -> Any:
         """Assign violation to an investigator"""
         self.assigned_to = investigator_id
         self.status = "investigating"
-
-        # Add audit entry
         self.add_audit_entry(
             "violation_assigned",
             {"violation_id": self.violation_id, "assigned_to": investigator_id},
         )
 
-    def resolve(self, resolution_notes: str, resolved_by: int = None):
+    def resolve(self, resolution_notes: str, resolved_by: int = None) -> Any:
         """Resolve the violation"""
         self.status = "resolved"
         self.resolution_date = datetime.utcnow()
         self.resolution_notes = resolution_notes
-
-        # Add audit entry
         self.add_audit_entry(
             "violation_resolved",
             {
@@ -557,13 +497,11 @@ class ComplianceViolation(Base, AuditMixin, TimestampMixin):
             },
         )
 
-    def mark_false_positive(self, reason: str, marked_by: int = None):
+    def mark_false_positive(self, reason: str, marked_by: int = None) -> Any:
         """Mark violation as false positive"""
         self.status = "false_positive"
         self.resolution_date = datetime.utcnow()
         self.resolution_notes = f"False positive: {reason}"
-
-        # Add audit entry
         self.add_audit_entry(
             "violation_false_positive",
             {
@@ -573,12 +511,10 @@ class ComplianceViolation(Base, AuditMixin, TimestampMixin):
             },
         )
 
-    def report_to_regulator(self, reported_by: int = None):
+    def report_to_regulator(self, reported_by: int = None) -> Any:
         """Report violation to regulatory authority"""
         self.reported_to_regulator = True
         self.reported_at = datetime.utcnow()
-
-        # Add audit entry
         self.add_audit_entry(
             "violation_reported_to_regulator",
             {
@@ -592,44 +528,34 @@ class ComplianceViolation(Base, AuditMixin, TimestampMixin):
 class ComplianceManager:
     """Main compliance management system"""
 
-    def __init__(self):
+    def __init__(self) -> Any:
         self.violation_rules = []
         self.monitoring_thresholds = {
             "large_transaction": 10000,
             "daily_transaction_limit": 50000,
             "monthly_transaction_limit": 500000,
-            "suspicious_velocity": 10,  # transactions per hour
-            "unusual_amount_multiplier": 5,  # times normal transaction amount
+            "suspicious_velocity": 10,
+            "unusual_amount_multiplier": 5,
         }
-
-        # Initialize monitoring
         self._setup_monitoring_rules()
 
-    def _setup_monitoring_rules(self):
+    def _setup_monitoring_rules(self) -> Any:
         """Set up compliance monitoring rules"""
-        # This would set up various compliance rules
 
     def check_transaction_compliance(
         self, transaction: Transaction
     ) -> List[ComplianceViolation]:
         """Check transaction for compliance violations"""
         violations = []
-
-        # Check large transaction reporting
         if float(transaction.amount) >= self.monitoring_thresholds["large_transaction"]:
             violation = self._create_large_transaction_violation(transaction)
             violations.append(violation)
-
-        # Check for structuring (multiple transactions just under reporting threshold)
         structuring_violation = self._check_structuring(transaction)
         if structuring_violation:
             violations.append(structuring_violation)
-
-        # Check velocity (too many transactions in short time)
         velocity_violation = self._check_transaction_velocity(transaction)
         if velocity_violation:
             violations.append(velocity_violation)
-
         return violations
 
     def _create_large_transaction_violation(
@@ -637,7 +563,6 @@ class ComplianceManager:
     ) -> ComplianceViolation:
         """Create large transaction violation"""
         violation_id = f"LTR_{transaction.id}_{int(datetime.utcnow().timestamp())}"
-
         violation = ComplianceViolation(
             violation_id=violation_id,
             violation_type=ComplianceViolationType.LARGE_CASH_TRANSACTION,
@@ -656,7 +581,6 @@ class ComplianceManager:
             detection_confidence=1.0,
             reporting_deadline=datetime.utcnow() + timedelta(days=15),
         )
-
         return violation
 
     def _check_structuring(
@@ -665,29 +589,24 @@ class ComplianceManager:
         """Check for potential structuring activity"""
         session = db_manager.get_session()
         try:
-            # Look for multiple transactions just under the reporting threshold
             threshold = self.monitoring_thresholds["large_transaction"]
             lookback_hours = 24
             cutoff_time = datetime.utcnow() - timedelta(hours=lookback_hours)
-
             recent_transactions = (
                 session.query(Transaction)
                 .filter(
                     Transaction.user_id == transaction.user_id,
                     Transaction.created_at >= cutoff_time,
-                    Transaction.amount >= threshold * 0.8,  # 80% of threshold
+                    Transaction.amount >= threshold * 0.8,
                     Transaction.amount < threshold,
                     Transaction.status == TransactionStatus.COMPLETED,
                 )
                 .all()
             )
-
-            if len(recent_transactions) >= 3:  # 3 or more transactions
-                total_amount = sum(float(t.amount) for t in recent_transactions)
-
-                if total_amount >= threshold * 1.5:  # Total exceeds 1.5x threshold
+            if len(recent_transactions) >= 3:
+                total_amount = sum((float(t.amount) for t in recent_transactions))
+                if total_amount >= threshold * 1.5:
                     violation_id = f"STR_{transaction.user_id}_{int(datetime.utcnow().timestamp())}"
-
                     violation = ComplianceViolation(
                         violation_id=violation_id,
                         violation_type=ComplianceViolationType.STRUCTURING,
@@ -707,9 +626,7 @@ class ComplianceManager:
                         detection_confidence=0.8,
                         reporting_deadline=datetime.utcnow() + timedelta(days=30),
                     )
-
                     return violation
-
             return None
         finally:
             session.close()
@@ -720,9 +637,7 @@ class ComplianceManager:
         """Check for unusual transaction velocity"""
         session = db_manager.get_session()
         try:
-            # Count transactions in the last hour
             cutoff_time = datetime.utcnow() - timedelta(hours=1)
-
             recent_count = (
                 session.query(Transaction)
                 .filter(
@@ -734,12 +649,10 @@ class ComplianceManager:
                 )
                 .count()
             )
-
             if recent_count > self.monitoring_thresholds["suspicious_velocity"]:
                 violation_id = (
                     f"VEL_{transaction.user_id}_{int(datetime.utcnow().timestamp())}"
                 )
-
                 violation = ComplianceViolation(
                     violation_id=violation_id,
                     violation_type=ComplianceViolationType.UNUSUAL_ACTIVITY,
@@ -757,9 +670,7 @@ class ComplianceManager:
                     detection_method="rule_engine",
                     detection_confidence=0.7,
                 )
-
                 return violation
-
             return None
         finally:
             session.close()
@@ -773,7 +684,6 @@ class ComplianceManager:
     ) -> ComplianceReport:
         """Generate a compliance report"""
         report_id = f"{report_type.value}_{int(datetime.utcnow().timestamp())}"
-
         report = ComplianceReport(
             report_id=report_id,
             report_type=report_type,
@@ -783,17 +693,13 @@ class ComplianceManager:
             end_date=end_date,
             generated_by=generated_by,
         )
-
-        # Generate the report
         report.generate()
-
         return report
 
     def get_compliance_dashboard_data(self) -> Dict[str, Any]:
         """Get compliance dashboard data"""
         session = db_manager.get_session()
         try:
-            # Get recent violations
             recent_violations = (
                 session.query(ComplianceViolation)
                 .filter(
@@ -802,14 +708,10 @@ class ComplianceManager:
                 )
                 .all()
             )
-
-            # Get KYC status summary
             kyc_summary = {}
             for status in KYCStatus:
                 count = session.query(User).filter(User.kyc_status == status).count()
                 kyc_summary[status.value] = count
-
-            # Get AML risk summary
             aml_summary = {}
             for risk_level in AMLRiskLevel:
                 count = (
@@ -818,8 +720,6 @@ class ComplianceManager:
                     .count()
                 )
                 aml_summary[risk_level.value] = count
-
-            # Get recent large transactions
             large_transactions_count = (
                 session.query(Transaction)
                 .filter(
@@ -829,7 +729,6 @@ class ComplianceManager:
                 )
                 .count()
             )
-
             return {
                 "violations": {
                     "total": len(recent_violations),
@@ -861,5 +760,4 @@ class ComplianceManager:
         return counts
 
 
-# Global compliance manager instance
 compliance_manager = ComplianceManager()

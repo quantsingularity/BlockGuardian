@@ -8,7 +8,6 @@ from datetime import datetime, timezone
 from decimal import ROUND_HALF_UP, Decimal
 from enum import Enum
 from typing import Any, Dict, List
-
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
@@ -23,7 +22,6 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
-
 from .base import BaseModel
 
 
@@ -95,35 +93,23 @@ class Portfolio(BaseModel):
     """Enhanced portfolio model with comprehensive financial features"""
 
     __tablename__ = "enhanced_portfolios"
-
-    # Primary identification
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     portfolio_number = Column(String(20), unique=True, nullable=False, index=True)
-
-    # Basic information
     name = Column(String(200), nullable=False)
     description = Column(Text)
     portfolio_type = Column(String(30), nullable=False, index=True)
-
-    # Owner information
     user_id = Column(
         UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True
     )
-    advisor_id = Column(UUID(as_uuid=True), ForeignKey("users.id"))  # Financial advisor
-
-    # Portfolio configuration
+    advisor_id = Column(UUID(as_uuid=True), ForeignKey("users.id"))
     base_currency = Column(String(3), default="USD", nullable=False)
     risk_level = Column(String(30), nullable=False, index=True)
     investment_objective = Column(Text)
-    time_horizon = Column(String(20))  # short, medium, long
-
-    # Financial metrics
+    time_horizon = Column(String(20))
     total_value = Column(Numeric(20, 2), default=Decimal("0.00"), nullable=False)
     cash_balance = Column(Numeric(20, 2), default=Decimal("0.00"), nullable=False)
     invested_amount = Column(Numeric(20, 2), default=Decimal("0.00"), nullable=False)
     available_cash = Column(Numeric(20, 2), default=Decimal("0.00"), nullable=False)
-
-    # Performance metrics
     unrealized_pnl = Column(Numeric(20, 2), default=Decimal("0.00"))
     realized_pnl = Column(Numeric(20, 2), default=Decimal("0.00"))
     total_return = Column(Numeric(20, 2), default=Decimal("0.00"))
@@ -133,52 +119,34 @@ class Portfolio(BaseModel):
     alpha = Column(Numeric(10, 4))
     volatility = Column(Numeric(10, 4))
     max_drawdown = Column(Numeric(10, 4))
-
-    # Risk management
-    var_95 = Column(Numeric(20, 2))  # Value at Risk (95% confidence)
-    var_99 = Column(Numeric(20, 2))  # Value at Risk (99% confidence)
-    expected_shortfall = Column(Numeric(20, 2))  # Conditional VaR
-    risk_score = Column(Integer, default=50)  # 0-100 scale
-
-    # Portfolio limits and constraints
-    max_position_size = Column(Numeric(5, 4), default=Decimal("0.10"))  # 10%
-    max_sector_allocation = Column(Numeric(5, 4), default=Decimal("0.25"))  # 25%
-    max_country_allocation = Column(Numeric(5, 4), default=Decimal("0.50"))  # 50%
-    min_cash_percentage = Column(Numeric(5, 4), default=Decimal("0.05"))  # 5%
-    max_leverage = Column(Numeric(5, 2), default=Decimal("1.00"))  # No leverage
-
-    # Rebalancing configuration
+    var_95 = Column(Numeric(20, 2))
+    var_99 = Column(Numeric(20, 2))
+    expected_shortfall = Column(Numeric(20, 2))
+    risk_score = Column(Integer, default=50)
+    max_position_size = Column(Numeric(5, 4), default=Decimal("0.10"))
+    max_sector_allocation = Column(Numeric(5, 4), default=Decimal("0.25"))
+    max_country_allocation = Column(Numeric(5, 4), default=Decimal("0.50"))
+    min_cash_percentage = Column(Numeric(5, 4), default=Decimal("0.05"))
+    max_leverage = Column(Numeric(5, 2), default=Decimal("1.00"))
     rebalance_strategy = Column(String(20), default=RebalanceStrategy.NONE.value)
-    rebalance_threshold = Column(Numeric(5, 4), default=Decimal("0.05"))  # 5%
-    rebalance_frequency = Column(Integer, default=90)  # Days
+    rebalance_threshold = Column(Numeric(5, 4), default=Decimal("0.05"))
+    rebalance_frequency = Column(Integer, default=90)
     last_rebalance_date = Column(DateTime(timezone=True))
     next_rebalance_date = Column(DateTime(timezone=True))
     auto_rebalance = Column(Boolean, default=False)
-
-    # Target allocation (stored as JSON)
-    target_allocation = Column(JSONB)  # Asset class target percentages
-
-    # Status and settings
+    target_allocation = Column(JSONB)
     is_active = Column(Boolean, default=True, nullable=False)
     is_taxable = Column(Boolean, default=True, nullable=False)
     allow_fractional_shares = Column(Boolean, default=True)
     auto_dividend_reinvest = Column(Boolean, default=True)
-
-    # Benchmark and comparison
-    benchmark_symbol = Column(String(20))  # e.g., "SPY", "VTI"
+    benchmark_symbol = Column(String(20))
     benchmark_name = Column(String(100))
-
-    # Compliance and reporting
     requires_accredited_investor = Column(Boolean, default=False)
-    suitability_score = Column(Integer)  # 0-100
+    suitability_score = Column(Integer)
     last_suitability_review = Column(DateTime(timezone=True))
-
-    # Additional metadata
     metadata = Column(JSONB)
     tags = Column(String(500))
     notes = Column(Text)
-
-    # Relationships
     user = relationship("User", foreign_keys=[user_id], back_populates="portfolios")
     advisor = relationship("User", foreign_keys=[advisor_id])
     holdings = relationship(
@@ -190,8 +158,6 @@ class Portfolio(BaseModel):
     snapshots = relationship(
         "PortfolioSnapshot", back_populates="portfolio", cascade="all, delete-orphan"
     )
-
-    # Indexes for performance
     __table_args__ = (
         Index("idx_portfolio_user_active", "user_id", "is_active"),
         Index("idx_portfolio_type_risk", "portfolio_type", "risk_level"),
@@ -200,7 +166,7 @@ class Portfolio(BaseModel):
         CheckConstraint("cash_balance >= 0", name="check_positive_cash_balance"),
     )
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> Any:
         super().__init__(**kwargs)
         if not self.portfolio_number:
             self.portfolio_number = self.generate_portfolio_number()
@@ -215,127 +181,92 @@ class Portfolio(BaseModel):
     def calculate_total_value(self) -> Decimal:
         """Calculate current total portfolio value"""
         total = self.cash_balance
-
         for holding in self.holdings:
             if holding.is_active:
                 total += holding.current_value or Decimal("0.00")
-
         return total.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
-    def update_portfolio_metrics(self):
+    def update_portfolio_metrics(self) -> Any:
         """Update all portfolio metrics"""
-        # Update basic values
         self.total_value = self.calculate_total_value()
-
-        # Calculate invested amount and P&L
         invested_amount = Decimal("0.00")
         unrealized_pnl = Decimal("0.00")
-
         for holding in self.holdings:
             if holding.is_active:
                 invested_amount += holding.cost_basis or Decimal("0.00")
                 unrealized_pnl += holding.unrealized_pnl or Decimal("0.00")
-
         self.invested_amount = invested_amount
         self.unrealized_pnl = unrealized_pnl
         self.total_return = self.realized_pnl + self.unrealized_pnl
-
-        # Update available cash (considering pending transactions)
-        self.available_cash = self.cash_balance  # Simplified
-
-        # Update metadata
+        self.available_cash = self.cash_balance
         if not self.metadata:
             self.metadata = {}
-
         self.metadata["last_metrics_update"] = datetime.now(timezone.utc).isoformat()
 
     def calculate_total_return_percentage(self) -> Decimal:
         """Calculate total return percentage"""
-
-        # Logical Correction: Ensure total_value is not zero before division
         if self.total_value <= 0:
             return Decimal("0.00")
-
-        # Simplified calculation: (Total Return / Total Value) * 100
-        # This is a very simplified return calculation, but fixes the division by zero.
         return (self.total_return / self.total_value).quantize(
             Decimal("0.0001"), rounding=ROUND_HALF_UP
-        ) * 100  # Return as percentage
+        ) * 100
 
     def get_asset_allocation(self) -> Dict[str, Decimal]:
         """Get current asset allocation by asset class"""
         allocation = {}
         total_value = self.total_value
-
         if total_value <= 0:
             return allocation
-
-        # Add cash allocation
-        cash_percentage = (self.cash_balance / total_value) * 100
+        cash_percentage = self.cash_balance / total_value * 100
         allocation["cash"] = cash_percentage.quantize(Decimal("0.01"))
-
-        # Add asset allocations
         for holding in self.holdings:
             if holding.is_active and holding.current_value:
                 asset_class = holding.asset.asset_class if holding.asset else "unknown"
-                percentage = (holding.current_value / total_value) * 100
-
+                percentage = holding.current_value / total_value * 100
                 if asset_class in allocation:
                     allocation[asset_class] += percentage
                 else:
                     allocation[asset_class] = percentage.quantize(Decimal("0.01"))
-
         return allocation
 
     def get_sector_allocation(self) -> Dict[str, Decimal]:
         """Get current allocation by sector"""
         allocation = {}
         total_value = self.total_value
-
         if total_value <= 0:
             return allocation
-
         for holding in self.holdings:
             if holding.is_active and holding.current_value and holding.asset:
                 sector = holding.asset.sector or "Other"
-                percentage = (holding.current_value / total_value) * 100
-
+                percentage = holding.current_value / total_value * 100
                 if sector in allocation:
                     allocation[sector] += percentage
                 else:
                     allocation[sector] = percentage.quantize(Decimal("0.01"))
-
         return allocation
 
     def get_country_allocation(self) -> Dict[str, Decimal]:
         """Get current allocation by country"""
         allocation = {}
         total_value = self.total_value
-
         if total_value <= 0:
             return allocation
-
         for holding in self.holdings:
             if holding.is_active and holding.current_value and holding.asset:
                 country = holding.asset.country or "Unknown"
-                percentage = (holding.current_value / total_value) * 100
-
+                percentage = holding.current_value / total_value * 100
                 if country in allocation:
                     allocation[country] += percentage
                 else:
                     allocation[country] = percentage.quantize(Decimal("0.01"))
-
         return allocation
 
     def check_risk_violations(self) -> List[Dict[str, Any]]:
         """Check for risk limit violations"""
         violations = []
         total_value = self.total_value
-
         if total_value <= 0:
             return violations
-
-        # Check position size limits
         for holding in self.holdings:
             if holding.is_active and holding.current_value:
                 position_percentage = holding.current_value / total_value
@@ -355,11 +286,9 @@ class Portfolio(BaseModel):
                             ),
                         }
                     )
-
-        # Check sector allocation limits
         sector_allocation = self.get_sector_allocation()
         for sector, percentage in sector_allocation.items():
-            if percentage > (self.max_sector_allocation * 100):
+            if percentage > self.max_sector_allocation * 100:
                 violations.append(
                     {
                         "type": "sector_allocation",
@@ -369,11 +298,9 @@ class Portfolio(BaseModel):
                         "severity": "medium",
                     }
                 )
-
-        # Check country allocation limits
         country_allocation = self.get_country_allocation()
         for country, percentage in country_allocation.items():
-            if percentage > (self.max_country_allocation * 100):
+            if percentage > self.max_country_allocation * 100:
                 violations.append(
                     {
                         "type": "country_allocation",
@@ -383,8 +310,6 @@ class Portfolio(BaseModel):
                         "severity": "medium",
                     }
                 )
-
-        # Check minimum cash requirement
         cash_percentage = self.cash_balance / total_value
         if cash_percentage < self.min_cash_percentage:
             violations.append(
@@ -395,33 +320,25 @@ class Portfolio(BaseModel):
                     "severity": "low",
                 }
             )
-
         return violations
 
     def needs_rebalancing(self) -> bool:
         """Check if portfolio needs rebalancing"""
         if not self.auto_rebalance or not self.target_allocation:
             return False
-
         current_allocation = self.get_asset_allocation()
-
         for asset_class, target_percentage in self.target_allocation.items():
             current_percentage = float(
                 current_allocation.get(asset_class, Decimal("0.00"))
             )
             target = float(target_percentage)
-
             deviation = abs(current_percentage - target) / 100
             if deviation > float(self.rebalance_threshold):
                 return True
-
         return False
 
     def calculate_performance_metrics(self, period_days: int = 365) -> Dict[str, Any]:
         """Calculate comprehensive performance metrics"""
-        # This would typically involve complex calculations using historical data
-        # For now, returning placeholder structure
-
         return {
             "total_return": float(self.total_return) if self.total_return else 0.0,
             "annualized_return": (
@@ -454,7 +371,6 @@ class Portfolio(BaseModel):
             performance_metrics=self.calculate_performance_metrics(),
             risk_violations=self.check_risk_violations(),
         )
-
         return snapshot
 
     def to_dict(self, include_sensitive: bool = False) -> Dict[str, Any]:
@@ -484,7 +400,6 @@ class Portfolio(BaseModel):
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
-
         if include_sensitive:
             result.update(
                 {
@@ -500,7 +415,6 @@ class Portfolio(BaseModel):
                     "notes": self.notes,
                 }
             )
-
         return result
 
 
@@ -508,37 +422,25 @@ class Asset(BaseModel):
     """Enhanced asset model with comprehensive market data"""
 
     __tablename__ = "enhanced_assets"
-
-    # Primary identification
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     symbol = Column(String(20), unique=True, nullable=False, index=True)
-
-    # Basic information
     name = Column(String(200), nullable=False)
     asset_type = Column(String(30), nullable=False, index=True)
     asset_class = Column(String(30), nullable=False, index=True)
-
-    # Classification
     sector = Column(String(100), index=True)
     industry = Column(String(100))
     sub_industry = Column(String(100))
     country = Column(String(50), index=True)
     region = Column(String(50))
-
-    # Identifiers
     isin = Column(String(12), unique=True, index=True)
     cusip = Column(String(9), index=True)
     sedol = Column(String(7))
     bloomberg_id = Column(String(20))
     reuters_id = Column(String(20))
-
-    # Trading information
     primary_exchange = Column(String(50))
     currency = Column(String(3), default="USD", nullable=False)
     lot_size = Column(Integer, default=1)
     tick_size = Column(Numeric(10, 6))
-
-    # Market data
     current_price = Column(Numeric(20, 8))
     previous_close = Column(Numeric(20, 8))
     open_price = Column(Numeric(20, 8))
@@ -546,49 +448,33 @@ class Asset(BaseModel):
     low_price = Column(Numeric(20, 8))
     volume = Column(Integer)
     market_cap = Column(Numeric(20, 2))
-
-    # Calculated fields
     day_change = Column(Numeric(20, 8))
     day_change_percent = Column(Numeric(10, 4))
     week_52_high = Column(Numeric(20, 8))
     week_52_low = Column(Numeric(20, 8))
-
-    # Risk metrics
     beta = Column(Numeric(10, 4))
     volatility = Column(Numeric(10, 4))
     var_95 = Column(Numeric(20, 8))
-
-    # Fundamental data (for stocks)
     pe_ratio = Column(Numeric(10, 2))
     pb_ratio = Column(Numeric(10, 2))
     dividend_yield = Column(Numeric(10, 4))
     earnings_per_share = Column(Numeric(10, 2))
     book_value_per_share = Column(Numeric(10, 2))
-
-    # Status and metadata
     is_active = Column(Boolean, default=True, nullable=False)
     is_tradeable = Column(Boolean, default=True, nullable=False)
     is_shortable = Column(Boolean, default=False)
     is_marginable = Column(Boolean, default=False)
-
-    # Data quality
     last_updated = Column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
     data_source = Column(String(50))
-    data_quality_score = Column(Integer, default=100)  # 0-100
-
-    # Additional metadata
+    data_quality_score = Column(Integer, default=100)
     metadata = Column(JSONB)
     description = Column(Text)
-
-    # Relationships
     holdings = relationship("PortfolioHolding", back_populates="asset")
     price_history = relationship(
         "AssetPrice", back_populates="asset", cascade="all, delete-orphan"
     )
-
-    # Indexes for performance
     __table_args__ = (
         Index("idx_asset_type_class", "asset_type", "asset_class"),
         Index("idx_asset_sector_country", "sector", "country"),
@@ -596,7 +482,7 @@ class Asset(BaseModel):
         Index("idx_asset_tradeable", "is_tradeable", "is_active"),
     )
 
-    def update_price_data(self, price_data: Dict[str, Any]):
+    def update_price_data(self, price_data: Dict[str, Any]) -> Any:
         """Update asset price and market data"""
         self.previous_close = self.current_price
         self.current_price = Decimal(str(price_data.get("price", 0)))
@@ -604,15 +490,12 @@ class Asset(BaseModel):
         self.high_price = Decimal(str(price_data.get("high", 0)))
         self.low_price = Decimal(str(price_data.get("low", 0)))
         self.volume = price_data.get("volume", 0)
-
-        # Calculate changes
         if self.previous_close and self.current_price:
             self.day_change = self.current_price - self.previous_close
             if self.previous_close > 0:
                 self.day_change_percent = (
                     self.day_change / self.previous_close * 100
                 ).quantize(Decimal("0.01"))
-
         self.last_updated = datetime.now(timezone.utc)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -646,11 +529,7 @@ class PortfolioHolding(BaseModel):
     """Enhanced portfolio holding with comprehensive position tracking"""
 
     __tablename__ = "enhanced_portfolio_holdings"
-
-    # Primary identification
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-
-    # Relationships
     portfolio_id = Column(
         UUID(as_uuid=True),
         ForeignKey("enhanced_portfolios.id"),
@@ -660,45 +539,27 @@ class PortfolioHolding(BaseModel):
     asset_id = Column(
         UUID(as_uuid=True), ForeignKey("enhanced_assets.id"), nullable=False, index=True
     )
-
-    # Position information
     quantity = Column(Numeric(20, 8), nullable=False)
     average_cost = Column(Numeric(20, 8), nullable=False)
     cost_basis = Column(Numeric(20, 2), nullable=False)
-
-    # Current valuation
     current_price = Column(Numeric(20, 8))
     current_value = Column(Numeric(20, 2))
     unrealized_pnl = Column(Numeric(20, 2))
     unrealized_pnl_percent = Column(Numeric(10, 4))
-
-    # Position tracking
     first_purchase_date = Column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
     last_transaction_date = Column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
-
-    # Tax lot tracking
-    tax_lots = Column(JSONB)  # Array of tax lot information
-
-    # Risk metrics
+    tax_lots = Column(JSONB)
     position_beta = Column(Numeric(10, 4))
     position_var = Column(Numeric(20, 2))
-
-    # Status
     is_active = Column(Boolean, default=True, nullable=False)
-
-    # Additional metadata
     metadata = Column(JSONB)
     notes = Column(Text)
-
-    # Relationships
     portfolio = relationship("Portfolio", back_populates="holdings")
     asset = relationship("Asset", back_populates="holdings")
-
-    # Indexes for performance
     __table_args__ = (
         Index("idx_holding_portfolio_asset", "portfolio_id", "asset_id"),
         Index("idx_holding_active", "is_active"),
@@ -706,7 +567,7 @@ class PortfolioHolding(BaseModel):
         CheckConstraint("cost_basis >= 0", name="check_positive_cost_basis"),
     )
 
-    def update_valuation(self):
+    def update_valuation(self) -> Any:
         """Update current valuation based on asset price"""
         if self.asset and self.asset.current_price:
             self.current_price = self.asset.current_price
@@ -714,36 +575,28 @@ class PortfolioHolding(BaseModel):
                 Decimal("0.01")
             )
             self.unrealized_pnl = self.current_value - self.cost_basis
-
             if self.cost_basis > 0:
                 self.unrealized_pnl_percent = (
-                    (self.unrealized_pnl / self.cost_basis) * 100
+                    self.unrealized_pnl / self.cost_basis * 100
                 ).quantize(Decimal("0.01"))
 
     def add_position(
         self, quantity: Decimal, price: Decimal, transaction_date: datetime = None
-    ):
+    ) -> Any:
         """Add to position (buy transaction)"""
         if transaction_date is None:
             transaction_date = datetime.now(timezone.utc)
-
-        # Calculate new averages
         total_cost = quantity * price
         new_total_quantity = self.quantity + quantity
         new_total_cost = self.cost_basis + total_cost
-
-        # Update position
         self.average_cost = (new_total_cost / new_total_quantity).quantize(
             Decimal("0.01")
         )
         self.quantity = new_total_quantity
         self.cost_basis = new_total_cost.quantize(Decimal("0.01"))
         self.last_transaction_date = transaction_date
-
-        # Add tax lot
         if not self.tax_lots:
             self.tax_lots = []
-
         self.tax_lots.append(
             {
                 "quantity": float(quantity),
@@ -752,8 +605,6 @@ class PortfolioHolding(BaseModel):
                 "cost_basis": float(total_cost),
             }
         )
-
-        # Update valuation
         self.update_valuation()
 
     def reduce_position(
@@ -762,53 +613,36 @@ class PortfolioHolding(BaseModel):
         """Reduce position (sell transaction) using FIFO"""
         if transaction_date is None:
             transaction_date = datetime.now(timezone.utc)
-
         if quantity > self.quantity:
             raise ValueError("Cannot sell more shares than owned")
-
-        # Calculate realized P&L using FIFO
         remaining_to_sell = quantity
         realized_pnl = Decimal("0.00")
         updated_tax_lots = []
-
         for lot in self.tax_lots or []:
             if remaining_to_sell <= 0:
                 updated_tax_lots.append(lot)
                 continue
-
             lot_quantity = Decimal(str(lot["quantity"]))
             lot_price = Decimal(str(lot["price"]))
-
             if lot_quantity <= remaining_to_sell:
-                # Sell entire lot
                 lot_pnl = (price - lot_price) * lot_quantity
                 realized_pnl += lot_pnl
                 remaining_to_sell -= lot_quantity
             else:
-                # Partial lot sale
                 sold_from_lot = remaining_to_sell
                 lot_pnl = (price - lot_price) * sold_from_lot
                 realized_pnl += lot_pnl
-
-                # Update lot
                 lot["quantity"] = float(lot_quantity - sold_from_lot)
                 lot["cost_basis"] = float((lot_quantity - sold_from_lot) * lot_price)
                 updated_tax_lots.append(lot)
                 remaining_to_sell = Decimal("0.00")
-
-        # Update position
         self.quantity -= quantity
         self.cost_basis -= (self.average_cost * quantity).quantize(Decimal("0.01"))
         self.tax_lots = updated_tax_lots
         self.last_transaction_date = transaction_date
-
-        # If position is closed, mark as inactive
         if self.quantity == 0:
             self.is_active = False
-
-        # Update valuation
         self.update_valuation()
-
         return realized_pnl.quantize(Decimal("0.01"))
 
     def to_dict(self) -> Dict[str, Any]:
@@ -844,8 +678,6 @@ class PortfolioSnapshot(BaseModel):
     """Portfolio performance snapshot for historical tracking"""
 
     __tablename__ = "portfolio_snapshots"
-
-    # Primary identification
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     portfolio_id = Column(
         UUID(as_uuid=True),
@@ -853,8 +685,6 @@ class PortfolioSnapshot(BaseModel):
         nullable=False,
         index=True,
     )
-
-    # Snapshot data
     snapshot_date = Column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
@@ -865,26 +695,14 @@ class PortfolioSnapshot(BaseModel):
     invested_amount = Column(Numeric(20, 2), nullable=False)
     unrealized_pnl = Column(Numeric(20, 2))
     realized_pnl = Column(Numeric(20, 2))
-
-    # Allocations (stored as JSON)
     asset_allocation = Column(JSONB)
     sector_allocation = Column(JSONB)
     country_allocation = Column(JSONB)
-
-    # Performance metrics
     performance_metrics = Column(JSONB)
-
-    # Risk data
     risk_violations = Column(JSONB)
     risk_score = Column(Integer)
-
-    # Market context
     market_conditions = Column(JSONB)
-
-    # Relationships
     portfolio = relationship("Portfolio", back_populates="snapshots")
-
-    # Indexes for performance
     __table_args__ = (
         Index("idx_snapshot_portfolio_date", "portfolio_id", "snapshot_date"),
         Index("idx_snapshot_date", "snapshot_date"),
@@ -917,32 +735,20 @@ class AssetPrice(BaseModel):
     """Historical asset price data"""
 
     __tablename__ = "asset_prices"
-
-    # Primary identification
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     asset_id = Column(
         UUID(as_uuid=True), ForeignKey("enhanced_assets.id"), nullable=False, index=True
     )
-
-    # Price data
     timestamp = Column(DateTime(timezone=True), nullable=False, index=True)
     open_price = Column(Numeric(20, 8))
     high_price = Column(Numeric(20, 8))
     low_price = Column(Numeric(20, 8))
     close_price = Column(Numeric(20, 8), nullable=False)
     volume = Column(Integer)
-
-    # Adjusted prices (for splits, dividends)
     adjusted_close = Column(Numeric(20, 8))
-
-    # Data source and quality
     data_source = Column(String(50))
-    data_quality = Column(String(20), default="good")  # good, fair, poor
-
-    # Relationships
+    data_quality = Column(String(20), default="good")
     asset = relationship("Asset", back_populates="price_history")
-
-    # Indexes for performance
     __table_args__ = (
         Index("idx_price_asset_timestamp", "asset_id", "timestamp"),
         Index("idx_price_timestamp", "timestamp"),

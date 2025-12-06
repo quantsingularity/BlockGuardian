@@ -4,7 +4,6 @@ Implements secure authentication, registration, and session management
 """
 
 import json
-
 from flask import Blueprint, g, jsonify, request
 from src.models.base import db_manager
 from src.models.user import User, UserStatus
@@ -17,43 +16,26 @@ auth_bp = Blueprint("auth", __name__)
 
 
 @auth_bp.route("/register", methods=["POST"])
-@rate_limit(
-    limit=5, window=300, scope=RateLimitScope.PER_IP
-)  # 5 registrations per 5 minutes per IP
-def register():
+@rate_limit(limit=5, window=300, scope=RateLimitScope.PER_IP)
+def register() -> Any:
     """Register a new user account"""
     try:
-        # Validate request size
         security_validator.validate_request_size()
-
-        # Get and validate JSON data
         data = security_validator.validate_json_input(request.get_json())
-
-        # Validate required fields
         required_fields = ["email", "username", "password", "first_name", "last_name"]
         for field in required_fields:
             if field not in data:
-                return jsonify({"error": f"{field} is required"}), 400
-
-        # Validate email
+                return (jsonify({"error": f"{field} is required"}), 400)
         email = security_validator.validate_email(data["email"])
-
-        # Validate username
         username = security_validator.validate_username(data["username"])
-
-        # Validate password
         security_validator.validate_password(data["password"])
-
-        # Check for security threats
         threats = security_validator.check_security_threats(json.dumps(data))
         if threats:
             audit_logger.log_security_alert(
                 "registration_security_threat",
                 details={"threats": threats, "data": data},
             )
-            return jsonify({"error": "Invalid input detected"}), 400
-
-        # Check if user already exists
+            return (jsonify({"error": "Invalid input detected"}), 400)
         session = db_manager.get_session()
         try:
             existing_user = (
@@ -61,9 +43,7 @@ def register():
                 .filter((User.email == email) | (User.username == username))
                 .first()
             )
-
             if existing_user:
-                # Log failed registration attempt
                 audit_logger.log_authentication_event(
                     AuditEventType.LOGIN_FAILURE,
                     success=False,
@@ -73,9 +53,7 @@ def register():
                         "username": username,
                     },
                 )
-                return jsonify({"error": "User already exists"}), 409
-
-            # Create new user
+                return (jsonify({"error": "User already exists"}), 409)
             user = User(
                 email=email,
                 username=username,
@@ -83,21 +61,13 @@ def register():
                 last_name=data["last_name"],
                 status=UserStatus.PENDING,
             )
-
-            # Set password
             user.set_password(data["password"])
-
-            # Add optional fields
             if "phone" in data:
                 user.set_encrypted_field("phone", data["phone"], "pii")
             if "country" in data:
                 user.country = data["country"]
-
-            # Save user
             session.add(user)
             session.commit()
-
-            # Log successful registration
             audit_logger.log_authentication_event(
                 AuditEventType.LOGIN_SUCCESS,
                 user_id=user.id,
@@ -108,12 +78,9 @@ def register():
                     "username": username,
                 },
             )
-
-            # Generate tokens
             tokens = auth_manager.generate_tokens(
                 user.id, user.role.value, auth_manager.get_user_permissions(user.role)
             )
-
             return (
                 jsonify(
                     {
@@ -124,60 +91,41 @@ def register():
                 ),
                 201,
             )
-
         finally:
             session.close()
-
     except ValidationError as e:
-        return jsonify({"error": e.message, "field": e.field}), 400
+        return (jsonify({"error": e.message, "field": e.field}), 400)
     except Exception as e:
         audit_logger.log_security_alert("registration_error", details={"error": str(e)})
-        return jsonify({"error": "Registration failed"}), 500
+        return (jsonify({"error": "Registration failed"}), 500)
 
 
 @auth_bp.route("/login", methods=["POST"])
-@rate_limit(
-    limit=10, window=300, scope=RateLimitScope.PER_IP
-)  # 10 login attempts per 5 minutes per IP
-def login():
+@rate_limit(limit=10, window=300, scope=RateLimitScope.PER_IP)
+def login() -> Any:
     """Authenticate user and return tokens"""
     try:
-        # Validate request size
         security_validator.validate_request_size()
-
-        # Get and validate JSON data
         data = security_validator.validate_json_input(request.get_json())
-
-        # Validate required fields
         if "email" not in data or "password" not in data:
-            return jsonify({"error": "Email and password are required"}), 400
-
-        # Validate email format
+            return (jsonify({"error": "Email and password are required"}), 400)
         email = security_validator.validate_email(data["email"])
-
-        # Check for security threats
         threats = security_validator.check_security_threats(json.dumps(data))
         if threats:
             audit_logger.log_security_alert(
                 "login_security_threat", details={"threats": threats, "email": email}
             )
-            return jsonify({"error": "Invalid input detected"}), 400
-
+            return (jsonify({"error": "Invalid input detected"}), 400)
         session = db_manager.get_session()
         try:
-            # Find user
             user = session.query(User).filter(User.email == email).first()
-
             if not user:
-                # Log failed login attempt
                 audit_logger.log_authentication_event(
                     AuditEventType.LOGIN_FAILURE,
                     success=False,
                     details={"reason": "user_not_found", "email": email},
                 )
-                return jsonify({"error": "Invalid credentials"}), 401
-
-            # Check if account is locked
+                return (jsonify({"error": "Invalid credentials"}), 401)
             if user.is_locked():
                 audit_logger.log_authentication_event(
                     AuditEventType.LOGIN_FAILURE,
@@ -190,14 +138,10 @@ def login():
                         ),
                     },
                 )
-                return jsonify({"error": "Account is locked"}), 423
-
-            # Verify password
+                return (jsonify({"error": "Account is locked"}), 423)
             if not user.verify_password(data["password"]):
-                # Increment login attempts
                 user.increment_login_attempts()
                 session.commit()
-
                 audit_logger.log_authentication_event(
                     AuditEventType.LOGIN_FAILURE,
                     user_id=user.id,
@@ -207,9 +151,7 @@ def login():
                         "login_attempts": user.login_attempts,
                     },
                 )
-                return jsonify({"error": "Invalid credentials"}), 401
-
-            # Check MFA if enabled
+                return (jsonify({"error": "Invalid credentials"}), 401)
             if user.mfa_enabled:
                 mfa_token = data.get("mfa_token")
                 if not mfa_token:
@@ -217,7 +159,6 @@ def login():
                         jsonify({"error": "MFA token required", "mfa_required": True}),
                         200,
                     )
-
                 if not user.verify_mfa_token(mfa_token):
                     audit_logger.log_authentication_event(
                         AuditEventType.LOGIN_FAILURE,
@@ -225,9 +166,7 @@ def login():
                         success=False,
                         details={"reason": "invalid_mfa_token"},
                     )
-                    return jsonify({"error": "Invalid MFA token"}), 401
-
-            # Check account status
+                    return (jsonify({"error": "Invalid MFA token"}), 401)
             if user.status != UserStatus.ACTIVE:
                 audit_logger.log_authentication_event(
                     AuditEventType.LOGIN_FAILURE,
@@ -235,25 +174,18 @@ def login():
                     success=False,
                     details={"reason": "account_inactive", "status": user.status.value},
                 )
-                return jsonify({"error": f"Account is {user.status.value}"}), 403
-
-            # Successful login
+                return (jsonify({"error": f"Account is {user.status.value}"}), 403)
             user.successful_login()
             session.commit()
-
-            # Log successful login
             audit_logger.log_authentication_event(
                 AuditEventType.LOGIN_SUCCESS,
                 user_id=user.id,
                 success=True,
                 details={"email": email},
             )
-
-            # Generate tokens
             tokens = auth_manager.generate_tokens(
                 user.id, user.role.value, auth_manager.get_user_permissions(user.role)
             )
-
             return (
                 jsonify(
                     {
@@ -264,82 +196,64 @@ def login():
                 ),
                 200,
             )
-
         finally:
             session.close()
-
     except ValidationError as e:
-        return jsonify({"error": e.message, "field": e.field}), 400
+        return (jsonify({"error": e.message, "field": e.field}), 400)
     except Exception as e:
         audit_logger.log_security_alert("login_error", details={"error": str(e)})
-        return jsonify({"error": "Login failed"}), 500
+        return (jsonify({"error": "Login failed"}), 500)
 
 
 @auth_bp.route("/logout", methods=["POST"])
 @jwt_required
-def logout():
+def logout() -> Any:
     """Logout user and revoke tokens"""
     try:
-        # Get token from header
         auth_header = request.headers.get("Authorization")
         if auth_header:
             token = auth_header.split(" ")[1]
-
-            # Revoke token
             auth_manager.revoke_token(token)
-
-            # Log logout
             audit_logger.log_authentication_event(
                 AuditEventType.LOGOUT, user_id=g.current_user_id, success=True
             )
-
-            return jsonify({"message": "Logout successful"}), 200
-
-        return jsonify({"error": "No token provided"}), 400
-
+            return (jsonify({"message": "Logout successful"}), 200)
+        return (jsonify({"error": "No token provided"}), 400)
     except Exception:
-        return jsonify({"error": "Logout failed"}), 500
+        return (jsonify({"error": "Logout failed"}), 500)
 
 
 @auth_bp.route("/refresh", methods=["POST"])
 @rate_limit(limit=20, window=300, scope=RateLimitScope.PER_IP)
-def refresh_token():
+def refresh_token() -> Any:
     """Refresh access token using refresh token"""
     try:
         data = request.get_json()
         if not data or "refresh_token" not in data:
-            return jsonify({"error": "Refresh token is required"}), 400
-
-        # Refresh tokens
+            return (jsonify({"error": "Refresh token is required"}), 400)
         new_tokens = auth_manager.refresh_access_token(data["refresh_token"])
-
         if not new_tokens:
-            return jsonify({"error": "Invalid refresh token"}), 401
-
+            return (jsonify({"error": "Invalid refresh token"}), 401)
         return (
             jsonify({"message": "Token refreshed successfully", "tokens": new_tokens}),
             200,
         )
-
     except Exception:
-        return jsonify({"error": "Token refresh failed"}), 500
+        return (jsonify({"error": "Token refresh failed"}), 500)
 
 
 @auth_bp.route("/setup-mfa", methods=["POST"])
 @jwt_required
-def setup_mfa():
+def setup_mfa() -> Any:
     """Set up multi-factor authentication"""
     try:
         session = db_manager.get_session()
         try:
             user = session.query(User).get(g.current_user_id)
             if not user:
-                return jsonify({"error": "User not found"}), 404
-
-            # Generate MFA secret and QR code
+                return (jsonify({"error": "User not found"}), 404)
             secret, qr_code, backup_codes = user.setup_mfa()
             session.commit()
-
             return (
                 jsonify(
                     {
@@ -351,108 +265,83 @@ def setup_mfa():
                 ),
                 200,
             )
-
         finally:
             session.close()
-
     except Exception:
-        return jsonify({"error": "MFA setup failed"}), 500
+        return (jsonify({"error": "MFA setup failed"}), 500)
 
 
 @auth_bp.route("/enable-mfa", methods=["POST"])
 @jwt_required
-def enable_mfa():
+def enable_mfa() -> Any:
     """Enable MFA after verifying token"""
     try:
         data = request.get_json()
         if not data or "token" not in data:
-            return jsonify({"error": "MFA token is required"}), 400
-
+            return (jsonify({"error": "MFA token is required"}), 400)
         session = db_manager.get_session()
         try:
             user = session.query(User).get(g.current_user_id)
             if not user:
-                return jsonify({"error": "User not found"}), 404
-
-            # Verify and enable MFA
+                return (jsonify({"error": "User not found"}), 404)
             if user.enable_mfa(data["token"]):
                 session.commit()
-
                 audit_logger.log_authentication_event(
                     AuditEventType.MFA_ENABLED, user_id=user.id, success=True
                 )
-
-                return jsonify({"message": "MFA enabled successfully"}), 200
+                return (jsonify({"message": "MFA enabled successfully"}), 200)
             else:
-                return jsonify({"error": "Invalid MFA token"}), 400
-
+                return (jsonify({"error": "Invalid MFA token"}), 400)
         finally:
             session.close()
-
     except Exception:
-        return jsonify({"error": "MFA enable failed"}), 500
+        return (jsonify({"error": "MFA enable failed"}), 500)
 
 
 @auth_bp.route("/disable-mfa", methods=["POST"])
 @jwt_required
-def disable_mfa():
+def disable_mfa() -> Any:
     """Disable multi-factor authentication"""
     try:
         data = request.get_json()
         if not data or "password" not in data:
-            return jsonify({"error": "Password is required"}), 400
-
+            return (jsonify({"error": "Password is required"}), 400)
         session = db_manager.get_session()
         try:
             user = session.query(User).get(g.current_user_id)
             if not user:
-                return jsonify({"error": "User not found"}), 404
-
-            # Verify password
+                return (jsonify({"error": "User not found"}), 404)
             if not user.verify_password(data["password"]):
-                return jsonify({"error": "Invalid password"}), 401
-
-            # Disable MFA
+                return (jsonify({"error": "Invalid password"}), 401)
             user.disable_mfa()
             session.commit()
-
             audit_logger.log_authentication_event(
                 AuditEventType.MFA_DISABLED, user_id=user.id, success=True
             )
-
-            return jsonify({"message": "MFA disabled successfully"}), 200
-
+            return (jsonify({"message": "MFA disabled successfully"}), 200)
         finally:
             session.close()
-
     except Exception:
-        return jsonify({"error": "MFA disable failed"}), 500
+        return (jsonify({"error": "MFA disable failed"}), 500)
 
 
 @auth_bp.route("/change-password", methods=["POST"])
 @jwt_required
 @rate_limit(limit=5, window=300, scope=RateLimitScope.PER_USER)
-def change_password():
+def change_password() -> Any:
     """Change user password"""
     try:
         data = security_validator.validate_json_input(request.get_json())
-
-        # Validate required fields
         required_fields = ["current_password", "new_password"]
         for field in required_fields:
             if field not in data:
-                return jsonify({"error": f"{field} is required"}), 400
-
-        # Validate new password
+                return (jsonify({"error": f"{field} is required"}), 400)
         security_validator.validate_password(data["new_password"])
-
         session = db_manager.get_session()
         try:
             user = session.query(User).get(g.current_user_id)
             if not user:
-                return jsonify({"error": "User not found"}), 404
-
-            # Verify current password
+                return (jsonify({"error": "User not found"}), 404)
             if not user.verify_password(data["current_password"]):
                 audit_logger.log_authentication_event(
                     AuditEventType.PASSWORD_CHANGE,
@@ -460,56 +349,45 @@ def change_password():
                     success=False,
                     details={"reason": "invalid_current_password"},
                 )
-                return jsonify({"error": "Invalid current password"}), 401
-
-            # Set new password
+                return (jsonify({"error": "Invalid current password"}), 401)
             user.set_password(data["new_password"])
             session.commit()
-
             audit_logger.log_authentication_event(
                 AuditEventType.PASSWORD_CHANGE, user_id=user.id, success=True
             )
-
-            return jsonify({"message": "Password changed successfully"}), 200
-
+            return (jsonify({"message": "Password changed successfully"}), 200)
         finally:
             session.close()
-
     except ValidationError as e:
-        return jsonify({"error": e.message, "field": e.field}), 400
+        return (jsonify({"error": e.message, "field": e.field}), 400)
     except Exception:
-        return jsonify({"error": "Password change failed"}), 500
+        return (jsonify({"error": "Password change failed"}), 500)
 
 
 @auth_bp.route("/profile", methods=["GET"])
 @jwt_required
-def get_profile():
+def get_profile() -> Any:
     """Get current user profile"""
     try:
         session = db_manager.get_session()
         try:
             user = session.query(User).get(g.current_user_id)
             if not user:
-                return jsonify({"error": "User not found"}), 404
-
-            return jsonify({"user": user.to_dict(include_sensitive=False)}), 200
-
+                return (jsonify({"error": "User not found"}), 404)
+            return (jsonify({"user": user.to_dict(include_sensitive=False)}), 200)
         finally:
             session.close()
-
     except Exception:
-        return jsonify({"error": "Failed to get profile"}), 500
+        return (jsonify({"error": "Failed to get profile"}), 500)
 
 
 @auth_bp.route("/profile", methods=["PUT"])
 @jwt_required
 @rate_limit(limit=10, window=300, scope=RateLimitScope.PER_USER)
-def update_profile():
+def update_profile() -> Any:
     """Update user profile"""
     try:
         data = security_validator.validate_json_input(request.get_json())
-
-        # Check for security threats
         threats = security_validator.check_security_threats(json.dumps(data))
         if threats:
             audit_logger.log_security_alert(
@@ -517,15 +395,12 @@ def update_profile():
                 user_id=g.current_user_id,
                 details={"threats": threats},
             )
-            return jsonify({"error": "Invalid input detected"}), 400
-
+            return (jsonify({"error": "Invalid input detected"}), 400)
         session = db_manager.get_session()
         try:
             user = session.query(User).get(g.current_user_id)
             if not user:
-                return jsonify({"error": "User not found"}), 404
-
-            # Update allowed fields
+                return (jsonify({"error": "User not found"}), 404)
             allowed_fields = [
                 "first_name",
                 "last_name",
@@ -535,23 +410,19 @@ def update_profile():
                 "country",
                 "postal_code",
             ]
-
             for field in allowed_fields:
                 if field in data:
                     if field in user._encrypted_fields:
                         user.set_encrypted_field(field, data[field], "pii")
                     else:
                         setattr(user, field, data[field])
-
             session.commit()
-
             audit_logger.log_data_access(
                 action="update",
                 resource="user_profile",
                 user_id=user.id,
                 details={"updated_fields": list(data.keys())},
             )
-
             return (
                 jsonify(
                     {
@@ -561,26 +432,22 @@ def update_profile():
                 ),
                 200,
             )
-
         finally:
             session.close()
-
     except ValidationError as e:
-        return jsonify({"error": e.message, "field": e.field}), 400
+        return (jsonify({"error": e.message, "field": e.field}), 400)
     except Exception:
-        return jsonify({"error": "Profile update failed"}), 500
+        return (jsonify({"error": "Profile update failed"}), 500)
 
 
 @auth_bp.route("/verify-token", methods=["POST"])
-def verify_token():
+def verify_token() -> Any:
     """Verify if a token is valid"""
     try:
         data = request.get_json()
         if not data or "token" not in data:
-            return jsonify({"error": "Token is required"}), 400
-
+            return (jsonify({"error": "Token is required"}), 400)
         payload = auth_manager.verify_token(data["token"])
-
         if payload:
             return (
                 jsonify(
@@ -594,7 +461,6 @@ def verify_token():
                 200,
             )
         else:
-            return jsonify({"valid": False}), 200
-
+            return (jsonify({"valid": False}), 200)
     except Exception:
-        return jsonify({"error": "Token verification failed"}), 500
+        return (jsonify({"error": "Token verification failed"}), 500)

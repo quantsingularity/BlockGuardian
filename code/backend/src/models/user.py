@@ -7,9 +7,7 @@ import hashlib
 import os
 from datetime import datetime, timezone
 from enum import Enum
-
 from sqlalchemy import Column, DateTime, Enum as SQLEnum, Integer, String
-
 from .base import db_manager
 
 
@@ -47,14 +45,11 @@ class User(db_manager.Base):
     """User model"""
 
     __tablename__ = "users"
-
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String(50), unique=True, nullable=False, index=True)
     email = Column(String(100), unique=True, nullable=False, index=True)
     password_hash = Column(String(128), nullable=False)
     salt = Column(String(32), nullable=False)
-
-    # Personal Information
     first_name = Column(String(50))
     last_name = Column(String(50))
     date_of_birth = Column(DateTime)
@@ -63,8 +58,6 @@ class User(db_manager.Base):
     city = Column(String(50))
     postal_code = Column(String(20))
     phone_number = Column(String(20))
-
-    # Compliance and Security
     status = Column(
         SQLEnum(UserStatus),
         default=UserStatus.PENDING_VERIFICATION,
@@ -80,19 +73,11 @@ class User(db_manager.Base):
     aml_score = Column(Integer, default=0)
     kyc_approved_at = Column(DateTime(timezone=True))
     kyc_expires_at = Column(DateTime(timezone=True))
-    mfa_enabled = Column(Integer, default=0)  # 0: disabled, 1: enabled
+    mfa_enabled = Column(Integer, default=0)
     mfa_secret = Column(String(64))
-
-    # Financial Profile
-    annual_income = Column(
-        String(50)
-    )  # Stored as string for flexibility (e.g., ranges)
-    risk_tolerance = Column(String(50))  # e.g., 'low', 'medium', 'high', 'aggressive'
-    investment_experience = Column(
-        String(50)
-    )  # e.g., 'beginner', 'intermediate', 'expert'
-
-    # Timestamps
+    annual_income = Column(String(50))
+    risk_tolerance = Column(String(50))
+    investment_experience = Column(String(50))
     created_at = Column(
         DateTime(timezone=True), default=datetime.now(timezone.utc), nullable=False
     )
@@ -104,16 +89,12 @@ class User(db_manager.Base):
     )
     last_login_at = Column(DateTime(timezone=True))
 
-    # Relationships (assuming other models exist)
-    # transactions = relationship("Transaction", back_populates="user")
-    # portfolios = relationship("Portfolio", back_populates="user")
-
-    def __init__(self, username, email, password):
+    def __init__(self, username: Any, email: Any, password: Any) -> Any:
         self.username = username
         self.email = email
         self.set_password(password)
 
-    def set_password(self, password: str):
+    def set_password(self, password: str) -> Any:
         """Hashes the password and stores the hash and salt."""
         self.salt = os.urandom(16).hex()
         self.password_hash = self._hash_password(password, self.salt)
@@ -124,9 +105,6 @@ class User(db_manager.Base):
 
     def _hash_password(self, password: str, salt: str) -> str:
         """Internal method to hash a password using SHA-256."""
-        # Use a strong, standard hashing algorithm like PBKDF2 in a real app.
-        # For this example, we use a simple SHA-256 for demonstration.
-        # DO NOT use this in production.
         hashed = hashlib.sha256((password + salt).encode("utf-8")).hexdigest()
         return hashed
 
@@ -146,5 +124,5 @@ class User(db_manager.Base):
         """Returns the user's full name."""
         return f"{self.first_name or ''} {self.last_name or ''}".strip()
 
-    def __repr__(self):
+    def __repr__(self) -> Any:
         return f"<User(id={self.id}, username='{self.username}', email='{self.email}', status='{self.status.value}')>"

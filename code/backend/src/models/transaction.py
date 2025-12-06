@@ -8,7 +8,6 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from enum import Enum
 from typing import Any, Dict, Optional
-
 from sqlalchemy import (
     Boolean,
     Column,
@@ -23,7 +22,6 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
-
 from .base import BaseModel
 
 
@@ -68,44 +66,30 @@ class Transaction(BaseModel):
     """Enhanced transaction model with comprehensive financial features"""
 
     __tablename__ = "transactions"
-
-    # Primary identification
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     transaction_id = Column(String(50), unique=True, nullable=False, index=True)
-    external_id = Column(String(100), index=True)  # External system reference
-
-    # User and portfolio relationships
+    external_id = Column(String(100), index=True)
     user_id = Column(
         UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True
     )
     portfolio_id = Column(
         UUID(as_uuid=True), ForeignKey("portfolios.id"), nullable=False, index=True
     )
-
-    # Transaction details
     transaction_type = Column(String(20), nullable=False, index=True)
     status = Column(
         String(20), nullable=False, default=TransactionStatus.PENDING.value, index=True
     )
-
-    # Asset information
     asset_symbol = Column(String(20), nullable=False, index=True)
     asset_name = Column(String(200))
-    asset_type = Column(String(50))  # stock, crypto, etf, bond, commodity
-
-    # Financial details
+    asset_type = Column(String(50))
     quantity = Column(Numeric(20, 8), nullable=False)
     price = Column(Numeric(20, 8), nullable=False)
     total_amount = Column(Numeric(20, 2), nullable=False)
-    fee = Column(Numeric(20, 2), default=Decimal("0.00"))  # Use Decimal for default
-    tax = Column(Numeric(20, 2), default=Decimal("0.00"))  # Use Decimal for default
+    fee = Column(Numeric(20, 2), default=Decimal("0.00"))
+    tax = Column(Numeric(20, 2), default=Decimal("0.00"))
     net_amount = Column(Numeric(20, 2), nullable=False)
-
-    # Currency information
     currency = Column(String(3), nullable=False, default="USD")
-    exchange_rate = Column(Numeric(20, 8), default=1)  # To base currency
-
-    # Timing information
+    exchange_rate = Column(Numeric(20, 8), default=1)
     order_date = Column(
         DateTime(timezone=True),
         nullable=False,
@@ -113,53 +97,38 @@ class Transaction(BaseModel):
     )
     execution_date = Column(DateTime(timezone=True))
     settlement_date = Column(DateTime(timezone=True))
-
-    # Market information
-    market = Column(String(50))  # NYSE, NASDAQ, etc.
+    market = Column(String(50))
     exchange = Column(String(50))
-    trading_session = Column(String(20))  # regular, pre-market, after-hours
-
-    # Risk and compliance
+    trading_session = Column(String(20))
     risk_level = Column(String(20), default=RiskLevel.LOW.value, index=True)
     compliance_status = Column(String(20), default="pending")
     aml_status = Column(String(20), default="pending")
     kyc_verified = Column(Boolean, default=False)
-
-    # Regulatory reporting
     reportable = Column(Boolean, default=False)
     reported_date = Column(DateTime(timezone=True))
-    reporting_jurisdiction = Column(String(10))  # US, EU, etc.
-
-    # Additional metadata
-    metadata = Column(JSONB)  # Flexible storage for additional data
+    reporting_jurisdiction = Column(String(10))
+    metadata = Column(JSONB)
     notes = Column(Text)
-    tags = Column(String(500))  # Comma-separated tags
-
-    # Audit trail
+    tags = Column(String(500))
     created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"))
     approved_by = Column(UUID(as_uuid=True), ForeignKey("users.id"))
     cancelled_by = Column(UUID(as_uuid=True), ForeignKey("users.id"))
-
-    # Relationships
     user = relationship("User", foreign_keys=[user_id], back_populates="transactions")
     portfolio = relationship("Portfolio", back_populates="transactions")
     created_by_user = relationship("User", foreign_keys=[created_by])
     approved_by_user = relationship("User", foreign_keys=[approved_by])
     cancelled_by_user = relationship("User", foreign_keys=[cancelled_by])
-
-    # Indexes for performance
     __table_args__ = (
         Index("idx_transaction_user_date", "user_id", "order_date"),
         Index("idx_transaction_portfolio_date", "portfolio_id", "order_date"),
         Index("idx_transaction_asset_date", "asset_symbol", "order_date"),
         Index("idx_transaction_status_date", "status", "order_date"),
         Index("idx_transaction_risk_compliance", "risk_level", "compliance_status"),
-        # Constraint: Ensure quantity and total_amount are non-negative
         CheckConstraint("quantity >= 0", name="check_positive_quantity"),
         CheckConstraint("total_amount >= 0", name="check_positive_total_amount"),
     )
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> Any:
         super().__init__(**kwargs)
         if not self.transaction_id:
             self.transaction_id = self.generate_transaction_id()
@@ -196,7 +165,7 @@ class Transaction(BaseModel):
         """Check if transaction requires compliance review"""
         return (
             self.risk_level in [RiskLevel.HIGH.value, RiskLevel.CRITICAL.value]
-            or self.total_amount > 10000  # Large transaction threshold
+            or self.total_amount > 10000
             or self.compliance_status == "pending"
         )
 
@@ -210,24 +179,19 @@ class Transaction(BaseModel):
 
     def update_status(
         self, new_status: TransactionStatus, user_id: Optional[str] = None
-    ):
+    ) -> Any:
         """Update transaction status with audit trail"""
         old_status = self.status
         self.status = new_status.value
         self.updated_at = datetime.now(timezone.utc)
-
         if new_status == TransactionStatus.COMPLETED:
             self.execution_date = datetime.now(timezone.utc)
         elif new_status == TransactionStatus.SETTLED:
             self.settlement_date = datetime.now(timezone.utc)
-
-        # Log status change
         if not self.metadata:
             self.metadata = {}
-
         if "status_history" not in self.metadata:
             self.metadata["status_history"] = []
-
         self.metadata["status_history"].append(
             {
                 "from_status": old_status,
@@ -237,14 +201,12 @@ class Transaction(BaseModel):
             }
         )
 
-    def add_compliance_note(self, note: str, user_id: Optional[str] = None):
+    def add_compliance_note(self, note: str, user_id: Optional[str] = None) -> Any:
         """Add compliance note to transaction"""
         if not self.metadata:
             self.metadata = {}
-
         if "compliance_notes" not in self.metadata:
             self.metadata["compliance_notes"] = []
-
         self.metadata["compliance_notes"].append(
             {
                 "note": note,
@@ -255,9 +217,6 @@ class Transaction(BaseModel):
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert transaction to dictionary"""
-        # Removed redundant to_dict method as BaseModel likely provides a similar one,
-        # or it should be implemented using a proper serialization library like Marshmallow.
-        # Keeping it for now but ensuring Decimal values are converted to float for JSON serialization.
         return {
             "id": str(self.id),
             "transaction_id": self.transaction_id,
@@ -308,29 +267,20 @@ class TransactionAudit(BaseModel):
     """Transaction audit log for compliance tracking"""
 
     __tablename__ = "transaction_audits"
-
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     transaction_id = Column(
         UUID(as_uuid=True), ForeignKey("transactions.id"), nullable=False, index=True
     )
-
-    # Audit details
-    action = Column(String(50), nullable=False)  # created, updated, approved, cancelled
+    action = Column(String(50), nullable=False)
     field_changed = Column(String(100))
     old_value = Column(Text)
     new_value = Column(Text)
-
-    # User and system information
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"))
     ip_address = Column(String(45))
     user_agent = Column(String(500))
     session_id = Column(String(100))
-
-    # Additional context
     reason = Column(Text)
     metadata = Column(JSONB)
-
-    # Relationships
     transaction = relationship("Transaction")
     user = relationship("User")
 
@@ -357,7 +307,6 @@ class SuspiciousActivity(BaseModel):
     """Suspicious activity reporting for AML compliance"""
 
     __tablename__ = "suspicious_activities"
-
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     transaction_id = Column(
         UUID(as_uuid=True), ForeignKey("transactions.id"), nullable=False, index=True
@@ -365,34 +314,22 @@ class SuspiciousActivity(BaseModel):
     user_id = Column(
         UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True
     )
-
-    # SAR details
     sar_number = Column(String(50), unique=True)
     activity_type = Column(String(100), nullable=False)
     description = Column(Text, nullable=False)
     risk_score = Column(Integer, nullable=False)
-
-    # Status and reporting
-    status = Column(
-        String(20), default="pending"
-    )  # pending, investigating, reported, closed
+    status = Column(String(20), default="pending")
     reported_to_authorities = Column(Boolean, default=False)
     report_date = Column(DateTime(timezone=True))
-
-    # Investigation details
     investigated_by = Column(UUID(as_uuid=True), ForeignKey("users.id"))
     investigation_notes = Column(Text)
     resolution = Column(Text)
-
-    # Additional information
     metadata = Column(JSONB)
-
-    # Relationships
     transaction = relationship("Transaction")
     user = relationship("User", foreign_keys=[user_id])
     investigator = relationship("User", foreign_keys=[investigated_by])
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> Any:
         super().__init__(**kwargs)
         if not self.sar_number:
             self.sar_number = self.generate_sar_number()

@@ -3,6 +3,10 @@ from datetime import timedelta
 import os
 import logging
 
+from core.logging import get_logger
+
+logger = get_logger(__name__)
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
@@ -133,14 +137,12 @@ def main():
     fraud_df = load_data(FRAUD_FILE)
 
     logger.info("\n--- Processed Transaction Data Sample ---")
-    print(processed_df.head().to_markdown(index=False))
-
+    logger.info(processed_df.head().to_markdown(index=False))
     logger.info("\n--- Fraud Patterns Data Sample ---")
     if not fraud_df.empty:
-        print(fraud_df.head().to_markdown(index=False))
+        logger.info(fraud_df.head().to_markdown(index=False))
     else:
-        print("No fraud patterns data loaded.")
-
+        logger.info("No fraud patterns data loaded.")
     # Example of saving the processed data (optional, but good practice)
     # PROCESSED_FILE = os.path.join(RESOURCES_DIR, 'processed_transactions.csv')
     # processed_df.to_csv(PROCESSED_FILE, index=False)

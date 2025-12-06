@@ -20,6 +20,10 @@ from src.models.user import AMLRiskLevel, KYCStatus, User, UserStatus, UserTier,
 from src.security.auth import UserRole, auth_manager
 from src.security.encryption import encryption_manager
 
+from core.logging import get_logger
+
+logger = get_logger(__name__)
+
 
 def create_database_schema():
     """Create all database tables"""
@@ -509,7 +513,7 @@ def initialize_database():
 if __name__ == "__main__":
     success = initialize_database()
     if success:
-        print("Database initialized successfully!")
+        logger.info("Database initialized successfully!")
     else:
-        print("Database initialization failed!")
+        logger.info("Database initialization failed!")
         sys.exit(1)

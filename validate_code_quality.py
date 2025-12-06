@@ -10,6 +10,10 @@ import os
 import subprocess
 import sys
 
+from core.logging import get_logger
+
+logger = get_logger(__name__)
+
 
 def run_command(command, cwd=None):
     """Run a shell command and return the output."""
@@ -30,65 +34,57 @@ def run_command(command, cwd=None):
 
 def check_python_code():
     """Run linting and static analysis on Python code."""
-    print("Checking Python code quality...")
-
+    logger.info("Checking Python code quality...")
     # Install required packages if not already installed
     run_command("pip install flake8 bandit safety")
 
     # Run flake8 for linting
-    print("\n=== Running Flake8 ===")
+    logger.info("\n=== Running Flake8 ===")
     success, output = run_command(
         "flake8 --max-line-length=100 --exclude=venv,__pycache__ .", cwd="backend"
     )
-    print(output if output else "No linting issues found.")
-
+    logger.info(output if output else "No linting issues found.")
     # Run bandit for security issues
-    print("\n=== Running Bandit Security Analysis ===")
+    logger.info("\n=== Running Bandit Security Analysis ===")
     success, output = run_command("bandit -r -f txt -ll .", cwd="backend")
-    print(output)
-
+    logger.info(output)
     # Check dependencies for vulnerabilities
-    print("\n=== Checking Dependencies for Vulnerabilities ===")
+    logger.info("\n=== Checking Dependencies for Vulnerabilities ===")
     success, output = run_command("safety check -r requirements.txt", cwd="backend")
-    print(output)
-
+    logger.info(output)
     return success
 
 
 def check_smart_contracts():
     """Run security analysis on smart contracts."""
-    print("\nChecking smart contract security...")
-
+    logger.info("\nChecking smart contract security...")
     # Install required packages if not already installed
     run_command("npm install -g solhint")
 
     # Run solhint for linting
-    print("\n=== Running Solhint ===")
+    logger.info("\n=== Running Solhint ===")
     success, output = run_command(
         "solhint 'contracts/**/*.sol'", cwd="blockchain-contracts"
     )
-    print(output if output else "No linting issues found.")
-
+    logger.info(output if output else "No linting issues found.")
     # Check if slither is installed, if not suggest installation
-    print("\n=== Slither Analysis ===")
+    logger.info("\n=== Slither Analysis ===")
     slither_installed, _ = run_command("pip show slither-analyzer")
     if not slither_installed:
-        print("Slither not installed. To install: pip install slither-analyzer")
-        print("Skipping Slither analysis.")
+        logger.info("Slither not installed. To install: pip install slither-analyzer")
+        logger.info("Skipping Slither analysis.")
     else:
         success, output = run_command("slither .", cwd="blockchain-contracts")
-        print(output)
-
+        logger.info(output)
     return success
 
 
 def main():
     """Main function to run all checks."""
-    print("Starting code quality and security validation...")
-
+    logger.info("Starting code quality and security validation...")
     # Check if we're in the right directory
     if not os.path.exists("backend") or not os.path.exists("blockchain-contracts"):
-        print("Error: Script must be run from the BlockGuardian root directory.")
+        logger.info("Error: Script must be run from the BlockGuardian root directory.")
         return False
 
     # Run Python code checks
@@ -98,12 +94,11 @@ def main():
     contract_success = check_smart_contracts()
 
     # Generate report
-    print("\n=== Validation Summary ===")
+    logger.info("\n=== Validation Summary ===")
     if python_success and contract_success:
-        print("All checks passed successfully!")
+        logger.info("All checks passed successfully!")
     else:
-        print("Some checks failed. Please review the output above.")
-
+        logger.info("Some checks failed. Please review the output above.")
     return python_success and contract_success
 
 

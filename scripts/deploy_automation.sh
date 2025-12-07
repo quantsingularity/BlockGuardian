@@ -4,6 +4,9 @@
 # This script automates the deployment process for BlockGuardian components
 # It handles building, testing, and deploying the application to various environments
 
+# --- Configuration and Setup ---
+set -euo pipefail # Exit on error, unset variable, and pipe failure
+
 # Set colors for terminal output
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
@@ -11,7 +14,7 @@ RED='\033[0;31m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Script directory
+# Script directory and project root
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
@@ -19,12 +22,13 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 DEPLOY_LOG_DIR="${PROJECT_ROOT}/deployment-logs"
 mkdir -p "$DEPLOY_LOG_DIR"
 
-# Log file
-LOG_FILE="${DEPLOY_LOG_DIR}/deployment_$(date +%Y%m%d_%H%M%S).log"
-SUMMARY_FILE="${DEPLOY_LOG_DIR}/deployment_summary_$(date +%Y%m%d_%H%M%S).md"
+# Log file and summary file placeholders (will be set in parse_arguments)
+LOG_FILE=""
+SUMMARY_FILE=""
 
-# Default environment
-ENVIRONMENT="development"
+# -----------------------------------------------------------------------------
+# Helper Functions
+# -----------------------------------------------------------------------------
 
 # Function to check if a command exists
 command_exists() {
@@ -36,7 +40,12 @@ log_message() {
   local message="$1"
   local level="${2:-INFO}"
   local timestamp=$(date +"%Y-%m-%d %H:%M:%S")
-  echo -e "[$timestamp] [$level] $message" | tee -a "$LOG_FILE"
+  # Check if LOG_FILE is set before attempting to tee
+  if [ -n "$LOG_FILE" ]; then
+    echo -e "[$timestamp] [$level] $message" | tee -a "$LOG_FILE"
+  else
+    echo -e "[$timestamp] [$level] $message"
+  fi
 }
 
 # Function to display usage information
@@ -45,7 +54,7 @@ show_usage() {
   echo ""
   echo "Options:"
   echo "  -e, --environment ENV    Specify deployment environment (development, staging, production)"
-  echo "  -c, --component COMP     Deploy specific component (backend, web-frontend, mobile-frontend, blockchain)"
+  echo "  -c, --component COMP     Deploy specific component (all, backend, web-frontend, mobile-frontend, blockchain)"
   echo "  -s, --skip-tests         Skip running tests before deployment"
   echo "  -h, --help               Show this help message"
   echo ""
@@ -58,6 +67,10 @@ show_usage() {
 parse_arguments() {
   SKIP_TESTS=false
   COMPONENT="all"
+
+  # Set log files now that we know the run time
+  LOG_FILE="${DEPLOY_LOG_DIR}/deployment_$(date +%Y%m%d_%H%M%S).log"
+  SUMMARY_FILE="${DEPLOY_LOG_DIR}/deployment_summary_$(date +%Y%m%d_%H%M%S).md"
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -107,6 +120,7 @@ parse_arguments() {
 run_tests() {
   local component="$1"
   local component_dir="${PROJECT_ROOT}/${component}"
+  local test_log="${DEPLOY_LOG_DIR}/${component}_tests.log"
 
   if [ "$SKIP_TESTS" = true ]; then
     log_message "Skipping tests for $component as requested" "INFO"
@@ -117,63 +131,64 @@ run_tests() {
 
   if [ ! -d "$component_dir" ]; then
     log_message "Component directory not found: $component_dir" "ERROR"
+    echo "| $component | ❌ Tests Failed | Directory not found |" >> "$SUMMARY_FILE"
     return 1
   fi
 
-  cd "$component_dir" || { log_message "Failed to change to directory: $component_dir" "ERROR"; return 1; }
+  # Use a subshell for localized directory and environment changes
+  (
+    set +e # Allow test command to fail without exiting the subshell
+    cd "$component_dir"
 
-  case "$component" in
-    backend)
-      if [ -d "venv" ]; then
-        source venv/bin/activate
-        python -m pytest tests/ > "${DEPLOY_LOG_DIR}/${component}_tests.log" 2>&1
-        local exit_code=$?
-        deactivate
-      else
-        log_message "Python virtual environment not found for backend" "ERROR"
-        return 1
-      fi
-      ;;
-    web-frontend)
-      if command_exists npm; then
-        npm test > "${DEPLOY_LOG_DIR}/${component}_tests.log" 2>&1
-        local exit_code=$?
-      else
-        log_message "npm not found, cannot run web-frontend tests" "ERROR"
-        return 1
-      fi
-      ;;
-    mobile-frontend)
-      if command_exists npm; then
-        npm test > "${DEPLOY_LOG_DIR}/${component}_tests.log" 2>&1
-        local exit_code=$?
-      else
-        log_message "npm not found, cannot run mobile-frontend tests" "ERROR"
-        return 1
-      fi
-      ;;
-    blockchain)
-      if command_exists npx; then
-        npx hardhat test > "${DEPLOY_LOG_DIR}/${component}_tests.log" 2>&1
-        local exit_code=$?
-      else
-        log_message "npx not found, cannot run blockchain tests" "ERROR"
-        return 1
-      fi
-      ;;
-    *)
-      log_message "Unknown component: $component" "ERROR"
-      return 1
-      ;;
-  esac
+    local exit_code=1
+    case "$component" in
+      backend)
+        if [ -d "venv" ]; then
+          source venv/bin/activate
+          python -m pytest tests/ > "$test_log" 2>&1
+          exit_code=$?
+          deactivate
+        else
+          log_message "Python virtual environment not found for backend" "ERROR"
+          exit_code=1
+        fi
+        ;;
+      web-frontend|mobile-frontend)
+        if command_exists npm; then
+          npm test > "$test_log" 2>&1
+          exit_code=$?
+        else
+          log_message "npm not found, cannot run $component tests" "ERROR"
+          exit_code=1
+        fi
+        ;;
+      blockchain)
+        if command_exists npx; then
+          npx hardhat test > "$test_log" 2>&1
+          exit_code=$?
+        else
+          log_message "npx not found, cannot run blockchain tests" "ERROR"
+          exit_code=1
+        fi
+        ;;
+      *)
+        log_message "Unknown component: $component" "ERROR"
+        exit_code=1
+        ;;
+    esac
 
-  if [ $exit_code -eq 0 ]; then
+    # Return the exit code of the test command
+    return $exit_code
+  )
+
+  local test_status=$?
+  if [ $test_status -eq 0 ]; then
     log_message "Tests for $component passed" "SUCCESS"
-    echo "| $component | ✅ Tests Passed | [View Logs](${DEPLOY_LOG_DIR}/${component}_tests.log) |" >> "$SUMMARY_FILE"
+    echo "| $component | ✅ Tests Passed | [View Logs](${test_log}) |" >> "$SUMMARY_FILE"
     return 0
   else
-    log_message "Tests for $component failed with exit code $exit_code" "ERROR"
-    echo "| $component | ❌ Tests Failed | [View Logs](${DEPLOY_LOG_DIR}/${component}_tests.log) |" >> "$SUMMARY_FILE"
+    log_message "Tests for $component failed with exit code $test_status" "ERROR"
+    echo "| $component | ❌ Tests Failed | [View Logs](${test_log}) |" >> "$SUMMARY_FILE"
     return 1
   fi
 }
@@ -182,119 +197,86 @@ run_tests() {
 build_component() {
   local component="$1"
   local component_dir="${PROJECT_ROOT}/${component}"
+  local build_log="${DEPLOY_LOG_DIR}/${component}_build.log"
 
   log_message "Building $component for $ENVIRONMENT environment..." "INFO"
 
   if [ ! -d "$component_dir" ]; then
     log_message "Component directory not found: $component_dir" "ERROR"
+    echo "| $component | ❌ Build Failed | Directory not found |" >> "$SUMMARY_FILE"
     return 1
   fi
 
-  cd "$component_dir" || { log_message "Failed to change to directory: $component_dir" "ERROR"; return 1; }
+  # Use a subshell for localized directory and environment changes
+  (
+    set +e # Allow build command to fail without exiting the subshell
+    cd "$component_dir"
 
-  case "$component" in
-    backend)
-      # For backend, we might just need to collect static files or compile some resources
-      if [ -d "venv" ]; then
-        source venv/bin/activate
-        # Example: python manage.py collectstatic --noinput
-        log_message "Backend build step completed" "SUCCESS"
-        deactivate
-        echo "| $component | ✅ Build Successful | No build artifacts |" >> "$SUMMARY_FILE"
-        return 0
-      else
-        log_message "Python virtual environment not found for backend" "ERROR"
-        echo "| $component | ❌ Build Failed | Virtual environment not found |" >> "$SUMMARY_FILE"
-        return 1
-      fi
-      ;;
-    web-frontend)
-      if command_exists npm; then
-        # Set environment-specific variables
-        export REACT_APP_ENV="$ENVIRONMENT"
-        export REACT_APP_API_URL="https://api.blockguardian.example.com"
-        if [ "$ENVIRONMENT" = "production" ]; then
-          export REACT_APP_API_URL="https://api.blockguardian.com"
-        elif [ "$ENVIRONMENT" = "staging" ]; then
-          export REACT_APP_API_URL="https://api-staging.blockguardian.com"
-        fi
-
-        # Build the application
-        npm run build > "${DEPLOY_LOG_DIR}/${component}_build.log" 2>&1
-        local exit_code=$?
-
-        if [ $exit_code -eq 0 ]; then
-          log_message "Web frontend build successful" "SUCCESS"
-          echo "| $component | ✅ Build Successful | [View Logs](${DEPLOY_LOG_DIR}/${component}_build.log) |" >> "$SUMMARY_FILE"
-          return 0
+    local exit_code=1
+    case "$component" in
+      backend)
+        # Backend build is often just a static file collection or no-op
+        if [ -d "venv" ]; then
+          source venv/bin/activate
+          # Example: python manage.py collectstatic --noinput
+          log_message "Backend build step completed" "SUCCESS"
+          exit_code=0
+          deactivate
         else
-          log_message "Web frontend build failed with exit code $exit_code" "ERROR"
-          echo "| $component | ❌ Build Failed | [View Logs](${DEPLOY_LOG_DIR}/${component}_build.log) |" >> "$SUMMARY_FILE"
-          return 1
+          log_message "Python virtual environment not found for backend" "ERROR"
+          exit_code=1
         fi
-      else
-        log_message "npm not found, cannot build web-frontend" "ERROR"
-        echo "| $component | ❌ Build Failed | npm not found |" >> "$SUMMARY_FILE"
-        return 1
-      fi
-      ;;
-    mobile-frontend)
-      if command_exists npm; then
-        # Set environment-specific variables
-        export REACT_NATIVE_APP_ENV="$ENVIRONMENT"
-        export REACT_NATIVE_API_URL="https://api.blockguardian.example.com"
-        if [ "$ENVIRONMENT" = "production" ]; then
-          export REACT_NATIVE_API_URL="https://api.blockguardian.com"
-        elif [ "$ENVIRONMENT" = "staging" ]; then
-          export REACT_NATIVE_API_URL="https://api-staging.blockguardian.com"
-        fi
+        ;;
+      web-frontend|mobile-frontend)
+        if command_exists npm; then
+          # Set environment-specific variables
+          export APP_ENV="$ENVIRONMENT"
+          export API_URL="https://api.blockguardian.example.com"
+          if [ "$ENVIRONMENT" = "production" ]; then
+            API_URL="https://api.blockguardian.com"
+          elif [ "$ENVIRONMENT" = "staging" ]; then
+            API_URL="https://api-staging.blockguardian.com"
+          fi
+          export REACT_APP_API_URL="$API_URL" # For React/Next.js
 
-        # Build the application
-        npm run build > "${DEPLOY_LOG_DIR}/${component}_build.log" 2>&1
-        local exit_code=$?
-
-        if [ $exit_code -eq 0 ]; then
-          log_message "Mobile frontend build successful" "SUCCESS"
-          echo "| $component | ✅ Build Successful | [View Logs](${DEPLOY_LOG_DIR}/${component}_build.log) |" >> "$SUMMARY_FILE"
-          return 0
+          # Build the application
+          npm run build > "$build_log" 2>&1
+          exit_code=$?
         else
-          log_message "Mobile frontend build failed with exit code $exit_code" "ERROR"
-          echo "| $component | ❌ Build Failed | [View Logs](${DEPLOY_LOG_DIR}/${component}_build.log) |" >> "$SUMMARY_FILE"
-          return 1
+          log_message "npm not found, cannot build $component" "ERROR"
+          exit_code=1
         fi
-      else
-        log_message "npm not found, cannot build mobile-frontend" "ERROR"
-        echo "| $component | ❌ Build Failed | npm not found |" >> "$SUMMARY_FILE"
-        return 1
-      fi
-      ;;
-    blockchain)
-      if command_exists npx; then
-        # Compile smart contracts
-        npx hardhat compile > "${DEPLOY_LOG_DIR}/${component}_build.log" 2>&1
-        local exit_code=$?
-
-        if [ $exit_code -eq 0 ]; then
-          log_message "Blockchain contracts compilation successful" "SUCCESS"
-          echo "| $component | ✅ Build Successful | [View Logs](${DEPLOY_LOG_DIR}/${component}_build.log) |" >> "$SUMMARY_FILE"
-          return 0
+        ;;
+      blockchain)
+        if command_exists npx; then
+          # Compile smart contracts
+          npx hardhat compile > "$build_log" 2>&1
+          exit_code=$?
         else
-          log_message "Blockchain contracts compilation failed with exit code $exit_code" "ERROR"
-          echo "| $component | ❌ Build Failed | [View Logs](${DEPLOY_LOG_DIR}/${component}_build.log) |" >> "$SUMMARY_FILE"
-          return 1
+          log_message "npx not found, cannot build blockchain contracts" "ERROR"
+          exit_code=1
         fi
-      else
-        log_message "npx not found, cannot build blockchain contracts" "ERROR"
-        echo "| $component | ❌ Build Failed | npx not found |" >> "$SUMMARY_FILE"
-        return 1
-      fi
-      ;;
-    *)
-      log_message "Unknown component: $component" "ERROR"
-      echo "| $component | ❌ Build Failed | Unknown component |" >> "$SUMMARY_FILE"
-      return 1
-      ;;
-  esac
+        ;;
+      *)
+        log_message "Unknown component: $component" "ERROR"
+        exit_code=1
+        ;;
+    esac
+
+    # Return the exit code of the build command
+    return $exit_code
+  )
+
+  local build_status=$?
+  if [ $build_status -eq 0 ]; then
+    log_message "$component build successful" "SUCCESS"
+    echo "| $component | ✅ Build Successful | [View Logs](${build_log}) |" >> "$SUMMARY_FILE"
+    return 0
+  else
+    log_message "$component build failed with exit code $build_status" "ERROR"
+    echo "| $component | ❌ Build Failed | [View Logs](${build_log}) |" >> "$SUMMARY_FILE"
+    return 1
+  fi
 }
 
 # Function to deploy a component
@@ -306,80 +288,54 @@ deploy_component() {
 
   if [ ! -d "$component_dir" ]; then
     log_message "Component directory not found: $component_dir" "ERROR"
+    echo "| $component | ❌ Deployment Failed | Directory not found |" >> "$SUMMARY_FILE"
     return 1
   fi
 
-  cd "$component_dir" || { log_message "Failed to change to directory: $component_dir" "ERROR"; return 1; }
+  # Use a subshell for localized directory changes
+  (
+    cd "$component_dir"
 
-  case "$component" in
-    backend)
-      # Example deployment steps for backend
-      if [ "$ENVIRONMENT" = "production" ]; then
-        log_message "Deploying backend to production server..." "INFO"
-        # Example: rsync -avz --exclude 'venv' --exclude '*.pyc' . user@production-server:/path/to/deployment/
-        echo "| $component | ✅ Deployment Simulated | Production deployment would happen here |" >> "$SUMMARY_FILE"
-      elif [ "$ENVIRONMENT" = "staging" ]; then
-        log_message "Deploying backend to staging server..." "INFO"
-        # Example: rsync -avz --exclude 'venv' --exclude '*.pyc' . user@staging-server:/path/to/deployment/
-        echo "| $component | ✅ Deployment Simulated | Staging deployment would happen here |" >> "$SUMMARY_FILE"
-      else
-        log_message "Deploying backend to development server..." "INFO"
-        # Example: Local deployment or to a development server
-        echo "| $component | ✅ Deployment Simulated | Development deployment would happen here |" >> "$SUMMARY_FILE"
-      fi
-      ;;
-    web-frontend)
-      # Example deployment steps for web frontend
-      if [ -d "build" ]; then
-        if [ "$ENVIRONMENT" = "production" ]; then
-          log_message "Deploying web frontend to production CDN..." "INFO"
-          # Example: aws s3 sync build/ s3://blockguardian-production-frontend/
-          echo "| $component | ✅ Deployment Simulated | Production deployment would happen here |" >> "$SUMMARY_FILE"
-        elif [ "$ENVIRONMENT" = "staging" ]; then
-          log_message "Deploying web frontend to staging CDN..." "INFO"
-          # Example: aws s3 sync build/ s3://blockguardian-staging-frontend/
-          echo "| $component | ✅ Deployment Simulated | Staging deployment would happen here |" >> "$SUMMARY_FILE"
-        else
-          log_message "Deploying web frontend to development server..." "INFO"
-          # Example: Local deployment or to a development server
-          echo "| $component | ✅ Deployment Simulated | Development deployment would happen here |" >> "$SUMMARY_FILE"
-        fi
-      else
-        log_message "Build directory not found for web frontend" "ERROR"
-        echo "| $component | ❌ Deployment Failed | Build directory not found |" >> "$SUMMARY_FILE"
+    case "$component" in
+      backend)
+        # Deployment logic for backend (e.g., rsync, docker push, k8s deploy)
+        log_message "Simulating backend deployment to $ENVIRONMENT..." "INFO"
+        # Example: rsync -avz --exclude 'venv' --exclude '*.pyc' . user@server:/path/to/deployment/
+        echo "| $component | ✅ Deployment Simulated | $ENVIRONMENT deployment would happen here |" >> "$SUMMARY_FILE"
+        ;;
+      web-frontend)
+        # Deployment logic for web-frontend (e.g., S3 sync, CDN upload)
+        log_message "Simulating web frontend deployment to $ENVIRONMENT..." "INFO"
+        # Example: aws s3 sync build/ s3://blockguardian-frontend/
+        echo "| $component | ✅ Deployment Simulated | $ENVIRONMENT deployment would happen here |" >> "$SUMMARY_FILE"
+        ;;
+      mobile-frontend)
+        # Mobile frontend deployment is usually just a build and upload to app store
+        log_message "Mobile frontend deployment prepared for $ENVIRONMENT" "SUCCESS"
+        echo "| $component | ✅ Deployment Simulated | Mobile app would be submitted to app stores |" >> "$SUMMARY_FILE"
+        ;;
+      blockchain)
+        # Deployment logic for blockchain contracts (e.g., hardhat deploy)
+        log_message "Simulating blockchain contracts deployment to $ENVIRONMENT..." "INFO"
+        # Example: npx hardhat run scripts/deploy.js --network $ENVIRONMENT
+        echo "| $component | ✅ Deployment Simulated | $ENVIRONMENT deployment would happen here |" >> "$SUMMARY_FILE"
+        ;;
+      *)
+        log_message "Unknown component: $component" "ERROR"
+        echo "| $component | ❌ Deployment Failed | Unknown component |" >> "$SUMMARY_FILE"
         return 1
-      fi
-      ;;
-    mobile-frontend)
-      # For mobile frontend, we might just build and prepare for app store submission
-      log_message "Mobile frontend deployment prepared for $ENVIRONMENT" "SUCCESS"
-      echo "| $component | ✅ Deployment Simulated | Mobile app would be submitted to app stores |" >> "$SUMMARY_FILE"
-      ;;
-    blockchain)
-      # Example deployment steps for blockchain contracts
-      if [ "$ENVIRONMENT" = "production" ]; then
-        log_message "Deploying blockchain contracts to mainnet..." "INFO"
-        # Example: npx hardhat run scripts/deploy.js --network mainnet
-        echo "| $component | ✅ Deployment Simulated | Mainnet deployment would happen here |" >> "$SUMMARY_FILE"
-      elif [ "$ENVIRONMENT" = "staging" ]; then
-        log_message "Deploying blockchain contracts to testnet..." "INFO"
-        # Example: npx hardhat run scripts/deploy.js --network testnet
-        echo "| $component | ✅ Deployment Simulated | Testnet deployment would happen here |" >> "$SUMMARY_FILE"
-      else
-        log_message "Deploying blockchain contracts to local network..." "INFO"
-        # Example: npx hardhat run scripts/deploy.js --network localhost
-        echo "| $component | ✅ Deployment Simulated | Local network deployment would happen here |" >> "$SUMMARY_FILE"
-      fi
-      ;;
-    *)
-      log_message "Unknown component: $component" "ERROR"
-      echo "| $component | ❌ Deployment Failed | Unknown component |" >> "$SUMMARY_FILE"
-      return 1
-      ;;
-  esac
+        ;;
+    esac
+  )
 
-  log_message "Deployment of $component to $ENVIRONMENT completed successfully" "SUCCESS"
-  return 0
+  local deploy_status=$?
+  if [ $deploy_status -eq 0 ]; then
+    log_message "Deployment of $component to $ENVIRONMENT completed successfully" "SUCCESS"
+    return 0
+  else
+    log_message "Deployment of $component to $ENVIRONMENT failed" "ERROR"
+    return 1
+  fi
 }
 
 # Main deployment function
@@ -405,57 +361,46 @@ deploy() {
   # Initialize counters
   local success_count=0
   local failure_count=0
+  local components_to_process=()
 
-  # Deploy specific component or all components
   if [ "$COMPONENT" = "all" ]; then
-    components=("backend" "web-frontend" "mobile-frontend" "blockchain")
+    components_to_process=("backend" "web-frontend" "mobile-frontend" "blockchain")
+  else
+    components_to_process=("$COMPONENT")
+  fi
 
-    for component in "${components[@]}"; do
-      echo -e "${BLUE}Processing $component...${NC}"
+  for component in "${components_to_process[@]}"; do
+    echo -e "${BLUE}Processing $component...${NC}"
 
-      # Run tests
-      if ! run_tests "$component"; then
-        log_message "Tests failed for $component, skipping deployment" "ERROR"
-        ((failure_count++))
-        continue
-      fi
+    local component_failed=false
 
-      # Build component
+    # 1. Run tests
+    if ! run_tests "$component"; then
+      log_message "Tests failed for $component, skipping deployment" "ERROR"
+      component_failed=true
+    fi
+
+    # 2. Build component (only if tests passed or skipped)
+    if [ "$component_failed" = false ]; then
       if ! build_component "$component"; then
         log_message "Build failed for $component, skipping deployment" "ERROR"
-        ((failure_count++))
-        continue
+        component_failed=true
       fi
+    fi
 
-      # Deploy component
+    # 3. Deploy component (only if tests and build passed)
+    if [ "$component_failed" = false ]; then
       if deploy_component "$component"; then
         ((success_count++))
       else
-        ((failure_count++))
-      fi
-    done
-  else
-    echo -e "${BLUE}Processing $COMPONENT...${NC}"
-
-    # Run tests
-    if ! run_tests "$COMPONENT"; then
-      log_message "Tests failed for $COMPONENT, skipping deployment" "ERROR"
-      ((failure_count++))
-    else
-      # Build component
-      if ! build_component "$COMPONENT"; then
-        log_message "Build failed for $COMPONENT, skipping deployment" "ERROR"
-        ((failure_count++))
-      else
-        # Deploy component
-        if deploy_component "$COMPONENT"; then
-          ((success_count++))
-        else
-          ((failure_count++))
-        fi
+        component_failed=true
       fi
     fi
-  fi
+
+    if [ "$component_failed" = true ]; then
+      ((failure_count++))
+    fi
+  done
 
   # Add summary statistics
   echo "" >> "$SUMMARY_FILE"
@@ -482,10 +427,8 @@ deploy() {
   fi
 }
 
-# Parse command line arguments
+# --- Script Execution ---
 parse_arguments "$@"
-
-# Run deployment
 deploy
 exit_code=$?
 

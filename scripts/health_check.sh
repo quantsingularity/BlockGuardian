@@ -4,6 +4,9 @@
 # This script checks the health of all running BlockGuardian components
 # and provides a consolidated status report
 
+# --- Configuration and Setup ---
+set -euo pipefail # Exit on error, unset variable, and pipe failure
+
 # Set colors for terminal output
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
@@ -11,7 +14,7 @@ RED='\033[0;31m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Script directory
+# Script directory and project root
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
@@ -19,9 +22,14 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 HEALTH_CHECK_DIR="${PROJECT_ROOT}/health-checks"
 mkdir -p "$HEALTH_CHECK_DIR"
 
-# Log file
-LOG_FILE="${HEALTH_CHECK_DIR}/health_check_$(date +%Y%m%d_%H%M%S).log"
-SUMMARY_FILE="${HEALTH_CHECK_DIR}/health_summary_$(date +%Y%m%d_%H%M%S).md"
+# Log file and summary file
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+LOG_FILE="${HEALTH_CHECK_DIR}/health_check_${TIMESTAMP}.log"
+SUMMARY_FILE="${HEALTH_CHECK_DIR}/health_summary_${TIMESTAMP}.md"
+
+# -----------------------------------------------------------------------------
+# Helper Functions
+# -----------------------------------------------------------------------------
 
 # Function to check if a command exists
 command_exists() {
@@ -42,7 +50,8 @@ check_port() {
   local service_name="$2"
 
   if command_exists nc; then
-    nc -z localhost "$port" > /dev/null 2>&1
+    # Use timeout for netcat
+    nc -z -w 1 localhost "$port" > /dev/null 2>&1
     return $?
   elif command_exists lsof; then
     lsof -i:"$port" > /dev/null 2>&1
@@ -59,51 +68,61 @@ check_service() {
   local check_command="$2"
   local service_dir="${3:-}"
   local expected_output="${4:-}"
+  local service_log="${HEALTH_CHECK_DIR}/${service_name}_health.log"
 
   log_message "Checking service: $service_name" "INFO"
 
-  # Change to service directory if provided
-  if [ -n "$service_dir" ] && [ -d "$service_dir" ]; then
-    cd "$service_dir" || { log_message "Failed to change to directory: $service_dir" "ERROR"; return 1; }
-  fi
+  # Use a subshell for localized directory changes
+  (
+    if [ -n "$service_dir" ] && [ -d "$service_dir" ]; then
+      cd "$service_dir"
+    fi
 
-  # Execute the check command
-  log_message "Executing: $check_command" "DEBUG"
-  local output
-  output=$(eval "$check_command" 2>&1)
-  local exit_code=$?
+    # Execute the check command
+    log_message "Executing: $check_command" "DEBUG"
+    # Use eval to allow complex commands, but be cautious
+    local output
+    output=$(eval "$check_command" 2>&1 || true) # Use || true to prevent subshell exit on failure
+    local exit_code=$?
 
-  # Save output to file
-  echo "$output" > "${HEALTH_CHECK_DIR}/${service_name}_health.log"
+    # Save output to file
+    echo "$output" > "$service_log"
 
-  # Check if command was successful
-  if [ $exit_code -eq 0 ]; then
-    # If expected output is provided, check if it's in the actual output
-    if [ -n "$expected_output" ]; then
-      if echo "$output" | grep -q "$expected_output"; then
-        log_message "Service $service_name is healthy" "SUCCESS"
-        echo -e "${GREEN}✓ $service_name is healthy${NC}"
-        return 0
+    # Check if command was successful and if expected output is present
+    if [ $exit_code -eq 0 ]; then
+      if [ -n "$expected_output" ]; then
+        if echo "$output" | grep -qF "$expected_output"; then
+          return 0 # Healthy
+        else
+          return 1 # Unhealthy (unexpected output)
+        fi
       else
-        log_message "Service $service_name returned unexpected output" "ERROR"
-        echo -e "${RED}✗ $service_name returned unexpected output${NC}"
-        return 1
+        return 0 # Healthy
       fi
     else
-      log_message "Service $service_name is healthy" "SUCCESS"
-      echo -e "${GREEN}✓ $service_name is healthy${NC}"
-      return 0
+      return 1 # Unhealthy (command failed)
     fi
-  else
-    log_message "Service $service_name is unhealthy (exit code: $exit_code)" "ERROR"
+  )
+
+  local status=$?
+  if [ $status -eq 0 ]; then
+    log_message "Service $service_name is healthy" "SUCCESS"
+    echo -e "${GREEN}✓ $service_name is healthy${NC}"
+    return 0
+  elif [ $status -eq 1 ]; then
+    log_message "Service $service_name is unhealthy" "ERROR"
     echo -e "${RED}✗ $service_name is unhealthy${NC}"
+    return 1
+  else
+    log_message "Service $service_name check failed to execute" "ERROR"
+    echo -e "${RED}✗ $service_name check failed${NC}"
     return 1
   fi
 }
 
 # Function to check backend service
 check_backend() {
-  local backend_dir="${PROJECT_ROOT}/backend"
+  local backend_dir="${PROJECT_ROOT}/code/backend" # Corrected path based on project structure
   local backend_port=8000  # Default FastAPI port
 
   if [ ! -d "$backend_dir" ]; then
@@ -112,28 +131,14 @@ check_backend() {
     return 2
   fi
 
-  # Check if backend service is running on expected port
   if check_port "$backend_port" "backend"; then
-    # Try to access health endpoint if it exists
-    if curl -s "http://localhost:${backend_port}/health" > /dev/null 2>&1; then
-      check_service "backend" "curl -s http://localhost:${backend_port}/health" "" "\"status\":\"healthy\""
-      local status=$?
-      if [ $status -eq 0 ]; then
-        echo "| Backend | ✅ Healthy | Running on port $backend_port |" >> "$SUMMARY_FILE"
-      else
-        echo "| Backend | ❌ Unhealthy | API health check failed |" >> "$SUMMARY_FILE"
-      fi
-      return $status
+    # Try to access health endpoint
+    if check_service "backend" "curl -s http://localhost:${backend_port}/health" "" "healthy"; then
+      echo "| Backend | ✅ Healthy | Running on port $backend_port |" >> "$SUMMARY_FILE"
+      return 0
     else
-      # Just check if the service responds
-      check_service "backend" "curl -s http://localhost:${backend_port}"
-      local status=$?
-      if [ $status -eq 0 ]; then
-        echo "| Backend | ✅ Healthy | Running on port $backend_port |" >> "$SUMMARY_FILE"
-      else
-        echo "| Backend | ❌ Unhealthy | Service not responding |" >> "$SUMMARY_FILE"
-      fi
-      return $status
+      echo "| Backend | ❌ Unhealthy | API health check failed |" >> "$SUMMARY_FILE"
+      return 1
     fi
   else
     log_message "Backend service not running on port $backend_port" "ERROR"
@@ -153,17 +158,15 @@ check_blockchain_node() {
     return 2
   fi
 
-  # Check if blockchain node is running on expected port
   if check_port "$blockchain_port" "blockchain"; then
     # Try to access JSON-RPC endpoint
-    check_service "blockchain" "curl -s -X POST -H 'Content-Type: application/json' --data '{\"jsonrpc\":\"2.0\",\"method\":\"web3_clientVersion\",\"params\":[],\"id\":1}' http://localhost:${blockchain_port}"
-    local status=$?
-    if [ $status -eq 0 ]; then
+    if check_service "blockchain" "curl -s -X POST -H 'Content-Type: application/json' --data '{\"jsonrpc\":\"2.0\",\"method\":\"web3_clientVersion\",\"params\":[],\"id\":1}' http://localhost:${blockchain_port}" "" "jsonrpc"; then
       echo "| Blockchain Node | ✅ Healthy | Running on port $blockchain_port |" >> "$SUMMARY_FILE"
+      return 0
     else
       echo "| Blockchain Node | ❌ Unhealthy | JSON-RPC check failed |" >> "$SUMMARY_FILE"
+      return 1
     fi
-    return $status
   else
     log_message "Blockchain node not running on port $blockchain_port" "ERROR"
     echo "| Blockchain Node | ❌ Not Running | Port $blockchain_port not in use |" >> "$SUMMARY_FILE"
@@ -174,7 +177,7 @@ check_blockchain_node() {
 # Function to check web frontend
 check_web_frontend() {
   local web_frontend_dir="${PROJECT_ROOT}/web-frontend"
-  local web_frontend_port=3000  # Default React port
+  local web_frontend_port=3000  # Default Next.js port
 
   if [ ! -d "$web_frontend_dir" ]; then
     log_message "Web frontend directory not found: $web_frontend_dir" "ERROR"
@@ -182,16 +185,15 @@ check_web_frontend() {
     return 2
   fi
 
-  # Check if web frontend is running on expected port
   if check_port "$web_frontend_port" "web-frontend"; then
-    check_service "web-frontend" "curl -s http://localhost:${web_frontend_port}"
-    local status=$?
-    if [ $status -eq 0 ]; then
+    # Check if the service responds (a simple curl is usually enough for a running web server)
+    if check_service "web-frontend" "curl -s -o /dev/null -w '%{http_code}' http://localhost:${web_frontend_port}" "" "200"; then
       echo "| Web Frontend | ✅ Healthy | Running on port $web_frontend_port |" >> "$SUMMARY_FILE"
+      return 0
     else
-      echo "| Web Frontend | ❌ Unhealthy | Service not responding |" >> "$SUMMARY_FILE"
+      echo "| Web Frontend | ❌ Unhealthy | Service not responding with 200 OK |" >> "$SUMMARY_FILE"
+      return 1
     fi
-    return $status
   else
     log_message "Web frontend not running on port $web_frontend_port" "ERROR"
     echo "| Web Frontend | ❌ Not Running | Port $web_frontend_port not in use |" >> "$SUMMARY_FILE"
@@ -199,49 +201,29 @@ check_web_frontend() {
   fi
 }
 
-# Function to check database
+# Function to check database (Placeholder - assumes a common setup)
 check_database() {
   local db_port=5432  # Default PostgreSQL port
 
-  # Check if PostgreSQL is running
   if check_port "$db_port" "database"; then
     if command_exists psql; then
-      check_service "database" "psql -h localhost -p $db_port -U postgres -c 'SELECT 1;'" "" "1 row"
-      local status=$?
-      if [ $status -eq 0 ]; then
+      # Check connection and a simple query
+      if check_service "database" "psql -h localhost -p $db_port -U postgres -c 'SELECT 1;' 2>&1" "" "1 row"; then
         echo "| Database | ✅ Healthy | PostgreSQL running on port $db_port |" >> "$SUMMARY_FILE"
+        return 0
       else
         echo "| Database | ❌ Unhealthy | PostgreSQL connection failed |" >> "$SUMMARY_FILE"
+        return 1
       fi
-      return $status
     else
       log_message "psql command not found, cannot check PostgreSQL" "WARNING"
       echo "| Database | ⚠️ Unknown | psql command not found |" >> "$SUMMARY_FILE"
       return 2
     fi
   else
-    # Check if MongoDB is running (alternative database)
-    local mongo_port=27017
-    if check_port "$mongo_port" "database"; then
-      if command_exists mongosh; then
-        check_service "database" "mongosh --quiet --eval 'db.runCommand({ ping: 1 })'" "" "{ ok: 1 }"
-        local status=$?
-        if [ $status -eq 0 ]; then
-          echo "| Database | ✅ Healthy | MongoDB running on port $mongo_port |" >> "$SUMMARY_FILE"
-        else
-          echo "| Database | ❌ Unhealthy | MongoDB connection failed |" >> "$SUMMARY_FILE"
-        fi
-        return $status
-      else
-        log_message "mongosh command not found, cannot check MongoDB" "WARNING"
-        echo "| Database | ⚠️ Unknown | mongosh command not found |" >> "$SUMMARY_FILE"
-        return 2
-      fi
-    else
-      log_message "No database service detected" "ERROR"
-      echo "| Database | ❌ Not Running | No database service detected |" >> "$SUMMARY_FILE"
-      return 1
-    fi
+    log_message "No database service detected on common ports (e.g., $db_port)" "WARNING"
+    echo "| Database | ⚠️ Not Running | No database service detected |" >> "$SUMMARY_FILE"
+    return 2
   fi
 }
 
@@ -249,17 +231,15 @@ check_database() {
 check_redis() {
   local redis_port=6379  # Default Redis port
 
-  # Check if Redis is running
   if check_port "$redis_port" "redis"; then
     if command_exists redis-cli; then
-      check_service "redis" "redis-cli -h localhost -p $redis_port ping" "" "PONG"
-      local status=$?
-      if [ $status -eq 0 ]; then
+      if check_service "redis" "redis-cli -h localhost -p $redis_port ping" "" "PONG"; then
         echo "| Redis Cache | ✅ Healthy | Running on port $redis_port |" >> "$SUMMARY_FILE"
+        return 0
       else
         echo "| Redis Cache | ❌ Unhealthy | Connection failed |" >> "$SUMMARY_FILE"
+        return 1
       fi
-      return $status
     else
       log_message "redis-cli command not found, cannot check Redis" "WARNING"
       echo "| Redis Cache | ⚠️ Unknown | redis-cli command not found |" >> "$SUMMARY_FILE"
@@ -275,11 +255,9 @@ check_redis() {
 # Function to check Docker containers
 check_docker_containers() {
   if command_exists docker; then
-    # Check if Docker is running
     if docker info > /dev/null 2>&1; then
-      # Get list of running containers related to BlockGuardian
       local containers
-      containers=$(docker ps --filter "name=blockguardian" --format "{{.Names}}")
+      containers=$(docker ps --filter "name=blockguardian" --format "{{.Names}}" || true)
 
       if [ -z "$containers" ]; then
         log_message "No BlockGuardian Docker containers running" "WARNING"
@@ -291,13 +269,13 @@ check_docker_containers() {
         log_message "$container_count BlockGuardian Docker containers running" "INFO"
         echo "| Docker Containers | ✅ Running | $container_count containers active |" >> "$SUMMARY_FILE"
 
-        # Add container details to log
+        # Save container details to log
         docker ps --filter "name=blockguardian" > "${HEALTH_CHECK_DIR}/docker_containers.log"
         return 0
       fi
     else
       log_message "Docker daemon is not running" "ERROR"
-      echo "| Docker Containers | ❌ Error | Docker daemon not running |" >> "$SUMMARY_FILE"
+      echo "| Docker Containers | ❌ Error | Docker daemon is not running |" >> "$SUMMARY_FILE"
       return 1
     fi
   else
@@ -311,9 +289,15 @@ check_docker_containers() {
 check_disk_space() {
   local threshold=90  # Warning threshold percentage
 
-  # Get disk usage percentage
+  # Get disk usage percentage for the current filesystem
   local disk_usage
-  disk_usage=$(df -h . | awk 'NR==2 {print $5}' | sed 's/%//')
+  disk_usage=$(df -P . | awk 'NR==2 {print $5}' | sed 's/%//')
+
+  if [ -z "$disk_usage" ]; then
+    log_message "Could not determine disk usage" "ERROR"
+    echo "| Disk Space | ❌ Error | Could not determine disk usage |" >> "$SUMMARY_FILE"
+    return 1
+  fi
 
   if [ "$disk_usage" -lt "$threshold" ]; then
     log_message "Disk space usage: $disk_usage% (below threshold of $threshold%)" "INFO"
@@ -345,62 +329,21 @@ run_health_checks() {
   echo "| Service | Status | Details |" >> "$SUMMARY_FILE"
   echo "|---------|--------|---------|" >> "$SUMMARY_FILE"
 
-  # Run individual health checks
-  echo -e "${BLUE}Checking backend service...${NC}"
-  check_backend
-  case $? in
-    0) ((healthy++)) ;;
-    1) ((unhealthy++)) ;;
-    2) ((warnings++)) ;;
-  esac
+  # Array of checks to run
+  local checks=("check_backend" "check_blockchain_node" "check_web_frontend" "check_database" "check_redis" "check_docker_containers" "check_disk_space")
 
-  echo -e "${BLUE}Checking blockchain node...${NC}"
-  check_blockchain_node
-  case $? in
-    0) ((healthy++)) ;;
-    1) ((unhealthy++)) ;;
-    2) ((warnings++)) ;;
-  esac
+  for check in "${checks[@]}"; do
+    echo -e "${BLUE}Checking $check...${NC}"
+    # Execute the function and capture its return code
+    "$check"
+    local status=$?
 
-  echo -e "${BLUE}Checking web frontend...${NC}"
-  check_web_frontend
-  case $? in
-    0) ((healthy++)) ;;
-    1) ((unhealthy++)) ;;
-    2) ((warnings++)) ;;
-  esac
-
-  echo -e "${BLUE}Checking database...${NC}"
-  check_database
-  case $? in
-    0) ((healthy++)) ;;
-    1) ((unhealthy++)) ;;
-    2) ((warnings++)) ;;
-  esac
-
-  echo -e "${BLUE}Checking Redis cache...${NC}"
-  check_redis
-  case $? in
-    0) ((healthy++)) ;;
-    1) ((unhealthy++)) ;;
-    2) ((warnings++)) ;;
-  esac
-
-  echo -e "${BLUE}Checking Docker containers...${NC}"
-  check_docker_containers
-  case $? in
-    0) ((healthy++)) ;;
-    1) ((unhealthy++)) ;;
-    2) ((warnings++)) ;;
-  esac
-
-  echo -e "${BLUE}Checking disk space...${NC}"
-  check_disk_space
-  case $? in
-    0) ((healthy++)) ;;
-    1) ((unhealthy++)) ;;
-    2) ((warnings++)) ;;
-  esac
+    case $status in
+      0) ((healthy++)) ;;
+      1) ((unhealthy++)) ;;
+      2) ((warnings++)) ;;
+    esac
+  done
 
   # Add summary statistics
   echo "" >> "$SUMMARY_FILE"
@@ -409,14 +352,14 @@ run_health_checks() {
   echo "- **Healthy Services:** $healthy" >> "$SUMMARY_FILE"
   echo "- **Unhealthy Services:** $unhealthy" >> "$SUMMARY_FILE"
   echo "- **Warnings:** $warnings" >> "$SUMMARY_FILE"
-  echo "- **Total Checks:** $((healthy + unhealthy + warnings))" >> "$SUMMARY_FILE"
+  echo "- **Total Checks:** ${#checks[@]}" >> "$SUMMARY_FILE"
 
   # Print summary to console
   echo -e "${BLUE}========== Health Check Summary ==========${NC}"
   echo -e "${GREEN}Healthy Services: $healthy${NC}"
   echo -e "${RED}Unhealthy Services: $unhealthy${NC}"
   echo -e "${YELLOW}Warnings: $warnings${NC}"
-  echo -e "${BLUE}Total Checks: $((healthy + unhealthy + warnings))${NC}"
+  echo -e "${BLUE}Total Checks: ${#checks[@]}${NC}"
 
   log_message "Health check completed. Results saved to $SUMMARY_FILE" "INFO"
 
@@ -428,7 +371,7 @@ run_health_checks() {
   fi
 }
 
-# Run all health checks
+# --- Script Execution ---
 run_health_checks
 exit_code=$?
 

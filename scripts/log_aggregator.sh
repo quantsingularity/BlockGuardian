@@ -4,6 +4,9 @@
 # This script collects and aggregates logs from all BlockGuardian components
 # into a centralized location for easier monitoring and troubleshooting
 
+# --- Configuration and Setup ---
+set -euo pipefail # Exit on error, unset variable, and pipe failure
+
 # Set colors for terminal output
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
@@ -11,7 +14,7 @@ RED='\033[0;31m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Script directory
+# Script directory and project root
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
@@ -25,6 +28,10 @@ TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 AGGREGATED_LOG_FILE="${AGGREGATED_LOG_DIR}/blockguardian_logs_${TIMESTAMP}.log"
 SUMMARY_FILE="${AGGREGATED_LOG_DIR}/log_summary_${TIMESTAMP}.md"
 
+# -----------------------------------------------------------------------------
+# Helper Functions
+# -----------------------------------------------------------------------------
+
 # Function to log messages
 log_message() {
   local message="$1"
@@ -36,14 +43,15 @@ log_message() {
 # Function to collect logs from a specific component
 collect_component_logs() {
   local component="$1"
-  local component_dir="${PROJECT_ROOT}/${component}"
-  local log_pattern="$2"
-  local max_age_days="${3:-7}"  # Default to 7 days
+  local component_dir="$2"
+  local log_pattern="$3"
+  local max_age_days="${4:-7}"  # Default to 7 days
 
-  log_message "Collecting logs for ${component}..." "INFO"
+  log_message "Collecting logs for ${component} from ${component_dir}..." "INFO"
 
   if [ ! -d "$component_dir" ]; then
     log_message "Component directory not found: $component_dir" "WARNING"
+    echo "| $component | 0 | 0B | Directory not found |" >> "$SUMMARY_FILE"
     return 1
   fi
 
@@ -52,21 +60,12 @@ collect_component_logs() {
   mkdir -p "$component_log_dir"
 
   # Find log files matching the pattern, not older than max_age_days
-  local log_files
-  log_files=$(find "$component_dir" -name "$log_pattern" -type f -mtime -"$max_age_days" 2>/dev/null)
+  # Use find -print0 and xargs -0 for safe handling of filenames with spaces
+  local log_files_count=0
+  local total_size="0B"
 
-  if [ -z "$log_files" ]; then
-    log_message "No log files found for ${component} matching pattern ${log_pattern}" "WARNING"
-    return 1
-  fi
-
-  # Count found log files
-  local file_count
-  file_count=$(echo "$log_files" | wc -l)
-  log_message "Found $file_count log files for ${component}" "INFO"
-
-  # Copy log files to aggregated directory
-  for log_file in $log_files; do
+  # Find log files and process them
+  find "$component_dir" -name "$log_pattern" -type f -mtime -"$max_age_days" -print0 | while IFS= read -r -d $'\0' log_file; do
     local base_name
     base_name=$(basename "$log_file")
     cp "$log_file" "${component_log_dir}/${base_name}"
@@ -74,10 +73,23 @@ collect_component_logs() {
     # Add to aggregated log with component header
     echo -e "\n\n========== ${component}: ${base_name} ==========\n" >> "$AGGREGATED_LOG_FILE"
     cat "$log_file" >> "$AGGREGATED_LOG_FILE"
+
+    ((log_files_count++))
   done
 
+  if [ "$log_files_count" -eq 0 ]; then
+    log_message "No log files found for ${component} matching pattern ${log_pattern}" "WARNING"
+    echo "| $component | 0 | 0B | No log files found |" >> "$SUMMARY_FILE"
+    return 1
+  fi
+
+  # Calculate total size of copied logs
+  total_size=$(du -sh "$component_log_dir" | awk '{print $1}')
+
+  log_message "Found $log_files_count log files for ${component}. Total size: $total_size" "INFO"
+
   # Create a summary entry for this component
-  echo "| $component | $file_count | $(du -sh "$component_log_dir" | awk '{print $1}') | ${component_log_dir} |" >> "$SUMMARY_FILE"
+  echo "| $component | $log_files_count | $total_size | ${component_log_dir} |" >> "$SUMMARY_FILE"
 
   return 0
 }
@@ -86,72 +98,62 @@ collect_component_logs() {
 collect_docker_logs() {
   if ! command -v docker >/dev/null 2>&1; then
     log_message "Docker command not found, skipping container logs" "WARNING"
+    echo "| Docker Containers | 0 | 0B | Docker command not found |" >> "$SUMMARY_FILE"
     return 1
   fi
 
-  # Check if Docker is running
   if ! docker info >/dev/null 2>&1; then
     log_message "Docker daemon is not running, skipping container logs" "WARNING"
+    echo "| Docker Containers | 0 | 0B | Docker daemon not running |" >> "$SUMMARY_FILE"
     return 1
   fi
 
-  # Create docker log directory
   local docker_log_dir="${AGGREGATED_LOG_DIR}/docker"
   mkdir -p "$docker_log_dir"
 
-  # Get list of BlockGuardian containers
   local containers
-  containers=$(docker ps -a --filter "name=blockguardian" --format "{{.Names}}")
+  containers=$(docker ps -a --filter "name=blockguardian" --format "{{.Names}}" || true)
 
   if [ -z "$containers" ]; then
     log_message "No BlockGuardian Docker containers found" "WARNING"
-    echo "| Docker Containers | 0 | 0B | ${docker_log_dir} |" >> "$SUMMARY_FILE"
+    echo "| Docker Containers | 0 | 0B | No BlockGuardian containers found |" >> "$SUMMARY_FILE"
     return 1
   fi
 
   local container_count=0
 
-  # Collect logs for each container
   for container in $containers; do
-    docker logs "$container" > "${docker_log_dir}/${container}.log" 2>&1
+    # Use docker logs -t to include timestamps
+    docker logs -t "$container" > "${docker_log_dir}/${container}.log" 2>&1
 
-    # Add to aggregated log with container header
     echo -e "\n\n========== Docker Container: ${container} ==========\n" >> "$AGGREGATED_LOG_FILE"
-    docker logs "$container" >> "$AGGREGATED_LOG_FILE" 2>&1
+    cat "${docker_log_dir}/${container}.log" >> "$AGGREGATED_LOG_FILE"
 
     ((container_count++))
   done
 
-  # Create a summary entry for Docker containers
-  echo "| Docker Containers | $container_count | $(du -sh "$docker_log_dir" | awk '{print $1}') | ${docker_log_dir} |" >> "$SUMMARY_FILE"
+  local total_size
+  total_size=$(du -sh "$docker_log_dir" | awk '{print $1}')
+
+  echo "| Docker Containers | $container_count | $total_size | ${docker_log_dir} |" >> "$SUMMARY_FILE"
 
   return 0
 }
 
 # Function to collect system logs related to BlockGuardian
 collect_system_logs() {
-  # Create system log directory
   local system_log_dir="${AGGREGATED_LOG_DIR}/system"
   mkdir -p "$system_log_dir"
 
-  # Collect relevant system logs
   log_message "Collecting system logs..." "INFO"
 
   # System information
   uname -a > "${system_log_dir}/system_info.log"
-
-  # Memory usage
   free -h > "${system_log_dir}/memory_usage.log"
-
-  # Disk usage
   df -h > "${system_log_dir}/disk_usage.log"
-
-  # Process information
-  ps aux | grep -E 'blockguardian|python|node|npm|docker' > "${system_log_dir}/processes.log"
-
-  # Network connections
+  ps aux | grep -E 'blockguardian|python|node|npm|docker' | grep -v 'grep' > "${system_log_dir}/processes.log" || true
   netstat -tuln > "${system_log_dir}/network_connections.log" 2>/dev/null || \
-  ss -tuln > "${system_log_dir}/network_connections.log" 2>/dev/null
+  ss -tuln > "${system_log_dir}/network_connections.log" 2>/dev/null || true
 
   # Add to aggregated log
   echo -e "\n\n========== System Information ==========\n" >> "$AGGREGATED_LOG_FILE"
@@ -169,10 +171,12 @@ collect_system_logs() {
   echo -e "\n\n========== Network Connections ==========\n" >> "$AGGREGATED_LOG_FILE"
   cat "${system_log_dir}/network_connections.log" >> "$AGGREGATED_LOG_FILE"
 
-  # Create a summary entry for system logs
   local file_count
   file_count=$(ls -1 "$system_log_dir" | wc -l)
-  echo "| System Logs | $file_count | $(du -sh "$system_log_dir" | awk '{print $1}') | ${system_log_dir} |" >> "$SUMMARY_FILE"
+  local total_size
+  total_size=$(du -sh "$system_log_dir" | awk '{print $1}')
+
+  echo "| System Logs | $file_count | $total_size | ${system_log_dir} |" >> "$SUMMARY_FILE"
 
   return 0
 }
@@ -181,7 +185,6 @@ collect_system_logs() {
 analyze_logs() {
   log_message "Analyzing logs for errors and warnings..." "INFO"
 
-  # Create analysis directory
   local analysis_dir="${AGGREGATED_LOG_DIR}/analysis"
   mkdir -p "$analysis_dir"
 
@@ -237,24 +240,18 @@ aggregate_logs() {
   echo "| Component | Files | Size | Location |" >> "$SUMMARY_FILE"
   echo "|-----------|-------|------|----------|" >> "$SUMMARY_FILE"
 
-  # Collect logs from each component
-  echo -e "${BLUE}Collecting backend logs...${NC}"
-  collect_component_logs "backend" "*.log"
+  # Define components and their log directories/patterns
+  local components=(
+    "Backend:${PROJECT_ROOT}/code/backend:*.log"
+    "Blockchain:${PROJECT_ROOT}/blockchain:*.log"
+    "Web-Frontend:${PROJECT_ROOT}/web-frontend:*.log"
+    "Mobile-Frontend:${PROJECT_ROOT}/mobile-frontend:*.log"
+  )
 
-  echo -e "${BLUE}Collecting blockchain logs...${NC}"
-  collect_component_logs "blockchain" "*.log"
-
-  echo -e "${BLUE}Collecting blockchain-contracts logs...${NC}"
-  collect_component_logs "blockchain-contracts" "*.log"
-
-  echo -e "${BLUE}Collecting web-frontend logs...${NC}"
-  collect_component_logs "web-frontend" "*.log"
-
-  echo -e "${BLUE}Collecting mobile-frontend logs...${NC}"
-  collect_component_logs "mobile-frontend" "*.log"
-
-  echo -e "${BLUE}Collecting data-analysis logs...${NC}"
-  collect_component_logs "data-analysis" "*.log"
+  for component_info in "${components[@]}"; do
+    IFS=':' read -r component_name component_dir log_pattern <<< "$component_info"
+    collect_component_logs "$component_name" "$component_dir" "$log_pattern"
+  done
 
   echo -e "${BLUE}Collecting Docker container logs...${NC}"
   collect_docker_logs
@@ -262,15 +259,12 @@ aggregate_logs() {
   echo -e "${BLUE}Collecting system logs...${NC}"
   collect_system_logs
 
-  # Analyze logs
   echo -e "${BLUE}Analyzing logs...${NC}"
   analyze_logs
 
-  # Calculate total size
   local total_size
   total_size=$(du -sh "$AGGREGATED_LOG_DIR" | awk '{print $1}')
 
-  # Add summary statistics
   echo "" >> "$SUMMARY_FILE"
   echo "## Summary Statistics" >> "$SUMMARY_FILE"
   echo "" >> "$SUMMARY_FILE"
@@ -278,7 +272,6 @@ aggregate_logs() {
   echo "- **Aggregated Log File:** $AGGREGATED_LOG_FILE" >> "$SUMMARY_FILE"
   echo "- **Collection Date:** $(date)" >> "$SUMMARY_FILE"
 
-  # Print summary to console
   echo -e "${BLUE}========== Log Aggregation Summary ==========${NC}"
   echo -e "${GREEN}Log aggregation completed successfully${NC}"
   echo -e "${BLUE}Total Log Size: $total_size${NC}"
@@ -289,7 +282,7 @@ aggregate_logs() {
   return 0
 }
 
-# Run log aggregation
+# --- Script Execution ---
 aggregate_logs
 exit_code=$?
 

@@ -2,7 +2,11 @@
 
 # BlockGuardian Environment Setup Script
 # This script automates the setup of the development environment for the BlockGuardian project.
-# It assumes it is being run from the root of the BlockGuardian project directory.
+# It is designed to be run from the root of the BlockGuardian project directory.
+
+# --- Configuration and Setup ---
+set -euo pipefail # Exit on error, unset variable, and pipe failure
+ROOT_DIR=$(pwd)
 
 echo "Starting BlockGuardian Environment Setup..."
 
@@ -46,144 +50,116 @@ fi
 # Install Node.js and npm (e.g., Node.js 20.x)
 if ! command_exists node; then
     echo "Installing Node.js and npm..."
+    # Using the official NodeSource setup script for a specific version (20.x)
     curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
     sudo apt-get install -y nodejs
 else
-    echo "Node.js is already installed. Verifying version..."
-    node -v
+    echo "Node.js is already installed. Version: $(node -v)"
 fi
 
-if ! command_exists npm; then
-    echo "npm not found, attempting to install..."
-    sudo apt-get install -y npm
-else
-    echo "npm is already installed. Verifying version..."
-    npm -v
-fi
-
-# Install Yarn
-if ! command_exists yarn; then
-    echo "Installing Yarn..."
-    sudo npm install --global yarn
-else
-    echo "Yarn is already installed."
-fi
-
-# Install Expo CLI
-if ! command_exists expo; then
-    echo "Installing Expo CLI..."
-    sudo npm install --global expo-cli
-else
-    echo "Expo CLI is already installed."
-fi
-
-# Install Truffle CLI (globally, for code/blockchain)
-if ! command_exists truffle; then
-    echo "Installing Truffle CLI..."
-    sudo npm install --global truffle
-else
-    echo "Truffle CLI is already installed."
-fi
+# Install global npm packages (Note: Global installs are generally discouraged, but kept for project compatibility)
+echo "Installing global npm packages: yarn, expo-cli, truffle..."
+npm_packages=("yarn" "expo-cli" "truffle")
+for pkg in "${npm_packages[@]}"; do
+    if ! command_exists "$pkg"; then
+        echo "Installing $pkg..."
+        sudo npm install --global "$pkg"
+    else
+        echo "$pkg is already installed."
+    fi
+done
 
 echo "System-level dependencies installation check complete."
 
 # -----------------------------------------------------------------------------
 # Project Component Setup
 # Paths are relative to the script's location (BlockGuardian project root)
+# Using subshells () to safely manage directory changes
 # -----------------------------------------------------------------------------
 
 # Backend Setup (Python/FastAPI)
-BACKEND_DIR="./code/backend"
+BACKEND_DIR="$ROOT_DIR/code/backend"
 if [ -d "$BACKEND_DIR" ]; then
     echo "Setting up Backend (Python/FastAPI) in $BACKEND_DIR ..."
-    cd "$BACKEND_DIR"
-    if [ ! -d "venv" ]; then
-        echo "Creating Python virtual environment for backend..."
-        python3 -m venv venv
-    fi
-    echo "Activating virtual environment and installing backend dependencies..."
-    source venv/bin/activate
-    pip install -r requirements.txt
-    deactivate
-    echo "Backend setup complete."
-    cd - > /dev/null
+    (
+        cd "$BACKEND_DIR"
+        VENV_PATH="./venv"
+        if [ ! -d "$VENV_PATH" ]; then
+            echo "Creating Python virtual environment for backend..."
+            python3 -m venv "$VENV_PATH"
+        fi
+        echo "Activating virtual environment and installing backend dependencies..."
+        source "$VENV_PATH/bin/activate"
+        pip install -r requirements.txt
+        deactivate
+        echo "Backend setup complete."
+    )
 else
     echo "Warning: Backend directory '$BACKEND_DIR' not found. Skipping backend setup."
 fi
 
 # Blockchain Setup (Node.js/Hardhat)
-BLOCKCHAIN_DIR="./blockchain"
+BLOCKCHAIN_DIR="$ROOT_DIR/blockchain"
 if [ -d "$BLOCKCHAIN_DIR" ]; then
     echo "Setting up Blockchain (Node.js/Hardhat) in $BLOCKCHAIN_DIR ..."
-    cd "$BLOCKCHAIN_DIR"
-    echo "Installing blockchain dependencies..."
-    npm install
-    echo "Blockchain setup complete."
-    cd - > /dev/null
+    (
+        cd "$BLOCKCHAIN_DIR"
+        echo "Installing blockchain dependencies..."
+        npm install
+        echo "Blockchain setup complete."
+    )
 else
     echo "Warning: Blockchain directory '$BLOCKCHAIN_DIR' not found. Skipping blockchain setup."
 fi
 
-# Code/Blockchain Info (Truffle)
-CODE_BLOCKCHAIN_DIR="./code/blockchain"
+# Code/Blockchain Info (Truffle) - Informational only, relies on global truffle
+CODE_BLOCKCHAIN_DIR="$ROOT_DIR/code/blockchain"
 if [ -d "$CODE_BLOCKCHAIN_DIR" ]; then
     echo "Info: Code/Blockchain (Truffle) component found in $CODE_BLOCKCHAIN_DIR."
     echo "Truffle CLI has been installed globally. Use 'truffle compile', 'truffle migrate', etc., within this directory."
-else
-    echo "Warning: Code/Blockchain directory '$CODE_BLOCKCHAIN_DIR' not found."
 fi
 
 # Code/Frontend Setup (React/Webpack)
-CODE_FRONTEND_DIR="./code/frontend"
+CODE_FRONTEND_DIR="$ROOT_DIR/code/frontend"
 if [ -d "$CODE_FRONTEND_DIR" ]; then
     echo "Setting up Code/Frontend (React/Webpack) in $CODE_FRONTEND_DIR ..."
-    cd "$CODE_FRONTEND_DIR"
-    echo "Installing code/frontend dependencies..."
-    npm install
-    echo "Code/Frontend setup complete."
-    cd - > /dev/null
+    (
+        cd "$CODE_FRONTEND_DIR"
+        echo "Installing code/frontend dependencies..."
+        npm install
+        echo "Code/Frontend setup complete."
+    )
 else
     echo "Warning: Code/Frontend directory '$CODE_FRONTEND_DIR' not found. Skipping code/frontend setup."
 fi
 
 # Mobile Frontend Setup (Expo/React Native)
-MOBILE_FRONTEND_DIR="./mobile-frontend"
+MOBILE_FRONTEND_DIR="$ROOT_DIR/mobile-frontend"
 if [ -d "$MOBILE_FRONTEND_DIR" ]; then
     echo "Setting up Mobile Frontend (Expo/React Native) in $MOBILE_FRONTEND_DIR ..."
-    cd "$MOBILE_FRONTEND_DIR"
-    echo "Installing mobile-frontend dependencies using Yarn..."
-    yarn install
-    echo "Mobile Frontend setup complete."
-    cd - > /dev/null
+    (
+        cd "$MOBILE_FRONTEND_DIR"
+        echo "Installing mobile-frontend dependencies using Yarn..."
+        yarn install
+        echo "Mobile Frontend setup complete."
+    )
 else
     echo "Warning: Mobile Frontend directory '$MOBILE_FRONTEND_DIR' not found. Skipping mobile-frontend setup."
 fi
 
 # Web Frontend Setup (Next.js)
-WEB_FRONTEND_DIR="./web-frontend"
+WEB_FRONTEND_DIR="$ROOT_DIR/web-frontend"
 if [ -d "$WEB_FRONTEND_DIR" ]; then
     echo "Setting up Web Frontend (Next.js) in $WEB_FRONTEND_DIR ..."
-    cd "$WEB_FRONTEND_DIR"
-    echo "Installing web-frontend dependencies..."
-    npm install
-    echo "Web Frontend setup complete."
-    cd - > /dev/null
+    (
+        cd "$WEB_FRONTEND_DIR"
+        echo "Installing web-frontend dependencies..."
+        npm install
+        echo "Web Frontend setup complete."
+    )
 else
     echo "Warning: Web Frontend directory '$WEB_FRONTEND_DIR' not found. Skipping web-frontend setup."
 fi
-
-# -----------------------------------------------------------------------------
-# Infrastructure Tools (Informational)
-# -----------------------------------------------------------------------------
-echo ""
-echo "-----------------------------------------------------------------------------"
-echo "Infrastructure Tools (Ansible, Kubernetes, Terraform):"
-echo "The project includes configurations for Ansible, Kubernetes, and Terraform"
-echo "in the './infrastructure' directory. Their setup is beyond the scope of this"
-echo "basic development environment script. Please refer to their respective"
-echo "documentation and the project's infrastructure guides for setup if needed."
-echo "You might need to install tools like 'ansible', 'kubectl', 'helm', 'terraform' separately."
-echo "-----------------------------------------------------------------------------"
 
 # -----------------------------------------------------------------------------
 # Final Instructions
@@ -194,19 +170,10 @@ echo "---------------------------------------------------------"
 echo "Summary of components and their setup locations:"
 echo "  - Backend (Python/FastAPI): ./code/backend/ (venv created inside)"
 echo "  - Blockchain (Node.js/Hardhat): ./blockchain/"
-echo "  - Code/Blockchain (Truffle): ./code/blockchain/ (uses global Truffle CLI)"
+echo "  - Code/Blockchain (Truffle): ./code/blockchain/"
 echo "  - Code/Frontend (React/Webpack): ./code/frontend/"
-echo "  - Mobile Frontend (Expo/React Native): ./mobile-frontend/ (uses global Expo CLI)"
+echo "  - Mobile Frontend (Expo/React Native): ./mobile-frontend/"
 echo "  - Web Frontend (Next.js): ./web-frontend/"
-
 echo ""
-echo "To run the project, you will likely need to start each component separately in its own terminal."
-echo "Refer to the project's README.md, individual component READMEs (if any), and the package.json/script files within each component for specific run commands."
-echo "The existing 'run_blockguardian.sh' script might offer a simplified way to run some parts, but ensure its paths align with your setup or adapt it as needed."
-echo ""
+echo "To run the project, use the 'run_blockguardian.sh' script or start each component separately."
 echo "Remember to check for any specific Node.js or Python version requirements if you encounter issues during runtime."
-
-chmod +x ./setup_blockguardian_env.sh
-echo "Made the script executable: ./setup_blockguardian_env.sh"
-
-echo "Setup script created at ./setup_blockguardian_env.sh"

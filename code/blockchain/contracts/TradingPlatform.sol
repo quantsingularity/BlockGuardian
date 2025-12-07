@@ -248,11 +248,7 @@ contract TradingPlatform is Ownable, ReentrancyGuard {
      * @param _sellOrderId Sell order ID
      * @param _tradePrice Execution price
      */
-    function executeTrade(
-        uint256 _buyOrderId,
-        uint256 _sellOrderId,
-        uint256 _tradePrice
-    ) internal {
+    function executeTrade(uint256 _buyOrderId, uint256 _sellOrderId, uint256 _tradePrice) internal {
         Order storage buyOrder = orders[_buyOrderId];
         Order storage sellOrder = orders[_sellOrderId];
 

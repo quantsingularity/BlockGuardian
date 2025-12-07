@@ -81,7 +81,7 @@ contract TokenizedAsset is ERC20, Ownable {
         feeCollector = _feeCollector;
 
         // Mint initial supply to contract creator
-        _mint(msg.sender, _initialSupply.mul(10**decimals()));
+        _mint(msg.sender, _initialSupply.mul(10 ** decimals()));
     }
 
     // --- Asset Management (Owner Only) ---
@@ -171,13 +171,14 @@ contract TokenizedAsset is ERC20, Ownable {
     /**
      * @dev Override _transfer function to enforce trading rules and collect fees
      */
-    function _transfer(
-        address sender,
-        address recipient,
-        uint256 amount
-    ) internal override {
+    function _transfer(address sender, address recipient, uint256 amount) internal override {
         // Allow transfers by owner/fee collector regardless of trading status
-        if (sender == owner() || recipient == owner() || sender == feeCollector || recipient == feeCollector) {
+        if (
+            sender == owner() ||
+            recipient == owner() ||
+            sender == feeCollector ||
+            recipient == feeCollector
+        ) {
             super._transfer(sender, recipient, amount);
             return;
         }

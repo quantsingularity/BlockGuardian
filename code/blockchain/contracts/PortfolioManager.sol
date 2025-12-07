@@ -122,7 +122,8 @@ contract PortfolioManager is Ownable, ReentrancyGuard {
         uint256 _portfolioId,
         address _address
     ) public view returns (bool) {
-        return isPortfolioOwner(_portfolioId, _address) || isPortfolioManager(_portfolioId, _address);
+        return
+            isPortfolioOwner(_portfolioId, _address) || isPortfolioManager(_portfolioId, _address);
     }
 
     // --- Portfolio Management (Owner/Manager Only) ---
@@ -223,7 +224,10 @@ contract PortfolioManager is Ownable, ReentrancyGuard {
     function removeAsset(uint256 _portfolioId, address _tokenAddress) external {
         require(isPortfolioOwnerOrManager(_portfolioId, msg.sender), 'Not authorized');
         require(portfolios[_portfolioId].isActive, 'Portfolio not active');
-        require(assetAllocations[_portfolioId][_tokenAddress].tokenAddress != address(0), 'Asset not found');
+        require(
+            assetAllocations[_portfolioId][_tokenAddress].tokenAddress != address(0),
+            'Asset not found'
+        );
         require(assetAllocations[_portfolioId][_tokenAddress].isActive, 'Asset already inactive');
 
         // Deactivate asset
@@ -276,7 +280,8 @@ contract PortfolioManager is Ownable, ReentrancyGuard {
         uint256 _portfolioId,
         address[] memory _tokenAddresses,
         uint256[] memory _currentAllocations
-    ) external onlyOwner { // Only owner (trusted keeper) can update current allocation
+    ) external onlyOwner {
+        // Only owner (trusted keeper) can update current allocation
         require(portfolios[_portfolioId].isActive, 'Portfolio not active');
         require(_tokenAddresses.length == _currentAllocations.length, 'Array length mismatch');
 
@@ -291,11 +296,7 @@ contract PortfolioManager is Ownable, ReentrancyGuard {
                 .currentAllocation = _currentAllocations[i];
             totalAllocation = totalAllocation.add(_currentAllocations[i]);
 
-            emit CurrentAllocationUpdated(
-                _portfolioId,
-                _tokenAddresses[i],
-                _currentAllocations[i]
-            );
+            emit CurrentAllocationUpdated(_portfolioId, _tokenAddresses[i], _currentAllocations[i]);
         }
 
         // Note: Total current allocation can exceed 10000 due to market movements, but should be monitored off-chain.

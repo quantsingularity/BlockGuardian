@@ -154,7 +154,10 @@ contract DeFiIntegration is Ownable, ReentrancyGuard {
         require(_risk >= 1 && _risk <= 5, 'Invalid risk level (1-5)');
         require(_assetAddress != address(0), 'Invalid asset address');
         require(_protocolAddress != address(0), 'Invalid protocol address');
-        require(_minInvestment <= _maxInvestment || _maxInvestment == 0, 'Invalid min/max investment');
+        require(
+            _minInvestment <= _maxInvestment || _maxInvestment == 0,
+            'Invalid min/max investment'
+        );
 
         uint256 strategyId = strategyIdCounter++;
 
@@ -205,7 +208,10 @@ contract DeFiIntegration is Ownable, ReentrancyGuard {
         require(strategy.id != 0, 'Strategy not found');
         require(strategy.isActive, 'Strategy not active');
         require(_risk >= 1 && _risk <= 5, 'Invalid risk level (1-5)');
-        require(_minInvestment <= _maxInvestment || _maxInvestment == 0, 'Invalid min/max investment');
+        require(
+            _minInvestment <= _maxInvestment || _maxInvestment == 0,
+            'Invalid min/max investment'
+        );
 
         strategy.name = _name;
         strategy.description = _description;
@@ -309,7 +315,8 @@ contract DeFiIntegration is Ownable, ReentrancyGuard {
     function updateInvestmentValue(
         uint256 _investmentId,
         uint256 _currentValue
-    ) external onlyOwner { // Only owner (trusted keeper) can update
+    ) external onlyOwner {
+        // Only owner (trusted keeper) can update
         Investment storage investment = investments[_investmentId];
 
         require(investment.id != 0, 'Investment not found');
@@ -508,7 +515,10 @@ contract DeFiIntegration is Ownable, ReentrancyGuard {
         // Count active investments
         uint256 activeCount = 0;
         for (uint256 i = 0; i < userInvestmentIds.length; i++) {
-            if (investments[userInvestmentIds[i]].id != 0 && investments[userInvestmentIds[i]].isActive) {
+            if (
+                investments[userInvestmentIds[i]].id != 0 &&
+                investments[userInvestmentIds[i]].isActive
+            ) {
                 activeCount++;
             }
         }

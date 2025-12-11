@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ .Values.appName }}-config
+  name: "{{ .Values.appName }}-config"
 data:
   API_URL: {{ .Values.backend.apiUrl }}
   REDIS_HOST: {{ .Values.appName }}-redis

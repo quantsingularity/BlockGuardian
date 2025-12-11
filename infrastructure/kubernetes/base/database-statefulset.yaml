@@ -1,9 +1,9 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ .Values.appName }}-database
+  name: "{{ .Values.appName }}-database"
   labels:
-    app: {{ .Values.appName }}-database
+    app: "{{ .Values.appName }}-database"
 spec:
   serviceName: {{ .Values.appName }}-database
   replicas: {{ .Values.database.replicas }}

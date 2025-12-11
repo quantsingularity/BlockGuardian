@@ -1,13 +1,13 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Values.appName }}-backend
-  namespace: {{ .Values.namespace | default "default" }}
+  name: "{{ .Values.appName }}-backend"
+  namespace: "{{ .Values.namespace | default \"default\" }}"
   labels:
-    app: {{ .Values.appName }}-backend
+    app: "{{ .Values.appName }}-backend"
     component: backend
     tier: application
-    version: {{ .Values.backend.image.tag }}
+    version: "{{ .Values.backend.image.tag }}"
     compliance: "pci-dss,soc2,iso27001"
   annotations:
     deployment.kubernetes.io/revision: "1"

@@ -1,9 +1,9 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Values.appName }}-frontend
+  name: "{{ .Values.appName }}-frontend"
   labels:
-    app: {{ .Values.appName }}-frontend
+    app: "{{ .Values.appName }}-frontend"
 spec:
   replicas: {{ .Values.frontend.replicas }}
   selector:

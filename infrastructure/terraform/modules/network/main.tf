@@ -20,7 +20,7 @@ resource "aws_subnet" "public" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = var.public_subnet_cidrs[count.index]
   availability_zone       = var.availability_zones[count.index]
-  map_public_ip_on_launch = false  # Disable auto-assign public IP for security
+  map_public_ip_on_launch = false # Disable auto-assign public IP for security
 
   tags = merge(var.default_tags, {
     Name        = "${var.environment}-public-subnet-${count.index + 1}"

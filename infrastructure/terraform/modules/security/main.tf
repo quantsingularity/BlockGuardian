@@ -449,7 +449,7 @@ resource "aws_iam_instance_profile" "ec2_profile" {
 resource "aws_secretsmanager_secret" "app_secrets" {
   name                    = "${var.app_name}/${var.environment}/app-secrets"
   description             = "Application secrets for ${var.app_name} in ${var.environment}"
-  kms_key_id             = aws_kms_key.main.arn
+  kms_key_id              = aws_kms_key.main.arn
   recovery_window_in_days = 7
 
   tags = {
@@ -487,8 +487,8 @@ resource "aws_wafv2_web_acl" "main" {
 
     visibility_config {
       cloudwatch_metrics_enabled = true
-      metric_name                 = "CommonRuleSetMetric"
-      sampled_requests_enabled    = true
+      metric_name                = "CommonRuleSetMetric"
+      sampled_requests_enabled   = true
     }
   }
 
@@ -510,8 +510,8 @@ resource "aws_wafv2_web_acl" "main" {
 
     visibility_config {
       cloudwatch_metrics_enabled = true
-      metric_name                 = "KnownBadInputsRuleSetMetric"
-      sampled_requests_enabled    = true
+      metric_name                = "KnownBadInputsRuleSetMetric"
+      sampled_requests_enabled   = true
     }
   }
 
@@ -533,8 +533,8 @@ resource "aws_wafv2_web_acl" "main" {
 
     visibility_config {
       cloudwatch_metrics_enabled = true
-      metric_name                 = "RateLimitRuleMetric"
-      sampled_requests_enabled    = true
+      metric_name                = "RateLimitRuleMetric"
+      sampled_requests_enabled   = true
     }
   }
 
@@ -547,8 +547,8 @@ resource "aws_wafv2_web_acl" "main" {
 
   visibility_config {
     cloudwatch_metrics_enabled = true
-    metric_name                 = "${var.app_name}-${var.environment}-waf"
-    sampled_requests_enabled    = true
+    metric_name                = "${var.app_name}-${var.environment}-waf"
+    sampled_requests_enabled   = true
   }
 }
 

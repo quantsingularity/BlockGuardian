@@ -76,8 +76,26 @@ variable "db_password" {
 variable "default_tags" {
   description = "Default tags for all resources"
   type        = map(string)
-  default     = {
+  default = {
     Terraform   = "true"
     Environment = "dev"
   }
+}
+
+variable "database_subnet_cidrs" {
+  description = "CIDR blocks for database subnets"
+  type        = list(string)
+  default     = ["10.0.7.0/24", "10.0.8.0/24", "10.0.9.0/24"]
+}
+
+variable "enable_management_subnet" {
+  description = "Enable management subnet for bastion hosts"
+  type        = bool
+  default     = false
+}
+
+variable "management_subnet_cidrs" {
+  description = "CIDR blocks for management subnets"
+  type        = list(string)
+  default     = ["10.0.10.0/24", "10.0.11.0/24", "10.0.12.0/24"]
 }

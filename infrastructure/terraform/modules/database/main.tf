@@ -104,7 +104,7 @@ resource "aws_db_option_group" "main" {
 resource "aws_secretsmanager_secret" "db_credentials" {
   name                    = "${var.db_name}/${var.environment}/credentials"
   description             = "Database credentials for ${var.db_name} in ${var.environment}"
-  kms_key_id             = var.kms_key_id != null ? var.kms_key_id : aws_kms_key.db_encryption[0].arn
+  kms_key_id              = var.kms_key_id != null ? var.kms_key_id : aws_kms_key.db_encryption[0].arn
   recovery_window_in_days = var.secrets_recovery_window
 
   tags = merge(var.default_tags, {
@@ -141,7 +141,7 @@ resource "aws_db_instance" "main" {
   max_allocated_storage = var.max_allocated_storage
   storage_type          = var.storage_type
   storage_encrypted     = true
-  kms_key_id           = var.kms_key_id != null ? var.kms_key_id : aws_kms_key.db_encryption[0].arn
+  kms_key_id            = var.kms_key_id != null ? var.kms_key_id : aws_kms_key.db_encryption[0].arn
 
   # Database configuration
   db_name  = var.db_name
@@ -159,26 +159,26 @@ resource "aws_db_instance" "main" {
   option_group_name    = var.engine == "mysql" ? aws_db_option_group.main[0].name : null
 
   # Backup and maintenance
-  backup_retention_period   = var.backup_retention_period
-  backup_window            = var.backup_window
-  maintenance_window       = var.maintenance_window
+  backup_retention_period    = var.backup_retention_period
+  backup_window              = var.backup_window
+  maintenance_window         = var.maintenance_window
   auto_minor_version_upgrade = var.auto_minor_version_upgrade
-  apply_immediately        = var.apply_immediately
+  apply_immediately          = var.apply_immediately
 
   # High availability and disaster recovery
-  multi_az               = var.multi_az
-  availability_zone      = var.multi_az ? null : var.availability_zone
-  copy_tags_to_snapshot  = true
-  skip_final_snapshot    = var.skip_final_snapshot
+  multi_az                  = var.multi_az
+  availability_zone         = var.multi_az ? null : var.availability_zone
+  copy_tags_to_snapshot     = true
+  skip_final_snapshot       = var.skip_final_snapshot
   final_snapshot_identifier = var.skip_final_snapshot ? null : "${var.db_name}-${var.environment}-final-snapshot-${formatdate("YYYY-MM-DD-hhmm", timestamp())}"
 
   # Monitoring and logging
   monitoring_interval = var.monitoring_interval
   monitoring_role_arn = var.monitoring_interval > 0 ? aws_iam_role.rds_enhanced_monitoring[0].arn : null
 
-  enabled_cloudwatch_logs_exports = var.enabled_cloudwatch_logs_exports
-  performance_insights_enabled    = var.performance_insights_enabled
-  performance_insights_kms_key_id = var.performance_insights_enabled ? (var.kms_key_id != null ? var.kms_key_id : aws_kms_key.db_encryption[0].arn) : null
+  enabled_cloudwatch_logs_exports       = var.enabled_cloudwatch_logs_exports
+  performance_insights_enabled          = var.performance_insights_enabled
+  performance_insights_kms_key_id       = var.performance_insights_enabled ? (var.kms_key_id != null ? var.kms_key_id : aws_kms_key.db_encryption[0].arn) : null
   performance_insights_retention_period = var.performance_insights_retention_period
 
   # Security
@@ -188,10 +188,10 @@ resource "aws_db_instance" "main" {
   ca_cert_identifier = var.ca_cert_identifier
 
   tags = merge(var.default_tags, {
-    Name        = "${var.db_name}-${var.environment}"
-    Environment = var.environment
-    Purpose     = "Primary database"
-    Compliance  = "PCI-DSS,SOC2,ISO27001"
+    Name            = "${var.db_name}-${var.environment}"
+    Environment     = var.environment
+    Purpose         = "Primary database"
+    Compliance      = "PCI-DSS,SOC2,ISO27001"
     BackupRetention = tostring(var.backup_retention_period)
   })
 
@@ -219,7 +219,7 @@ resource "aws_db_instance" "read_replica" {
   monitoring_interval = var.monitoring_interval
   monitoring_role_arn = var.monitoring_interval > 0 ? aws_iam_role.rds_enhanced_monitoring[0].arn : null
 
-  performance_insights_enabled = var.performance_insights_enabled
+  performance_insights_enabled    = var.performance_insights_enabled
   performance_insights_kms_key_id = var.performance_insights_enabled ? (var.kms_key_id != null ? var.kms_key_id : aws_kms_key.db_encryption[0].arn) : null
 
   # Security

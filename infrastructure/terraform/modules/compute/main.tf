@@ -25,10 +25,10 @@ data "aws_ami" "hardened_ami" {
 # User data script for instance hardening
 locals {
   user_data = base64encode(templatefile("${path.module}/templates/user_data.sh.tpl", {
-    environment           = var.environment
-    app_name             = var.app_name
-    cloudwatch_config    = var.enable_cloudwatch_agent
-    secrets_manager_arn  = var.secrets_manager_arn
+    environment         = var.environment
+    app_name            = var.app_name
+    cloudwatch_config   = var.enable_cloudwatch_agent
+    secrets_manager_arn = var.secrets_manager_arn
     kms_key_id          = var.kms_key_id
     log_group_name      = var.log_group_name
     enable_ssm          = var.enable_ssm_agent
@@ -38,8 +38,8 @@ locals {
 
 # Enhanced Launch Template with security hardening
 resource "aws_launch_template" "app" {
-  name_prefix   = "${var.app_name}-${var.environment}-"
-  description   = "Launch template for ${var.app_name} in ${var.environment} - Financial Grade"
+  name_prefix = "${var.app_name}-${var.environment}-"
+  description = "Launch template for ${var.app_name} in ${var.environment} - Financial Grade"
 
   image_id      = var.custom_ami_id != null ? var.custom_ami_id : data.aws_ami.hardened_ami.id
   instance_type = var.instance_type
@@ -58,7 +58,7 @@ resource "aws_launch_template" "app" {
     associate_public_ip_address = false
     security_groups             = var.security_group_ids
     delete_on_termination       = true
-    device_index               = 0
+    device_index                = 0
   }
 
   # EBS optimization and encryption
@@ -70,10 +70,10 @@ resource "aws_launch_template" "app" {
       volume_type           = var.root_volume_type
       volume_size           = var.root_volume_size
       encrypted             = true
-      kms_key_id           = var.kms_key_id
+      kms_key_id            = var.kms_key_id
       delete_on_termination = true
-      iops                 = var.root_volume_type == "gp3" ? var.root_volume_iops : null
-      throughput           = var.root_volume_type == "gp3" ? var.root_volume_throughput : null
+      iops                  = var.root_volume_type == "gp3" ? var.root_volume_iops : null
+      throughput            = var.root_volume_type == "gp3" ? var.root_volume_throughput : null
     }
   }
 
@@ -86,10 +86,10 @@ resource "aws_launch_template" "app" {
         volume_type           = var.data_volume_type
         volume_size           = var.data_volume_size
         encrypted             = true
-        kms_key_id           = var.kms_key_id
+        kms_key_id            = var.kms_key_id
         delete_on_termination = true
-        iops                 = var.data_volume_type == "gp3" ? var.data_volume_iops : null
-        throughput           = var.data_volume_type == "gp3" ? var.data_volume_throughput : null
+        iops                  = var.data_volume_type == "gp3" ? var.data_volume_iops : null
+        throughput            = var.data_volume_type == "gp3" ? var.data_volume_throughput : null
       }
     }
   }
@@ -97,7 +97,7 @@ resource "aws_launch_template" "app" {
   # Metadata options for security
   metadata_options {
     http_endpoint               = "enabled"
-    http_tokens                = "required"  # Require IMDSv2
+    http_tokens                 = "required" # Require IMDSv2
     http_put_response_hop_limit = 1
     instance_metadata_tags      = "enabled"
   }
@@ -153,7 +153,7 @@ resource "aws_autoscaling_group" "app" {
 
   health_check_type         = "ELB"
   health_check_grace_period = var.health_check_grace_period
-  default_cooldown         = var.default_cooldown
+  default_cooldown          = var.default_cooldown
 
   # Launch template configuration
   launch_template {
@@ -169,7 +169,7 @@ resource "aws_autoscaling_group" "app" {
     strategy = "Rolling"
     preferences {
       min_healthy_percentage = 50
-      instance_warmup       = var.instance_warmup
+      instance_warmup        = var.instance_warmup
     }
   }
 
@@ -205,10 +205,10 @@ resource "aws_lb" "app" {
   # Security configurations
   enable_deletion_protection       = var.enable_deletion_protection
   enable_cross_zone_load_balancing = true
-  enable_http2                    = true
-  enable_waf_fail_open            = false
-  drop_invalid_header_fields      = true
-  preserve_host_header            = true
+  enable_http2                     = true
+  enable_waf_fail_open             = false
+  drop_invalid_header_fields       = true
+  preserve_host_header             = true
 
   # Access logs
   dynamic "access_logs" {
@@ -316,7 +316,7 @@ resource "aws_autoscaling_policy" "scale_up" {
   name                   = "${var.app_name}-${var.environment}-scale-up"
   scaling_adjustment     = var.scale_up_adjustment
   adjustment_type        = "ChangeInCapacity"
-  cooldown              = var.scale_up_cooldown
+  cooldown               = var.scale_up_cooldown
   autoscaling_group_name = aws_autoscaling_group.app.name
 }
 
@@ -324,7 +324,7 @@ resource "aws_autoscaling_policy" "scale_down" {
   name                   = "${var.app_name}-${var.environment}-scale-down"
   scaling_adjustment     = var.scale_down_adjustment
   adjustment_type        = "ChangeInCapacity"
-  cooldown              = var.scale_down_cooldown
+  cooldown               = var.scale_down_cooldown
   autoscaling_group_name = aws_autoscaling_group.app.name
 }
 

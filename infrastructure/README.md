@@ -1,352 +1,597 @@
-# BlockGuardian Financial-Grade Infrastructure
+# BlockGuardian Infrastructure
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Prerequisites](#prerequisites)
+- [Quick Start](#quick-start)
+- [Directory Structure](#directory-structure)
+- [Terraform Setup](#terraform-setup)
+- [Kubernetes Deployment](#kubernetes-deployment)
+- [Ansible Configuration](#ansible-configuration)
+- [CI/CD](#cicd)
+- [Validation & Testing](#validation--testing)
+- [Security & Secrets](#security--secrets)
+- [Troubleshooting](#troubleshooting)
 
 ## Overview
 
-This repository contains a comprehensive, financial-grade infrastructure implementation for BlockGuardian, designed to meet the highest standards of security, compliance, and reliability required in the financial services industry.
+Financial-grade infrastructure for BlockGuardian, implementing:
+
+- **Terraform**: Infrastructure as Code for AWS resources
+- **Kubernetes**: Container orchestration with Kustomize overlays
+- **Ansible**: Configuration management and security hardening
+- **CI/CD**: Automated validation and deployment pipelines
 
 ### Compliance Standards
 
-This infrastructure is designed to meet the following compliance standards:
+- PCI DSS (Payment Card Industry Data Security Standard)
+- SOC 2 (Service Organization Control 2)
+- ISO 27001 (Information Security Management)
 
-- **PCI DSS** (Payment Card Industry Data Security Standard)
-- **SOC 2** (Service Organization Control 2)
-- **ISO 27001** (Information Security Management)
-- **Financial Industry Regulatory Requirements**
+## Prerequisites
 
-### Key Features
+### Required Tools
 
-- **Financial-Grade Security**: Multi-layered security controls with defense-in-depth
-- **Encryption Everywhere**: Data encrypted at rest and in transit
-- **Zero-Trust Architecture**: No implicit trust, verify everything
-- **Comprehensive Monitoring**: Real-time security and performance monitoring
-- **Audit Trails**: Complete audit logging for compliance
-- **Disaster Recovery**: Cross-region DR with 4-hour RTO, 15-minute RPO
-- **High Availability**: 99.99% uptime SLA with auto-scaling
-- **Automated Compliance**: Continuous compliance monitoring and reporting
+| Tool         | Minimum Version | Installation                                                                |
+| ------------ | --------------- | --------------------------------------------------------------------------- |
+| Terraform    | 1.5.0+          | [Download](https://www.terraform.io/downloads)                              |
+| kubectl      | 1.27.0+         | [Install Guide](https://kubernetes.io/docs/tasks/tools/)                    |
+| kustomize    | 5.0.0+          | [Install Guide](https://kubectl.docs.kubernetes.io/installation/kustomize/) |
+| Ansible      | 2.15.0+         | `pip install ansible>=2.15`                                                 |
+| AWS CLI      | 2.0+            | [Install Guide](https://aws.amazon.com/cli/)                                |
+| TFLint       | 0.44+           | [Install Guide](https://github.com/terraform-linters/tflint)                |
+| tfsec        | 1.28+           | [Install Guide](https://github.com/aquasecurity/tfsec)                      |
+| ansible-lint | 6.0+            | `pip install ansible-lint`                                                  |
+| yamllint     | 1.26+           | `pip install yamllint`                                                      |
 
-## Architecture Overview
+### Install All Tools (Linux/macOS)
 
+```bash
+# Terraform
+wget https://releases.hashicorp.com/terraform/1.5.0/terraform_1.5.0_linux_amd64.zip
+unzip terraform_1.5.0_linux_amd64.zip
+sudo mv terraform /usr/local/bin/
+
+# kubectl
+curl -LO "https://dl.k8s.io/release/v1.27.0/bin/linux/amd64/kubectl"
+chmod +x kubectl
+sudo mv kubectl /usr/local/bin/
+
+# kustomize
+curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+sudo mv kustomize /usr/local/bin/
+
+# Ansible and linting tools
+pip install ansible>=2.15 ansible-lint yamllint
+
+# AWS CLI
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+sudo ./aws/install
+
+# TFLint
+curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+
+# tfsec
+curl -s https://raw.githubusercontent.com/aquasecurity/tfsec/master/scripts/install_linux.sh | bash
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        Internet Gateway                         │
-└─────────────────────┬───────────────────────────────────────────┘
-                      │
-┌─────────────────────┴───────────────────────────────────────────┐
-│                     Application Load Balancer                  │
-│                    (WAF + DDoS Protection)                     │
-└─────────────────────┬───────────────────────────────────────────┘
-                      │
-┌─────────────────────┴───────────────────────────────────────────┐
-│                      Public Subnets                            │
-│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
-│  │   NAT Gateway   │  │   NAT Gateway   │  │   NAT Gateway   │ │
-│  │       AZ-A      │  │       AZ-B      │  │       AZ-C      │ │
-│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
-└─────────────────────┬───────────────────────────────────────────┘
-                      │
-┌─────────────────────┴───────────────────────────────────────────┐
-│                     Private Subnets                            │
-│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
-│  │  EKS Cluster    │  │  EKS Cluster    │  │  EKS Cluster    │ │
-│  │   Worker Nodes  │  │   Worker Nodes  │  │   Worker Nodes  │ │
-│  │       AZ-A      │  │       AZ-B      │  │       AZ-C      │ │
-│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
-└─────────────────────┬───────────────────────────────────────────┘
-                      │
-┌─────────────────────┴───────────────────────────────────────────┐
-│                    Database Subnets                            │
-│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
-│  │   RDS Primary   │  │  RDS Read Rep   │  │  RDS Read Rep   │ │
-│  │   (Encrypted)   │  │   (Encrypted)   │  │   (Encrypted)   │ │
-│  │       AZ-A      │  │       AZ-B      │  │       AZ-C      │ │
-│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
-└─────────────────────────────────────────────────────────────────┘
+
+## Quick Start
+
+### 1. Clone and Navigate
+
+```bash
+git clone https://github.com/abrar2030/BlockGuardian.git
+cd BlockGuardian/infrastructure
+```
+
+### 2. Configure AWS Credentials
+
+```bash
+aws configure
+# Or use environment variables:
+export AWS_ACCESS_KEY_ID="your-access-key"
+export AWS_SECRET_ACCESS_KEY="your-secret-key"
+export AWS_DEFAULT_REGION="us-west-2"
+```
+
+### 3. Validate Everything
+
+```bash
+# Run all validations
+./scripts/validate-all.sh
+
+# Or validate individually:
+cd terraform && terraform fmt -check -recursive && terraform validate
+cd ../kubernetes && kustomize build environments/dev
+cd ../ansible && ansible-lint playbooks/main.yml
+```
+
+### 4. Deploy (Development)
+
+```bash
+# Deploy Terraform infrastructure
+cd terraform
+terraform init
+terraform plan -out=tfplan
+terraform apply tfplan
+
+# Deploy Kubernetes resources
+cd ../kubernetes
+kustomize build environments/dev | kubectl apply --dry-run=client -f -  # Validate first
+kustomize build environments/dev | kubectl apply -f -
+
+# Run Ansible configuration
+cd ../ansible
+ansible-playbook -i inventory/hosts.yml playbooks/main.yml --check  # Dry run
+ansible-playbook -i inventory/hosts.yml playbooks/main.yml
 ```
 
 ## Directory Structure
 
 ```
 infrastructure/
-├── terraform/                 # Infrastructure as Code
-│   ├── modules/               # Reusable Terraform modules
-│   │   ├── network/           # VPC, subnets, security groups
-│   │   ├── security/          # Security controls and policies
-│   │   ├── database/          # RDS with encryption and backups
-│   │   └── compute/           # EKS cluster and worker nodes
-│   └── environments/          # Environment-specific configurations
+├── terraform/              # Infrastructure as Code
+│   ├── main.tf            # Root module
+│   ├── backend.tf         # State backend configuration
+│   ├── variables.tf       # Input variables
+│   ├── outputs.tf         # Output values
+│   ├── terraform.tfvars.example  # Example variables file
+│   ├── .tflint.hcl       # TFLint configuration
+│   └── modules/          # Reusable Terraform modules
+│       ├── network/      # VPC, subnets, security groups
+│       ├── compute/      # EC2, EKS, Auto Scaling
+│       ├── database/     # RDS, DynamoDB
+│       ├── storage/      # S3, EBS
+│       └── security/     # IAM, KMS, Security Groups
+├── kubernetes/            # Kubernetes manifests
+│   ├── base/             # Base Kustomize resources
+│   │   ├── kustomization.yaml
+│   │   ├── *-deployment-fixed.yaml
+│   │   ├── *-service.yaml
+│   │   ├── backend-service-account.yaml
+│   │   ├── backend-role.yaml
+│   │   ├── backend-rolebinding.yaml
+│   │   └── app-secrets-example.yaml
+│   └── environments/     # Environment overlays
 │       ├── dev/
 │       ├── staging/
 │       └── prod/
-├── kubernetes/                # Kubernetes manifests
-│   ├── base/                  # Base configurations
-│   │   ├── monitoring/        # Prometheus, Grafana, AlertManager
-│   │   └── security/          # Security policies and RBAC
-│   └── overlays/              # Environment-specific overlays
-├── ansible/                   # Configuration management
-│   ├── playbooks/             # Ansible playbooks
-│   ├── roles/                 # Reusable roles
-│   │   ├── security_hardening/
-│   │   ├── monitoring/
-│   │   └── compliance/
-│   └── inventory/             # Environment inventories
-├── cicd/                      # CI/CD pipeline configurations
-├── backup/                    # Backup and recovery scripts
-├── disaster-recovery/         # DR procedures and scripts
-├── scripts/                   # Deployment and utility scripts
-└── docs/                      # Documentation
+├── ansible/              # Configuration management
+│   ├── ansible.cfg       # Ansible configuration
+│   ├── inventory/        # Inventory files
+│   │   └── hosts.example.yml
+│   ├── playbooks/        # Playbooks
+│   │   └── main.yml
+│   └── roles/            # Ansible roles
+│       ├── common/
+│       ├── database/
+│       ├── security_hardening/
+│       └── webserver/
+├── ci-cd/                # CI/CD pipelines
+│   ├── ci-cd.yml        # Application CI/CD
+│   └── infrastructure-ci-cd.yml  # Infrastructure validation
+├── scripts/              # Deployment scripts
+│   ├── deploy.sh
+│   └── validate-all.sh
+├── .gitignore           # Git ignore patterns
+├── .yamllint            # YAML linting configuration
+└── README.md            # This file
 ```
 
-## Quick Start
+## Terraform Setup
+
+### Initialize Backend (Local Development)
+
+```bash
+cd terraform
+
+# Create terraform.tfvars from example
+cp terraform.tfvars.example terraform.tfvars
+
+# Edit terraform.tfvars with your values
+vim terraform.tfvars
+
+# Initialize Terraform (uses local state by default)
+terraform init
+
+# Format and validate
+terraform fmt -recursive
+terraform validate
+```
+
+### Initialize Backend (Production - S3)
+
+```bash
+# Create S3 bucket for state
+aws s3 mb s3://your-terraform-state-bucket --region us-east-1
+
+# Enable versioning
+aws s3api put-bucket-versioning \
+  --bucket your-terraform-state-bucket \
+  --versioning-configuration Status=Enabled
+
+# Enable encryption
+aws s3api put-bucket-encryption \
+  --bucket your-terraform-state-bucket \
+  --server-side-encryption-configuration '{
+    "Rules": [{
+      "ApplyServerSideEncryptionByDefault": {
+        "SSEAlgorithm": "AES256"
+      }
+    }]
+  }'
+
+# Create DynamoDB table for state locking (optional but recommended)
+aws dynamodb create-table \
+  --table-name terraform-state-lock \
+  --attribute-definitions AttributeName=LockID,AttributeType=S \
+  --key-schema AttributeName=LockID,KeyType=HASH \
+  --billing-mode PAY_PER_REQUEST
+
+# Edit backend.tf and uncomment the S3 backend block
+# Then initialize with migration:
+terraform init -migrate-state
+```
+
+### Terraform Commands
+
+```bash
+# Validate configuration
+terraform fmt -check -recursive  # Check formatting
+terraform fmt -recursive         # Fix formatting
+terraform validate               # Validate syntax
+
+# Plan changes
+terraform plan -out=tfplan
+
+# Apply changes
+terraform apply tfplan
+
+# Destroy resources (careful!)
+terraform destroy
+
+# Run security scan
+tfsec .
+
+# Run linting
+tflint --init
+tflint
+```
+
+### Using terraform.tfvars
+
+**NEVER commit terraform.tfvars with real secrets!**
+
+```hcl
+# terraform.tfvars (not committed to git)
+aws_region  = "us-west-2"
+environment = "dev"
+app_name    = "blockguardian"
+
+# Use environment variables for secrets:
+# export TF_VAR_db_username="admin"
+# export TF_VAR_db_password="your-secure-password"
+
+# Or use AWS Secrets Manager/Parameter Store in Terraform data sources
+```
+
+## Kubernetes Deployment
 
 ### Prerequisites
 
-Ensure you have the following tools installed:
-
-- **Terraform** >= 1.5.0
-- **kubectl** >= 1.27.0
-- **AWS CLI** >= 2.0
-- **Docker** >= 20.0
-- **Helm** >= 3.0
-- **Ansible** >= 6.0
-
-### Environment Setup
-
-1. **Configure AWS Credentials**
-
-    ```bash
-    aws configure
-    # or use IAM roles/instance profiles
-    ```
-
-2. **Set Environment Variables**
-
-    ```bash
-    export AWS_REGION=us-east-1
-    export ENVIRONMENT=staging
-    export COMPLIANCE_MODE=financial-grade
-    ```
-
-3. **Initialize Terraform Backend**
-    ```bash
-    cd terraform/environments/staging
-    terraform init
-    ```
-
-### Deployment
-
-#### Option 1: Automated Deployment (Recommended)
-
 ```bash
-# Deploy to staging environment
-./scripts/deploy.sh staging deploy
+# Configure kubectl for your cluster
+aws eks update-kubeconfig --region us-west-2 --name blockguardian-dev
 
-# Deploy to production (requires approval)
-./scripts/deploy.sh prod deploy
+# Verify connection
+kubectl cluster-info
+kubectl get nodes
 ```
 
-#### Option 2: Manual Deployment
+### Using Kustomize
 
 ```bash
-# 1. Deploy Infrastructure
-cd terraform/environments/staging
-terraform plan -out=tfplan
-terraform apply tfplan
+cd kubernetes
 
-# 2. Configure Kubernetes
-aws eks update-kubeconfig --region us-east-1 --name blockguardian-staging
-kubectl apply -f ../../kubernetes/base/
+# Build and preview (dev)
+kustomize build environments/dev
 
-# 3. Run Configuration Management
-cd ../../ansible
-ansible-playbook -i inventory/staging playbooks/main.yml
+# Validate manifests
+kustomize build environments/dev | kubectl apply --dry-run=client -f -
+
+# Apply manifests
+kustomize build environments/dev | kubectl apply -f -
+
+# For staging/production:
+kustomize build environments/staging | kubectl apply -f -
+kustomize build environments/prod | kubectl apply -f -
 ```
 
-## Security Features
+### Managing Secrets
 
-### Network Security
+**Option 1: kubectl create secret (quickest)**
 
-- **VPC with Private Subnets**: All application components in private subnets
-- **Network ACLs**: Stateless firewall rules at subnet level
-- **Security Groups**: Stateful firewall rules at instance level
-- **WAF**: Web Application Firewall with OWASP Top 10 protection
-- **DDoS Protection**: AWS Shield Advanced integration
+```bash
+kubectl create secret generic blockguardian-secrets \
+  --from-literal=database-url='postgresql://user:pass@host:5432/db' \
+  --from-literal=jwt-secret='your-jwt-secret-here' \
+  --from-literal=api-key='your-api-key-here' \
+  -n default
+```
 
-### Data Protection
+**Option 2: Kustomize secretGenerator (in overlays)**
 
-- **Encryption at Rest**: All data encrypted using AWS KMS
-- **Encryption in Transit**: TLS 1.3 for all communications
-- **Key Management**: Centralized key management with rotation
-- **Data Classification**: Automated data classification and handling
+```yaml
+# kubernetes/environments/prod/kustomization.yaml
+secretGenerator:
+    - name: blockguardian-secrets
+      literals:
+          - database-url=postgresql://user:pass@host:5432/db
+          - jwt-secret=actual-jwt-secret
+```
 
-### Access Control
+**Option 3: External Secrets Operator (recommended for production)**
 
-- **IAM Roles**: Least privilege access with temporary credentials
-- **MFA Required**: Multi-factor authentication for all admin access
-- **RBAC**: Role-based access control in Kubernetes
-- **Service Mesh**: Istio for service-to-service authentication
+Install External Secrets Operator and configure with AWS Secrets Manager, Vault, or other secret backends.
 
-### Monitoring and Logging
+### Validate Kubernetes Manifests
 
-- **SIEM Integration**: Security Information and Event Management
-- **Real-time Alerting**: Immediate notification of security events
-- **Audit Logging**: Complete audit trail for all activities
-- **Compliance Reporting**: Automated compliance reports
+```bash
+# YAML syntax
+yamllint -c ../.yamllint .
 
-## Compliance Features
+# Kubernetes schema validation
+find base -name "*-fixed.yaml" -exec kubeval {} \;
 
-### PCI DSS Compliance
+# Dry run apply
+kubectl apply --dry-run=client -f base/
 
-- **Network Segmentation**: Isolated cardholder data environment
-- **Access Controls**: Strict access controls and monitoring
-- **Encryption**: Strong cryptography for data protection
-- **Vulnerability Management**: Regular security assessments
+# Check Kustomize builds
+kustomize build environments/dev > /dev/null
+kustomize build environments/staging > /dev/null
+kustomize build environments/prod > /dev/null
+```
 
-### SOC 2 Compliance
+## Ansible Configuration
 
-- **Security Controls**: Comprehensive security control framework
-- **Availability**: High availability and disaster recovery
-- **Processing Integrity**: Data processing integrity controls
-- **Confidentiality**: Data confidentiality protections
+### Setup Inventory
 
-### ISO 27001 Compliance
+```bash
+cd ansible
 
-- **ISMS**: Information Security Management System
-- **Risk Management**: Systematic risk assessment and treatment
-- **Continuous Improvement**: Regular security reviews and updates
-- **Documentation**: Complete documentation of security controls
+# Copy example inventory
+cp inventory/hosts.example.yml inventory/hosts.yml
 
-## Monitoring and Alerting
+# Edit with your server IPs
+vim inventory/hosts.yml
 
-### Metrics Collection
+# Test connectivity
+ansible all -i inventory/hosts.yml -m ping
+```
 
-- **Prometheus**: Time-series metrics collection
-- **Grafana**: Visualization and dashboards
-- **Custom Metrics**: Application-specific metrics
+### Run Playbooks
 
-### Log Aggregation
+```bash
+# Syntax check
+ansible-playbook playbooks/main.yml --syntax-check -i inventory/hosts.yml
 
-- **Loki**: Log aggregation and storage
-- **Fluent Bit**: Log shipping and processing
-- **Retention**: 7-year log retention for compliance
+# Dry run (check mode)
+ansible-playbook playbooks/main.yml --check -i inventory/hosts.yml
 
-### Alerting
+# Run playbook
+ansible-playbook playbooks/main.yml -i inventory/hosts.yml
 
-- **AlertManager**: Centralized alert management
-- **Multi-channel**: Email, Slack, PagerDuty notifications
-- **Escalation**: Automated escalation procedures
+# Run specific roles with tags
+ansible-playbook playbooks/main.yml -i inventory/hosts.yml --tags security,hardening
 
-### Security Monitoring
+# Run against specific hosts
+ansible-playbook playbooks/main.yml -i inventory/hosts.yml --limit webservers
+```
 
-- **Falco**: Runtime security monitoring
-- **Intrusion Detection**: Network and host-based IDS
-- **Threat Intelligence**: Integration with threat feeds
+### Validate Ansible
 
-## Disaster Recovery
+```bash
+# Lint playbooks
+ansible-lint playbooks/main.yml
 
-### Backup Strategy
+# YAML lint
+yamllint .
 
-- **Automated Backups**: Daily encrypted backups
-- **Cross-region Replication**: Backups replicated to DR region
-- **Point-in-time Recovery**: 15-minute RPO capability
-- **Retention**: 7-year backup retention
+# Syntax check
+ansible-playbook playbooks/main.yml --syntax-check -i inventory/hosts.yml
+```
 
-### Recovery Procedures
+## CI/CD
 
-- **RTO**: 4-hour Recovery Time Objective
-- **RPO**: 15-minute Recovery Point Objective
-- **Automated Failover**: Database and application failover
-- **Testing**: Monthly DR testing and validation
+### GitHub Actions
 
-## CI/CD Pipeline
+The repository includes two CI/CD workflows:
 
-### Security-First Approach
+1. **Application CI/CD** (`ci-cd/ci-cd.yml`): Tests backend, blockchain, and frontend
+2. **Infrastructure CI/CD** (`ci-cd/infrastructure-ci-cd.yml`): Validates infrastructure code
 
-- **Security Scanning**: Automated vulnerability scanning
-- **Compliance Validation**: Continuous compliance checking
-- **Code Analysis**: Static and dynamic code analysis
-- **Container Scanning**: Container image vulnerability scanning
+### Required GitHub Secrets
 
-### Deployment Process
+```bash
+# For infrastructure deployments, configure these secrets in GitHub:
+AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY
+AWS_REGION
+KUBECONFIG  # Base64 encoded kubeconfig
+ANSIBLE_VAULT_PASSWORD  # If using Ansible Vault
+```
 
-- **Blue-Green Deployment**: Zero-downtime deployments
-- **Canary Releases**: Gradual rollout with monitoring
-- **Automated Testing**: Comprehensive test automation
-- **Rollback Capability**: Automated rollback on failure
+### Local CI Testing
 
-## Configuration Management
+```bash
+# Install act (GitHub Actions local runner)
+curl https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash
 
-### Ansible Automation
+# Run workflows locally
+act -j terraform-validate
+act -j kubernetes-validate
+act -j ansible-validate
+```
 
-- **Security Hardening**: Automated security configuration
-- **Compliance Enforcement**: Continuous compliance enforcement
-- **Patch Management**: Automated security patching
-- **Configuration Drift**: Detection and remediation
+## Validation & Testing
 
-### Infrastructure as Code
+### Run All Validations
 
-- **Terraform**: Declarative infrastructure management
-- **Version Control**: All infrastructure changes tracked
-- **Peer Review**: Required code reviews for changes
-- **Testing**: Infrastructure testing and validation
+```bash
+# Create validation script
+cat > scripts/validate-all.sh << 'EOF'
+#!/bin/bash
+set -e
+
+echo "=== Terraform Validation ==="
+cd terraform
+terraform fmt -check -recursive
+terraform init -backend=false
+terraform validate
+tflint --init
+tflint
+tfsec .
+cd ..
+
+echo "=== Kubernetes Validation ==="
+cd kubernetes
+yamllint -c ../.yamllint .
+kustomize build environments/dev > /dev/null
+kustomize build environments/staging > /dev/null
+kustomize build environments/prod > /dev/null
+find base -name "*-fixed.yaml" -exec kubeval {} \; || echo "kubeval done"
+cd ..
+
+echo "=== Ansible Validation ==="
+cd ansible
+ansible-lint playbooks/main.yml || echo "ansible-lint done"
+yamllint .
+ansible-playbook playbooks/main.yml --syntax-check -i inventory/hosts.example.yml
+cd ..
+
+echo "=== All validations passed ==="
+EOF
+
+chmod +x scripts/validate-all.sh
+./scripts/validate-all.sh
+```
+
+### Validation Logs
+
+Run validations and capture logs:
+
+```bash
+mkdir -p validation_logs
+
+# Terraform
+cd terraform
+terraform fmt -recursive 2>&1 | tee ../validation_logs/terraform_fmt.log
+terraform validate 2>&1 | tee ../validation_logs/terraform_validate.log
+tflint 2>&1 | tee ../validation_logs/tflint.log
+tfsec . 2>&1 | tee ../validation_logs/tfsec.log
+cd ..
+
+# Kubernetes
+cd kubernetes
+kustomize build environments/dev 2>&1 | tee ../validation_logs/kustomize_dev.log
+kustomize build environments/staging 2>&1 | tee ../validation_logs/kustomize_staging.log
+cd ..
+
+# Ansible
+cd ansible
+ansible-lint playbooks/main.yml 2>&1 | tee ../validation_logs/ansible_lint.log
+cd ..
+```
+
+## Security & Secrets
+
+### Secrets Management Best Practices
+
+1. **NEVER commit secrets to Git**
+    - Use `.gitignore` to exclude `*.tfvars`, `*.vault`, `*-secrets.yaml`
+    - Verify: `git status` should not show secret files
+
+2. **Use environment variables**
+
+    ```bash
+    export TF_VAR_db_password="secure-password"
+    export ANSIBLE_VAULT_PASSWORD="vault-password"
+    ```
+
+3. **Use secret management services**
+    - AWS Secrets Manager
+    - HashiCorp Vault
+    - Kubernetes External Secrets Operator
+
+4. **Encrypt secrets at rest**
+    - Terraform: Use AWS KMS for sensitive variables
+    - Ansible: Use `ansible-vault`
+    - Kubernetes: Use Sealed Secrets or External Secrets
+
+### Ansible Vault Example
+
+```bash
+# Create vault file
+ansible-vault create ansible/vars/secrets.yml
+
+# Edit vault file
+ansible-vault edit ansible/vars/secrets.yml
+
+# Run playbook with vault
+ansible-playbook playbooks/main.yml --ask-vault-pass
+```
 
 ## Troubleshooting
 
-### Common Issues
-
-#### Deployment Failures
+### Terraform Issues
 
 ```bash
-# Check Terraform state
-terraform show
+# State lock errors
+terraform force-unlock LOCK_ID
 
-# Validate Kubernetes resources
-kubectl get pods --all-namespaces
-kubectl describe pod <pod-name>
+# Provider download issues
+terraform init -upgrade
 
-# Check logs
-kubectl logs <pod-name> -f
+# Refresh state
+terraform refresh
+
+# Import existing resources
+terraform import aws_instance.example i-1234567890abcdef0
 ```
 
-#### Security Issues
+### Kubernetes Issues
 
 ```bash
-# Check security policies
-kubectl get networkpolicies
-kubectl get podsecuritypolicies
+# Check pod status
+kubectl get pods -A
+kubectl describe pod POD_NAME -n NAMESPACE
+kubectl logs POD_NAME -n NAMESPACE -f
 
-# Validate certificates
-openssl x509 -in cert.pem -text -noout
+# Check events
+kubectl get events --sort-by='.lastTimestamp'
+
+# Validate resource definitions
+kubectl explain deployment.spec.template.spec.containers
+
+# Delete and recreate resources
+kubectl delete -f file.yaml
+kubectl apply -f file.yaml
 ```
 
-#### Performance Issues
+### Ansible Issues
 
 ```bash
-# Check resource usage
-kubectl top nodes
-kubectl top pods
+# Increase verbosity
+ansible-playbook playbooks/main.yml -vvv
 
-# Monitor metrics
-curl http://prometheus:9090/metrics
+# Test specific tasks
+ansible-playbook playbooks/main.yml --step
+
+# Check syntax
+ansible-playbook playbooks/main.yml --syntax-check
+
+# List tasks
+ansible-playbook playbooks/main.yml --list-tasks
 ```
-
-## License
-
-This infrastructure code is proprietary and confidential. Unauthorized access, use, or distribution is prohibited.
-
-## Changelog
-
-### Version 2.0.0 (Current)
-
-- Enhanced financial-grade security controls
-- Comprehensive compliance framework
-- Advanced monitoring and alerting
-- Disaster recovery capabilities
-- Automated CI/CD pipeline
-
-### Version 1.0.0
-
-- Basic infrastructure setup
-- Initial security controls
-- Basic monitoring
-
----

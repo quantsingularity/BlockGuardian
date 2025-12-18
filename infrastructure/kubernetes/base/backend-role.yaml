@@ -1,0 +1,14 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+    name: blockguardian-backend-role
+    labels:
+        app: blockguardian-backend
+        component: backend
+rules:
+    - apiGroups: ['']
+      resources: ['configmaps']
+      verbs: ['get', 'list']
+    - apiGroups: ['']
+      resources: ['secrets']
+      verbs: ['get']

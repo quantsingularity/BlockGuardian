@@ -251,7 +251,7 @@ variable "connection_alarm_threshold" {
 variable "memory_alarm_threshold" {
   description = "Freeable memory alarm threshold (bytes)"
   type        = number
-  default     = 268435456  # 256 MB
+  default     = 268435456 # 256 MB
 }
 
 variable "alarm_actions" {
@@ -265,17 +265,17 @@ variable "mysql_security_parameters" {
   description = "Security parameters for MySQL"
   type        = map(string)
   default = {
-    "general_log"                     = "1"
-    "slow_query_log"                  = "1"
-    "log_queries_not_using_indexes"   = "1"
-    "log_slow_admin_statements"       = "1"
-    "log_slow_slave_statements"       = "1"
-    "server_audit_logging"            = "1"
-    "server_audit_events"             = "CONNECT,QUERY,TABLE"
-    "innodb_file_per_table"           = "1"
-    "innodb_encrypt_tables"           = "ON"
-    "require_secure_transport"        = "ON"
-    "tls_version"                     = "TLSv1.2,TLSv1.3"
+    "general_log"                   = "1"
+    "slow_query_log"                = "1"
+    "log_queries_not_using_indexes" = "1"
+    "log_slow_admin_statements"     = "1"
+    "log_slow_slave_statements"     = "1"
+    "server_audit_logging"          = "1"
+    "server_audit_events"           = "CONNECT,QUERY,TABLE"
+    "innodb_file_per_table"         = "1"
+    "innodb_encrypt_tables"         = "ON"
+    "require_secure_transport"      = "ON"
+    "tls_version"                   = "TLSv1.2,TLSv1.3"
   }
 }
 
@@ -284,16 +284,16 @@ variable "postgres_security_parameters" {
   description = "Security parameters for PostgreSQL"
   type        = map(string)
   default = {
-    "log_statement"                   = "all"
-    "log_min_duration_statement"      = "1000"
-    "log_connections"                 = "1"
-    "log_disconnections"              = "1"
-    "log_checkpoints"                 = "1"
-    "log_lock_waits"                  = "1"
-    "log_temp_files"                  = "0"
-    "shared_preload_libraries"        = "pg_stat_statements"
-    "ssl"                             = "1"
-    "ssl_min_protocol_version"        = "TLSv1.2"
+    "log_statement"              = "all"
+    "log_min_duration_statement" = "1000"
+    "log_connections"            = "1"
+    "log_disconnections"         = "1"
+    "log_checkpoints"            = "1"
+    "log_lock_waits"             = "1"
+    "log_temp_files"             = "0"
+    "shared_preload_libraries"   = "pg_stat_statements"
+    "ssl"                        = "1"
+    "ssl_min_protocol_version"   = "TLSv1.2"
   }
 }
 

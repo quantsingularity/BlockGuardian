@@ -184,15 +184,15 @@ output "health_check_configuration" {
 output "auto_scaling_configuration" {
   description = "Auto scaling configuration"
   value = {
-    min_size                    = var.min_size
-    max_size                    = var.max_size
-    desired_capacity            = var.desired_capacity
-    health_check_grace_period   = var.health_check_grace_period
-    default_cooldown           = var.default_cooldown
-    cpu_high_threshold         = var.cpu_high_threshold
-    cpu_low_threshold          = var.cpu_low_threshold
-    scale_up_adjustment        = var.scale_up_adjustment
-    scale_down_adjustment      = var.scale_down_adjustment
+    min_size                  = var.min_size
+    max_size                  = var.max_size
+    desired_capacity          = var.desired_capacity
+    health_check_grace_period = var.health_check_grace_period
+    default_cooldown          = var.default_cooldown
+    cpu_high_threshold        = var.cpu_high_threshold
+    cpu_low_threshold         = var.cpu_low_threshold
+    scale_up_adjustment       = var.scale_up_adjustment
+    scale_down_adjustment     = var.scale_down_adjustment
   }
 }
 

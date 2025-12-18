@@ -1,0 +1,52 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: staging
+
+bases:
+    - ../../base
+
+namePrefix: staging-
+
+commonLabels:
+    environment: staging
+
+images:
+    - name: blockguardian/backend
+      newTag: staging-latest
+    - name: blockguardian/frontend
+      newTag: staging-latest
+
+replicas:
+    - name: blockguardian-backend
+      count: 2
+    - name: blockguardian-frontend
+      count: 2
+
+configMapGenerator:
+    - name: blockguardian-config
+      behavior: merge
+      literals:
+          - NODE_ENV=staging
+          - LOG_LEVEL=info
+
+# Note: Configure secrets via external secret manager or sealed-secrets
+# Do not commit actual secrets here
+secretGenerator:
+    - name: blockguardian-secrets
+      behavior: replace
+      literals:
+          - database-url=REPLACE_WITH_ACTUAL_SECRET
+          - jwt-secret=REPLACE_WITH_ACTUAL_SECRET
+
+patches:
+    - target:
+          kind: Ingress
+          name: blockguardian-ingress
+      patch: |-
+          - op: replace
+            path: /spec/rules/0/host
+            value: staging.blockguardian.com
+          - op: replace
+            path: /spec/tls/0/hosts/0
+            value: staging.blockguardian.com

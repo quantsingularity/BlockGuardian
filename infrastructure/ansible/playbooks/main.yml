@@ -34,10 +34,12 @@
         tags: [common, security, hardening]
       - role: security_hardening
         tags: [security, hardening, compliance]
-      - role: monitoring
-        tags: [monitoring, logging]
-      - role: compliance
-        tags: [compliance, audit]
+      # NOTE: monitoring and compliance roles not yet implemented
+      # Uncomment when roles are created:
+      # - role: monitoring
+      #   tags: [monitoring, logging]
+      # - role: compliance
+      #   tags: [compliance, audit]
 
   post_tasks:
       - name: Generate compliance report
@@ -66,12 +68,14 @@
   roles:
       - role: webserver
         tags: [webserver, nginx, apache]
-      - role: ssl_certificates
-        tags: [ssl, certificates, encryption]
-      - role: web_security
-        tags: [security, waf, firewall]
-      - role: log_shipping
-        tags: [logging, monitoring]
+      # NOTE: Additional roles not yet implemented
+      # Uncomment when roles are created:
+      # - role: ssl_certificates
+      #   tags: [ssl, certificates, encryption]
+      # - role: web_security
+      #   tags: [security, waf, firewall]
+      # - role: log_shipping
+      #   tags: [logging, monitoring]
 
 - name: Configure Database Servers with Financial-Grade Security
   hosts: databases
@@ -85,46 +89,50 @@
   roles:
       - role: database
         tags: [database, mysql, postgresql]
-      - role: database_security
-        tags: [security, encryption, audit]
-      - role: backup_encryption
-        tags: [backup, encryption]
-      - role: database_monitoring
-        tags: [monitoring, performance]
+      # NOTE: Additional database roles not yet implemented
+      # Uncomment when roles are created:
+      # - role: database_security
+      #   tags: [security, encryption, audit]
+      # - role: backup_encryption
+      #   tags: [backup, encryption]
+      # - role: database_monitoring
+      #   tags: [monitoring, performance]
 
-- name: Configure Load Balancers
-  hosts: loadbalancers
-  become: true
-  gather_facts: true
-  vars:
-      lb_security_level: maximum
-      enable_ddos_protection: true
+# NOTE: Load balancer configuration disabled - roles not implemented
+# Uncomment when roles are created:
+# - name: Configure Load Balancers
+#   hosts: loadbalancers
+#   become: true
+#   gather_facts: true
+#   vars:
+#       lb_security_level: maximum
+#       enable_ddos_protection: true
+#   roles:
+#       - role: loadbalancer
+#         tags: [loadbalancer, haproxy, nginx]
+#       - role: ddos_protection
+#         tags: [security, ddos]
+#       - role: rate_limiting
+#         tags: [security, rate_limit]
 
-  roles:
-      - role: loadbalancer
-        tags: [loadbalancer, haproxy, nginx]
-      - role: ddos_protection
-        tags: [security, ddos]
-      - role: rate_limiting
-        tags: [security, rate_limit]
-
-- name: Configure Monitoring and Logging Infrastructure
-  hosts: monitoring
-  become: true
-  gather_facts: true
-  vars:
-      log_retention_days: 2555 # 7 years for financial compliance
-      enable_siem: true
-
-  roles:
-      - role: log_aggregation
-        tags: [logging, elk, splunk]
-      - role: metrics_collection
-        tags: [monitoring, prometheus, grafana]
-      - role: alerting
-        tags: [alerting, notifications]
-      - role: siem_integration
-        tags: [siem, security]
+# NOTE: Monitoring configuration disabled - roles not implemented
+# Uncomment when roles are created:
+# - name: Configure Monitoring and Logging Infrastructure
+#   hosts: monitoring
+#   become: true
+#   gather_facts: true
+#   vars:
+#       log_retention_days: 2555 # 7 years for financial compliance
+#       enable_siem: true
+#   roles:
+#       - role: log_aggregation
+#         tags: [logging, elk, splunk]
+#       - role: metrics_collection
+#         tags: [monitoring, prometheus, grafana]
+#       - role: alerting
+#         tags: [alerting, notifications]
+#       - role: siem_integration
+#         tags: [siem, security]
 
 - name: Final Security Validation and Compliance Check
   hosts: all
@@ -132,34 +140,20 @@
   gather_facts: true
 
   tasks:
-      - name: Run security compliance scan
-        include_role:
-            name: compliance_scanner
-        tags: [compliance, validation]
+      - name: Display completion message
+        debug:
+            msg: 'Security hardening playbook completed. Additional validation roles not yet implemented.'
+        tags: [always]
 
-      - name: Generate final security report
-        template:
-            src: security_report.j2
-            dest: '/var/log/security-report-{{ ansible_date_time.date }}.json'
-            mode: '0600'
-        tags: [reporting, security]
-
-      - name: Verify all security controls are in place
-        include_role:
-            name: security_verification
-        tags: [verification, security]
-
-      - name: Send completion notification
-        mail:
-            to: "{{ security_team_email | default('security@company.com') }}"
-            subject: 'Infrastructure Security Hardening Completed - {{ inventory_hostname }}'
-            body: |
-                Security hardening playbook has been completed successfully on {{ inventory_hostname }}.
-
-                Compliance Standards Applied: {{ compliance_standards | join(', ') }}
-                Security Baseline: {{ security_baseline }}
-                Execution Time: {{ ansible_date_time.iso8601 }}
-
-                Please review the generated compliance and security reports.
-        when: send_notifications | default(false)
-        tags: [notification]
+      # NOTE: Validation tasks disabled - roles and templates not implemented
+      # Uncomment when roles/templates are created:
+      # - name: Run security compliance scan
+      #   include_role:
+      #       name: compliance_scanner
+      #   tags: [compliance, validation]
+      # - name: Generate final security report
+      #   template:
+      #       src: security_report.j2
+      #       dest: '/var/log/security-report-{{ ansible_date_time.date }}.json'
+      #       mode: '0600'
+      #   tags: [reporting, security]

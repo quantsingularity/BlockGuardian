@@ -1,0 +1,74 @@
+# Terraform
+*.tfstate
+*.tfstate.backup
+*.tfstate.lock.info
+.terraform/
+.terraform.lock.hcl
+terraform.tfvars
+terraform.tfvars.json
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+plan.out
+*.tfplan
+
+# Ansible
+*.retry
+.ansible/
+*.vault_pass
+ansible.log
+*.vault
+
+# Kubernetes
+kubeconfig
+*.kubeconfig
+secrets.yaml
+*-secrets.yaml
+!*-secrets.example.yaml
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment files
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# Logs
+*.log
+logs/
+validation_logs/*.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+*.backup
+
+# CI/CD
+.gitlab-ci-local/
+
+# AWS
+.aws/
+credentials
+config
+
+# SSH keys
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub

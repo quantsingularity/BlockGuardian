@@ -86,9 +86,9 @@ output "database_network_acl_id" {
 output "vpc_endpoints" {
   description = "VPC Endpoint information"
   value = var.enable_vpc_endpoints ? {
-    s3_endpoint_id            = aws_vpc_endpoint.s3[0].id
-    dynamodb_endpoint_id      = aws_vpc_endpoint.dynamodb[0].id
-    ec2_endpoint_id           = aws_vpc_endpoint.ec2[0].id
+    s3_endpoint_id             = aws_vpc_endpoint.s3[0].id
+    dynamodb_endpoint_id       = aws_vpc_endpoint.dynamodb[0].id
+    ec2_endpoint_id            = aws_vpc_endpoint.ec2[0].id
     secretsmanager_endpoint_id = aws_vpc_endpoint.secretsmanager[0].id
   } : {}
 }

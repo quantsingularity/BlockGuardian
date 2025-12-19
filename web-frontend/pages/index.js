@@ -7,11 +7,12 @@ export default function Home({ darkMode, toggleDarkMode }) {
             <div className="max-w-7xl mx-auto">
                 <div className="text-center mb-16">
                     <h1 className="text-5xl font-bold mb-6 text-gray-900 dark:text-white">
-                        QuantumNest Capital
+                        BlockGuardian
                     </h1>
                     <p className="text-xl mb-8 text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-                        A futuristic fintech platform integrating AI, Blockchain, Data Science, and
-                        Automation for next-generation hedge fund management.
+                        Comprehensive blockchain security and monitoring platform that helps
+                        organizations protect their blockchain assets, detect vulnerabilities, and
+                        ensure compliance.
                     </p>
                     <div className="flex flex-wrap justify-center gap-4">
                         <Link
@@ -130,7 +131,7 @@ export default function Home({ darkMode, toggleDarkMode }) {
                 <div className="bg-indigo-50 dark:bg-gray-800 rounded-2xl p-8 mb-16">
                     <div className="text-center mb-8">
                         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-                            Why Choose QuantumNest Capital?
+                            Why Choose BlockGuardian?
                         </h2>
                         <p className="text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
                             Our platform combines cutting-edge technologies to provide unparalleled

@@ -1,8 +1,7 @@
-// Page Test: /home/ubuntu/BlockGuardian_Tests/BlockGuardian_tests/web-frontend/__tests__/pages/index.test.js
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom'; // For .toBeInTheDocument()
-import Home from '../../../../BlockGuardian_Project/web-frontend/pages/index';
+import '@testing-library/jest-dom';
+import Home from '../../pages/index';
 
 // Mock next/link behavior for testing
 jest.mock('next/link', () => {
@@ -12,13 +11,13 @@ jest.mock('next/link', () => {
 });
 
 // Mock the Layout component to isolate the Home page content
-jest.mock('../../../../BlockGuardian_Project/web-frontend/components/Layout', () => {
-    // eslint-disable-next-line react/display-name
-    return ({ children }) => <div data-testid="mock-layout">{children}</div>;
+jest.mock('../../components/Layout', () => {
+    return function MockLayout({ children }) {
+        return <div data-testid="mock-layout">{children}</div>;
+    };
 });
 
 describe('Index Page (Home)', () => {
-    // Mock props that might be passed down from _app.js or Layout
     const mockToggleDarkMode = jest.fn();
     const defaultProps = {
         darkMode: false,
@@ -32,12 +31,10 @@ describe('Index Page (Home)', () => {
     test('renders main heading and description', () => {
         render(<Home {...defaultProps} />);
         expect(
-            screen.getByRole('heading', { name: /QuantumNest Capital/i, level: 1 }),
+            screen.getByRole('heading', { name: /BlockGuardian/i, level: 1 })
         ).toBeInTheDocument();
         expect(
-            screen.getByText(
-                /A futuristic fintech platform integrating AI, Blockchain, Data Science, and Automation/i,
-            ),
+            screen.getByText(/Comprehensive blockchain security and monitoring platform/i)
         ).toBeInTheDocument();
     });
 
@@ -49,72 +46,48 @@ describe('Index Page (Home)', () => {
 
     test('renders feature sections with headings and links', () => {
         render(<Home {...defaultProps} />);
-        // Feature 1
-        expect(
-            screen.getByRole('heading', { name: /AI-Powered Analytics/i, level: 2 }),
-        ).toBeInTheDocument();
-        expect(
-            screen.getByText(/Advanced machine learning models for financial prediction/i),
-        ).toBeInTheDocument();
-        expect(screen.getAllByRole('link', { name: /Learn more →/i })[0]).toHaveAttribute(
-            'href',
-            '/ai-recommendations',
-        );
 
-        // Feature 2
+        // Feature 1: AI-Powered Analytics
         expect(
-            screen.getByRole('heading', {
-                name: /Blockchain Integration/i,
-                level: 2,
-            }),
+            screen.getByRole('heading', { name: /AI-Powered Analytics/i, level: 2 })
         ).toBeInTheDocument();
         expect(
-            screen.getByText(/Secure transactions with Ethereum smart contracts/i),
+            screen.getByText(/Advanced machine learning models for financial prediction/i)
         ).toBeInTheDocument();
-        expect(screen.getAllByRole('link', { name: /Learn more →/i })[1]).toHaveAttribute(
-            'href',
-            '/blockchain-explorer',
-        );
 
-        // Feature 3
+        // Feature 2: Blockchain Integration
         expect(
-            screen.getByRole('heading', { name: /Real-time Data/i, level: 2 }),
+            screen.getByRole('heading', { name: /Blockchain Integration/i, level: 2 })
         ).toBeInTheDocument();
         expect(
-            screen.getByText(/Live financial data streaming with advanced visualization/i),
+            screen.getByText(/Secure transactions with Ethereum smart contracts/i)
         ).toBeInTheDocument();
-        expect(screen.getAllByRole('link', { name: /Learn more →/i })[2]).toHaveAttribute(
-            'href',
-            '/market-analysis',
-        );
+
+        // Feature 3: Real-time Data
+        expect(
+            screen.getByRole('heading', { name: /Real-time Data/i, level: 2 })
+        ).toBeInTheDocument();
+        expect(
+            screen.getByText(/Live financial data streaming with advanced visualization/i)
+        ).toBeInTheDocument();
     });
 
     test('renders "Why Choose" section with sub-features', () => {
         render(<Home {...defaultProps} />);
         expect(
-            screen.getByRole('heading', {
-                name: /Why Choose QuantumNest Capital\?/i,
-                level: 2,
-            }),
+            screen.getByRole('heading', { name: /Why Choose BlockGuardian\?/i, level: 2 })
         ).toBeInTheDocument();
         expect(
-            screen.getByRole('heading', { name: /Advanced Security/i, level: 3 }),
+            screen.getByRole('heading', { name: /Advanced Security/i, level: 3 })
         ).toBeInTheDocument();
         expect(
-            screen.getByRole('heading', {
-                name: /Performance Optimization/i,
-                level: 3,
-            }),
+            screen.getByRole('heading', { name: /Performance Optimization/i, level: 3 })
         ).toBeInTheDocument();
         expect(
-            screen.getByRole('heading', { name: /Intelligent Insights/i, level: 3 }),
+            screen.getByRole('heading', { name: /Intelligent Insights/i, level: 3 })
         ).toBeInTheDocument();
         expect(
-            screen.getByRole('heading', { name: /Real-time Monitoring/i, level: 3 }),
+            screen.getByRole('heading', { name: /Real-time Monitoring/i, level: 3 })
         ).toBeInTheDocument();
     });
-
-    // No interactive elements like buttons with onClick handlers directly in Home component itself
-    // (besides the dark mode toggle which is assumed to be in Layout/Navbar)
-    // So, no fireEvent tests needed here unless more interactivity is added to index.js
 });

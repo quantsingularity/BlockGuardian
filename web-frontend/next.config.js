@@ -1,7 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     reactStrictMode: true,
-    output: 'export',
+    eslint: {
+        // Only lint during development, not during production build
+        ignoreDuringBuilds: false,
+    },
     images: {
         unoptimized: true,
     },

@@ -1,15 +1,40 @@
-// Placeholder jest.config.js for web-frontend
-module.exports = {
+const nextJest = require('next/jest');
+
+const createJestConfig = nextJest({
+    dir: './',
+});
+
+const customJestConfig = {
+    setupFilesAfterEnv: ['<rootDir>/setupTests.js'],
     testEnvironment: 'jsdom',
-    setupFilesAfterEnv: ['<rootDir>/setupTests.js'], // if you have a setup file
     moduleNameMapper: {
-        // Handle module aliases (if configured in tsconfig.json or jsconfig.json)
         '^@/components/(.*)$': '<rootDir>/components/$1',
         '^@/pages/(.*)$': '<rootDir>/pages/$1',
-        // Handle CSS imports (if using CSS Modules or similar)
+        '^@/services/(.*)$': '<rootDir>/services/$1',
+        '^@/utils/(.*)$': '<rootDir>/utils/$1',
         '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
-        // Handle image imports
-        '\\.(gif|ttf|eot|svg|png)$': '<rootDir>/__mocks__/fileMock.js',
+        '\\.(gif|ttf|eot|svg|png|jpg|jpeg)$': '<rootDir>/__mocks__/fileMock.js',
     },
-    // Add more configuration options as needed
+    collectCoverageFrom: [
+        'components/**/*.{js,jsx}',
+        'pages/**/*.{js,jsx}',
+        'services/**/*.{js,jsx}',
+        'utils/**/*.{js,jsx}',
+        '!pages/_app.js',
+        '!pages/_document.js',
+        '!**/*.test.{js,jsx}',
+        '!**/__tests__/**',
+    ],
+    coverageThreshold: {
+        global: {
+            branches: 50,
+            functions: 50,
+            lines: 50,
+            statements: 50,
+        },
+    },
+    testMatch: ['**/__tests__/**/*.[jt]s?(x)', '**/?(*.)+(spec|test).[jt]s?(x)'],
+    testPathIgnorePatterns: ['/node_modules/', '/.next/', '/e2e/'],
 };
+
+module.exports = createJestConfig(customJestConfig);

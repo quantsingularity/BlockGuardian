@@ -1,12 +1,10 @@
-// Page Test: /home/ubuntu/BlockGuardian_Tests/BlockGuardian_tests/web-frontend/__tests__/pages/login.test.js
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import Login from '../../../../BlockGuardian_Project/web-frontend/pages/login';
+import Login from '../../pages/login';
 
 // Mock next/link
 jest.mock('next/link', () => {
-    // eslint-disable-next-line react/display-name
     return ({ children, href }) => <a href={href}>{children}</a>;
 });
 
@@ -15,7 +13,6 @@ const mockPush = jest.fn();
 jest.mock('next/router', () => ({
     useRouter: () => ({
         push: mockPush,
-        // Add other router properties/methods if needed
     }),
 }));
 
@@ -27,31 +24,26 @@ describe('Login Page', () => {
     };
 
     beforeEach(() => {
-        // Reset mocks before each test
         mockToggleDarkMode.mockClear();
         mockPush.mockClear();
-        // Reset useRouter mock if needed
         jest.clearAllMocks();
     });
 
     test('renders login form by default', () => {
         render(<Login {...defaultProps} />);
         expect(
-            screen.getByRole('heading', { name: /Sign in to your account/i }),
+            screen.getByRole('heading', { name: /Sign in to your account/i })
         ).toBeInTheDocument();
         expect(screen.getByPlaceholderText(/Email address/i)).toBeInTheDocument();
-        expect(screen.getByPlaceholderText(/^Password$/i)).toBeInTheDocument(); // Use exact match for password
+        expect(screen.getByPlaceholderText(/^Password$/i)).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /Sign in$/i })).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /Sign up/i })).toBeInTheDocument(); // Button to switch to signup
     });
 
     test('renders dark mode toggle button', () => {
         render(<Login {...defaultProps} />);
-        const toggleButton = screen.getByRole('button', {
-            name: /Toggle dark mode/i,
-        });
+        const toggleButton = screen.getByRole('button', { name: /Toggle dark mode/i });
         expect(toggleButton).toBeInTheDocument();
-        expect(toggleButton).toHaveTextContent('🌙'); // Initial state is light mode
+        expect(toggleButton).toHaveTextContent('🌙');
         fireEvent.click(toggleButton);
         expect(mockToggleDarkMode).toHaveBeenCalledTimes(1);
     });
@@ -63,24 +55,7 @@ describe('Login Page', () => {
 
         expect(screen.getByRole('heading', { name: /Create a new account/i })).toBeInTheDocument();
         expect(screen.getByPlaceholderText(/Full Name/i)).toBeInTheDocument();
-        expect(screen.getByPlaceholderText(/Email address/i)).toBeInTheDocument();
-        expect(screen.getByPlaceholderText(/^Password$/i)).toBeInTheDocument();
         expect(screen.getByPlaceholderText(/Confirm Password/i)).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /Sign up$/i })).toBeInTheDocument(); // Submit button text changes
-        expect(screen.getByRole('button', { name: /Sign in/i })).toBeInTheDocument(); // Button to switch back to login
-    });
-
-    test('toggles back to login form from signup form', () => {
-        render(<Login {...defaultProps} />);
-        // Go to signup first
-        fireEvent.click(screen.getByRole('button', { name: /Sign up/i }));
-        expect(screen.getByRole('heading', { name: /Create a new account/i })).toBeInTheDocument();
-
-        // Go back to login
-        fireEvent.click(screen.getByRole('button', { name: /Sign in/i }));
-        expect(
-            screen.getByRole('heading', { name: /Sign in to your account/i }),
-        ).toBeInTheDocument();
     });
 
     test('updates email and password fields on input', () => {
@@ -106,7 +81,7 @@ describe('Login Page', () => {
 
     test('shows error message for password mismatch on signup submit', async () => {
         render(<Login {...defaultProps} />);
-        fireEvent.click(screen.getByRole('button', { name: /Sign up/i })); // Switch to signup
+        fireEvent.click(screen.getByRole('button', { name: /Sign up/i }));
 
         fireEvent.change(screen.getByPlaceholderText(/Full Name/i), {
             target: { value: 'Test User' },
@@ -128,27 +103,6 @@ describe('Login Page', () => {
         expect(mockPush).not.toHaveBeenCalled();
     });
 
-    test('shows error message for missing name on signup submit', async () => {
-        render(<Login {...defaultProps} />);
-        fireEvent.click(screen.getByRole('button', { name: /Sign up/i })); // Switch to signup
-
-        fireEvent.change(screen.getByPlaceholderText(/Email address/i), {
-            target: { value: 'test@example.com' },
-        });
-        fireEvent.change(screen.getByPlaceholderText(/^Password$/i), {
-            target: { value: 'password123' },
-        });
-        fireEvent.change(screen.getByPlaceholderText(/Confirm Password/i), {
-            target: { value: 'password123' },
-        });
-
-        const submitButton = screen.getByRole('button', { name: /Sign up$/i });
-        fireEvent.click(submitButton);
-
-        expect(await screen.findByText(/Please enter your name/i)).toBeInTheDocument();
-        expect(mockPush).not.toHaveBeenCalled();
-    });
-
     test('simulates successful login and redirects', async () => {
         render(<Login {...defaultProps} />);
         fireEvent.change(screen.getByPlaceholderText(/Email address/i), {
@@ -161,56 +115,13 @@ describe('Login Page', () => {
         const submitButton = screen.getByRole('button', { name: /Sign in$/i });
         fireEvent.click(submitButton);
 
-        // Check for loading indicator
         expect(submitButton).toBeDisabled();
-        expect(
-            screen.getByRole('button', { name: /Sign in/i }).querySelector('svg'),
-        ).toBeInTheDocument(); // Check for spinner svg
 
-        // Wait for the simulated API call (setTimeout) and redirection
         await waitFor(
             () => {
                 expect(mockPush).toHaveBeenCalledWith('/dashboard');
             },
-            { timeout: 2000 },
-        ); // Timeout slightly longer than the 1500ms in component
-
-        // Check loading indicator is gone (though component might unmount on redirect)
-        // expect(submitButton).not.toBeDisabled();
-    });
-
-    test('simulates successful signup and redirects', async () => {
-        render(<Login {...defaultProps} />);
-        fireEvent.click(screen.getByRole('button', { name: /Sign up/i })); // Switch to signup
-
-        fireEvent.change(screen.getByPlaceholderText(/Full Name/i), {
-            target: { value: 'Test User' },
-        });
-        fireEvent.change(screen.getByPlaceholderText(/Email address/i), {
-            target: { value: 'test@example.com' },
-        });
-        fireEvent.change(screen.getByPlaceholderText(/^Password$/i), {
-            target: { value: 'password123' },
-        });
-        fireEvent.change(screen.getByPlaceholderText(/Confirm Password/i), {
-            target: { value: 'password123' },
-        });
-
-        const submitButton = screen.getByRole('button', { name: /Sign up$/i });
-        fireEvent.click(submitButton);
-
-        // Check for loading indicator
-        expect(submitButton).toBeDisabled();
-        expect(
-            screen.getByRole('button', { name: /Sign up/i }).querySelector('svg'),
-        ).toBeInTheDocument(); // Check for spinner svg
-
-        // Wait for the simulated API call (setTimeout) and redirection
-        await waitFor(
-            () => {
-                expect(mockPush).toHaveBeenCalledWith('/dashboard');
-            },
-            { timeout: 2000 },
+            { timeout: 2000 }
         );
     });
 

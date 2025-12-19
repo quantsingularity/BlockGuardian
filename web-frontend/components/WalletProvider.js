@@ -18,7 +18,7 @@ const providerOptions = {
     coinbasewallet: {
         package: CoinbaseWalletSDK,
         options: {
-            appName: 'QuantumNest Capital',
+            appName: 'BlockGuardian',
             infuraId: process.env.NEXT_PUBLIC_INFURA_ID,
         },
     },

@@ -16,7 +16,7 @@ export default function Navbar({ darkMode, toggleDarkMode }) {
                         <div className="flex-shrink-0 flex items-center">
                             <Link href="/">
                                 <span className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
-                                    QuantumNest
+                                    BlockGuardian
                                 </span>
                             </Link>
                         </div>

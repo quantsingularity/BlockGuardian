@@ -61,7 +61,7 @@ export default function Login({ darkMode, toggleDarkMode }) {
                 <div>
                     <Link href="/">
                         <h1 className="text-center text-3xl font-extrabold text-indigo-600 dark:text-indigo-400 cursor-pointer">
-                            QuantumNest Capital
+                            BlockGuardian Capital
                         </h1>
                     </Link>
                     <h2 className="mt-6 text-center text-3xl font-bold text-gray-900 dark:text-white">

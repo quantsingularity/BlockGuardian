@@ -1,14 +1,14 @@
-# QuantumNest Capital - User Guide
+# BlockGuardian Capital - User Guide
 
 ## Introduction
 
-Welcome to QuantumNest Capital, a cutting-edge fintech platform that combines artificial intelligence, blockchain technology, and data science to provide sophisticated investment management tools. This user guide will help you navigate the platform and make the most of its features.
+Welcome to BlockGuardian Capital, a cutting-edge fintech platform that combines artificial intelligence, blockchain technology, and data science to provide sophisticated investment management tools. This user guide will help you navigate the platform and make the most of its features.
 
 ## Getting Started
 
 ### Creating an Account
 
-1. Visit the QuantumNest Capital website
+1. Visit the BlockGuardian Capital website
 2. Click on "Sign Up" in the top right corner
 3. Fill in your personal information
 4. Verify your email address
@@ -191,7 +191,7 @@ The dashboard is your central hub for monitoring your investments and accessing 
 
 ### Mobile Responsiveness
 
-- QuantumNest Capital is fully responsive and works on all devices
+- BlockGuardian Capital is fully responsive and works on all devices
 - Access all features through your mobile browser
 - Use landscape mode for optimal chart viewing
 
@@ -243,7 +243,7 @@ The dashboard is your central hub for monitoring your investments and accessing 
 
 ### Regulatory Information
 
-- QuantumNest Capital complies with relevant financial regulations
+- BlockGuardian Capital complies with relevant financial regulations
 - View our licenses and registrations in the "About Us" section
 - Tax reporting tools are available in the "Reports" section
 

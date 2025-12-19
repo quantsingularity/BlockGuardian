@@ -1,8 +1,8 @@
-# QuantumNest Capital - Technical Documentation
+# BlockGuardian Capital - Technical Documentation
 
 ## Architecture Overview
 
-QuantumNest Capital is built on a modern, scalable architecture that integrates multiple technologies:
+BlockGuardian Capital is built on a modern, scalable architecture that integrates multiple technologies:
 
 1. **Frontend Layer**: Next.js with React and Tailwind CSS
 2. **Backend Layer**: FastAPI with PostgreSQL

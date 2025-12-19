@@ -9,7 +9,7 @@ import '@openzeppelin/contracts/access/Ownable.sol';
  * @dev ERC20 token for testing on Goerli testnet
  */
 contract TestToken is ERC20, Ownable {
-    constructor() ERC20('QuantumNest Test Token', 'QNT') Ownable(msg.sender) {
+    constructor() ERC20('BlockGuardian Test Token', 'QNT') Ownable(msg.sender) {
         // Mint 1,000,000 tokens to the contract creator
         _mint(msg.sender, 1000000 * 10 ** decimals());
     }

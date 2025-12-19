@@ -1,13 +1,13 @@
-# QuantumNest Capital - API Documentation
+# BlockGuardian Capital - API Documentation
 
 ## Overview
 
-The QuantumNest Capital API provides programmatic access to the platform's features, allowing developers to integrate with the system and build custom applications. This RESTful API uses JSON for request and response bodies and JWT for authentication.
+The BlockGuardian Capital API provides programmatic access to the platform's features, allowing developers to integrate with the system and build custom applications. This RESTful API uses JSON for request and response bodies and JWT for authentication.
 
 ## Base URL
 
 ```
-https://api.quantumnest.capital/v1
+https://api.BlockGuardian.capital/v1
 ```
 
 ## Authentication
@@ -642,7 +642,7 @@ Authorization: Bearer <token>
         {
             "contract_address": "0x1234567890abcdef1234567890abcdef12345678",
             "symbol": "qAAPL",
-            "name": "QuantumNest Apple Stock Token",
+            "name": "BlockGuardian Apple Stock Token",
             "asset_type": "stock",
             "underlying_symbol": "AAPL",
             "current_value": 175.5,
@@ -654,7 +654,7 @@ Authorization: Bearer <token>
         {
             "contract_address": "0xabcdef1234567890abcdef1234567890abcdef12",
             "symbol": "qGOLD",
-            "name": "QuantumNest Gold Token",
+            "name": "BlockGuardian Gold Token",
             "asset_type": "commodity",
             "underlying_symbol": "XAU",
             "current_value": 2150.75,
@@ -691,7 +691,7 @@ Authorization: Bearer <token>
                 {
                     "token_address": "0x1234567890abcdef1234567890abcdef12345678",
                     "symbol": "qAAPL",
-                    "name": "QuantumNest Apple Stock Token",
+                    "name": "BlockGuardian Apple Stock Token",
                     "balance": 100,
                     "value": 17550.0,
                     "allocation": 45.2
@@ -699,7 +699,7 @@ Authorization: Bearer <token>
                 {
                     "token_address": "0xabcdef1234567890abcdef1234567890abcdef12",
                     "symbol": "qGOLD",
-                    "name": "QuantumNest Gold Token",
+                    "name": "BlockGuardian Gold Token",
                     "balance": 10,
                     "value": 21507.5,
                     "allocation": 54.8
@@ -874,7 +874,7 @@ The API is versioned in the URL path (e.g., `/v1/portfolios`). When breaking cha
 
 ## Webhooks
 
-QuantumNest Capital supports webhooks for real-time notifications. To set up webhooks:
+BlockGuardian Capital supports webhooks for real-time notifications. To set up webhooks:
 
 1. Register a webhook URL in your account settings
 2. Select the events you want to receive
@@ -896,4 +896,4 @@ Official client libraries are available for:
 - Java
 - Ruby
 
-Visit our [GitHub repository](https://github.com/quantumnest/api-clients) for documentation and examples.
+Visit our [GitHub repository](https://github.com/BlockGuardian/api-clients) for documentation and examples.

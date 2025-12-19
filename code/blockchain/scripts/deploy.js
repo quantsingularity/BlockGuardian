@@ -51,7 +51,7 @@ async function main() {
             wallet,
         );
         const tokenizedAsset = await tokenizedAssetFactory.deploy(
-            'QuantumNest Apple Stock Token',
+            'BlockGuardian Apple Stock Token',
             'qAAPL',
             'AAPL',
             'Apple Inc.',
@@ -59,7 +59,7 @@ async function main() {
             1000000,
             17500, // $175.00
             'Tokenized representation of Apple Inc. stock',
-            'QuantumNest Capital',
+            'BlockGuardian Capital',
         );
         await tokenizedAsset.deployed();
         console.log('TokenizedAsset deployed to:', tokenizedAsset.address);
@@ -152,7 +152,7 @@ async function main() {
             'Staking Strategy',
             'Earn yield by staking tokens',
             deployer, // Mock protocol address
-            'QuantumNest Staking',
+            'BlockGuardian Staking',
             testToken.address,
             'QNT',
             500, // 5% APY

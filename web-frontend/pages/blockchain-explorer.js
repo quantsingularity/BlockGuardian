@@ -31,7 +31,7 @@ export default function BlockchainExplorer({ darkMode, toggleDarkMode }) {
     const smartContracts = [
         {
             address: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
-            name: 'QuantumNest Trading',
+            name: 'BlockGuardian Trading',
             type: 'Trading Contract',
             transactions: 1245,
             value: '125.45 ETH',

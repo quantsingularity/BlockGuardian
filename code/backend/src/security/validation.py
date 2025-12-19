@@ -1,574 +1,271 @@
 """
-Enterprise security validation system for input sanitization and security checks
-Implements comprehensive validation for financial data, user inputs, and security threats
+Input validation and security checking system for BlockGuardian Backend
+Implements comprehensive validation for all user inputs and security threat detection
 """
 
-import hashlib
-import ipaddress
-import json
 import re
-from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
-from typing import List, Tuple, Union
-from urllib.parse import urlparse
-import bleach
-from email_validator import EmailNotValidError, validate_email
+from typing import Any, Dict, List, Optional
 from flask import request
-from src.config import current_config
+import bleach
 
 
 class ValidationError(Exception):
-    """Custom validation error"""
+    """Custom validation exception"""
 
-    def __init__(self, message: str, field: str = None, code: str = None) -> Any:
+    def __init__(self, message: str, field: str = None):
         self.message = message
         self.field = field
-        self.code = code
-        super().__init__(message)
+        super().__init__(self.message)
 
 
 class SecurityValidator:
-    """Enterprise security validation system"""
+    """Enterprise-grade input validation and security checker"""
 
-    PATTERNS = {
-        "username": re.compile("^[a-zA-Z0-9_]{3,30}$"),
-        "password_strong": re.compile(
-            "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$"
-        ),
-        "phone": re.compile("^\\+?1?[2-9]\\d{2}[2-9]\\d{2}\\d{4}$"),
-        "ssn": re.compile("^\\d{3}-?\\d{2}-?\\d{4}$"),
-        "credit_card": re.compile(
-            "^(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13}|3[0-9]{13}|6(?:011|5[0-9]{2})[0-9]{12})$"
-        ),
-        "routing_number": re.compile("^\\d{9}$"),
-        "account_number": re.compile("^\\d{8,17}$"),
-        "blockchain_address": re.compile("^(0x)?[0-9a-fA-F]{40}$"),
-        "transaction_hash": re.compile("^(0x)?[0-9a-fA-F]{64}$"),
-        "uuid": re.compile(
-            "^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
-        ),
-        "sql_injection": re.compile(
-            "(\\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|UNION|SCRIPT)\\b)",
-            re.IGNORECASE,
-        ),
-        "xss_basic": re.compile("<script[^>]*>.*?</script>", re.IGNORECASE | re.DOTALL),
-        "path_traversal": re.compile("\\.\\.[\\\\/]"),
-    }
-    ALLOWED_HTML_TAGS = [
-        "p",
-        "br",
-        "strong",
-        "em",
-        "u",
-        "ol",
-        "ul",
-        "li",
-        "h1",
-        "h2",
-        "h3",
-        "h4",
-        "h5",
-        "h6",
-        "blockquote",
-        "code",
-        "pre",
-        "a",
-        "img",
-    ]
-    ALLOWED_HTML_ATTRIBUTES = {
-        "a": ["href", "title"],
-        "img": ["src", "alt", "title", "width", "height"],
-        "*": ["class", "id"],
-    }
+    def __init__(self):
+        self.max_request_size = 10 * 1024 * 1024  # 10MB
+        self.email_pattern = re.compile(
+            r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+        )
+        self.username_pattern = re.compile(r"^[a-zA-Z0-9_-]{3,32}$")
+        self.phone_pattern = re.compile(r"^\+?[1-9]\d{1,14}$")
 
-    def __init__(self) -> Any:
-        self.suspicious_patterns = [
-            self.PATTERNS["sql_injection"],
-            self.PATTERNS["xss_basic"],
-            self.PATTERNS["path_traversal"],
+        # Security threat patterns
+        self.sql_injection_patterns = [
+            r"(\bOR\b|\bAND\b).*['\"]?\s*=\s*['\"]?",
+            r"UNION\s+SELECT",
+            r"DROP\s+TABLE",
+            r"INSERT\s+INTO",
+            r"DELETE\s+FROM",
+            r"--\s*$",
+            r"/\*.*\*/",
+            r"xp_cmdshell",
+            r"exec\s*\(",
         ]
 
+        self.xss_patterns = [
+            r"<script[^>]*>.*?</script>",
+            r"javascript:",
+            r"on\w+\s*=",
+            r"<iframe",
+            r"<object",
+            r"<embed",
+        ]
+
+        self.command_injection_patterns = [
+            r";\s*\w+",
+            r"\|\s*\w+",
+            r"&&\s*\w+",
+            r"`.*`",
+            r"\$\(.*\)",
+        ]
+
+    def validate_request_size(self) -> None:
+        """Validate request content length"""
+        content_length = request.content_length
+        if content_length and content_length > self.max_request_size:
+            raise ValidationError(
+                f"Request size exceeds maximum allowed size of {self.max_request_size} bytes"
+            )
+
+    def validate_json_input(self, data: Optional[Dict]) -> Dict:
+        """Validate and sanitize JSON input"""
+        if data is None:
+            raise ValidationError("Request body is required")
+
+        if not isinstance(data, dict):
+            raise ValidationError("Request body must be a JSON object")
+
+        return data
+
     def validate_email(self, email: str) -> str:
-        """
-        Validate and normalize email address
+        """Validate email address format"""
+        if not email or not isinstance(email, str):
+            raise ValidationError("Email is required", "email")
 
-        Args:
-            email: Email address to validate
+        email = email.strip().lower()
 
-        Returns:
-            Normalized email address
+        if len(email) > 254:
+            raise ValidationError("Email is too long", "email")
 
-        Raises:
-            ValidationError: If email is invalid
-        """
-        if not email:
-            raise ValidationError("Email is required", "email", "REQUIRED")
-        try:
-            validation = validate_email(email)
-            return validation.email
-        except EmailNotValidError as e:
-            raise ValidationError(
-                f"Invalid email address: {str(e)}", "email", "INVALID_FORMAT"
-            )
+        if not self.email_pattern.match(email):
+            raise ValidationError("Invalid email format", "email")
 
-    def validate_password(self, password: str, require_strong: bool = True) -> bool:
-        """
-        Validate password strength
-
-        Args:
-            password: Password to validate
-            require_strong: Whether to require strong password
-
-        Returns:
-            True if password is valid
-
-        Raises:
-            ValidationError: If password is invalid
-        """
-        if not password:
-            raise ValidationError("Password is required", "password", "REQUIRED")
-        if len(password) < 8:
-            raise ValidationError(
-                "Password must be at least 8 characters long", "password", "TOO_SHORT"
-            )
-        if len(password) > 128:
-            raise ValidationError(
-                "Password must be less than 128 characters", "password", "TOO_LONG"
-            )
-        if require_strong:
-            if not self.PATTERNS["password_strong"].match(password):
-                raise ValidationError(
-                    "Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character",
-                    "password",
-                    "WEAK_PASSWORD",
-                )
-        weak_passwords = ["password", "123456", "qwerty", "admin", "letmein"]
-        if password.lower() in weak_passwords:
-            raise ValidationError(
-                "Password is too common", "password", "COMMON_PASSWORD"
-            )
-        return True
+        return email
 
     def validate_username(self, username: str) -> str:
-        """
-        Validate username format
+        """Validate username format"""
+        if not username or not isinstance(username, str):
+            raise ValidationError("Username is required", "username")
 
-        Args:
-            username: Username to validate
+        username = username.strip()
 
-        Returns:
-            Validated username
-
-        Raises:
-            ValidationError: If username is invalid
-        """
-        if not username:
-            raise ValidationError("Username is required", "username", "REQUIRED")
-        if not self.PATTERNS["username"].match(username):
+        if not self.username_pattern.match(username):
             raise ValidationError(
-                "Username must be 3-30 characters long and contain only letters, numbers, and underscores",
+                "Username must be 3-32 characters and contain only letters, numbers, underscores, and hyphens",
                 "username",
-                "INVALID_FORMAT",
             )
-        reserved_usernames = ["admin", "root", "system", "api", "www", "mail", "ftp"]
-        if username.lower() in reserved_usernames:
-            raise ValidationError("Username is reserved", "username", "RESERVED")
-        return username.lower()
 
-    def validate_financial_amount(
-        self,
-        amount: Union[str, float, Decimal],
-        min_amount: float = 0.01,
-        max_amount: float = 1000000,
-    ) -> Decimal:
-        """
-        Validate financial amount
+        return username
 
-        Args:
-            amount: Amount to validate
-            min_amount: Minimum allowed amount
-            max_amount: Maximum allowed amount
+    def validate_password(self, password: str) -> None:
+        """Validate password strength"""
+        if not password or not isinstance(password, str):
+            raise ValidationError("Password is required", "password")
 
-        Returns:
-            Validated amount as Decimal
+        if len(password) < 12:
+            raise ValidationError(
+                "Password must be at least 12 characters long", "password"
+            )
 
-        Raises:
-            ValidationError: If amount is invalid
-        """
-        if amount is None:
-            raise ValidationError("Amount is required", "amount", "REQUIRED")
+        if len(password) > 128:
+            raise ValidationError("Password is too long", "password")
+
+        if not re.search(r"[A-Z]", password):
+            raise ValidationError(
+                "Password must contain at least one uppercase letter", "password"
+            )
+
+        if not re.search(r"[a-z]", password):
+            raise ValidationError(
+                "Password must contain at least one lowercase letter", "password"
+            )
+
+        if not re.search(r"\d", password):
+            raise ValidationError(
+                "Password must contain at least one digit", "password"
+            )
+
+        if not re.search(r"[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]", password):
+            raise ValidationError(
+                "Password must contain at least one special character", "password"
+            )
+
+    def validate_phone(self, phone: str) -> str:
+        """Validate phone number format"""
+        if not phone or not isinstance(phone, str):
+            raise ValidationError("Phone number is required", "phone")
+
+        phone = re.sub(r"\s+", "", phone)
+
+        if not self.phone_pattern.match(phone):
+            raise ValidationError("Invalid phone number format", "phone")
+
+        return phone
+
+    def validate_financial_amount(self, amount: Any) -> Decimal:
+        """Validate financial amount"""
         try:
             if isinstance(amount, str):
-                cleaned_amount = re.sub("[^\\d.-]", "", amount)
-                decimal_amount = Decimal(cleaned_amount)
+                amount = Decimal(amount)
+            elif isinstance(amount, (int, float)):
+                amount = Decimal(str(amount))
+            elif isinstance(amount, Decimal):
+                pass
             else:
-                decimal_amount = Decimal(str(amount))
-        except (InvalidOperation, ValueError):
-            raise ValidationError("Invalid amount format", "amount", "INVALID_FORMAT")
-        if decimal_amount < Decimal(str(min_amount)):
-            raise ValidationError(
-                f"Amount must be at least {min_amount}", "amount", "TOO_SMALL"
-            )
-        if decimal_amount > Decimal(str(max_amount)):
-            raise ValidationError(
-                f"Amount must be less than {max_amount}", "amount", "TOO_LARGE"
-            )
-        if decimal_amount.as_tuple().exponent < -8:
-            raise ValidationError(
-                "Amount has too many decimal places", "amount", "TOO_PRECISE"
-            )
-        return decimal_amount
+                raise ValidationError("Invalid amount format", "amount")
 
-    def validate_blockchain_address(
-        self, address: str, network: str = "ethereum"
-    ) -> str:
-        """
-        Validate blockchain address format
+            if amount < 0:
+                raise ValidationError("Amount cannot be negative", "amount")
 
-        Args:
-            address: Blockchain address to validate
-            network: Blockchain network (ethereum, bitcoin, etc.)
+            if amount > Decimal("999999999999.99"):
+                raise ValidationError("Amount is too large", "amount")
 
-        Returns:
-            Validated address
-
-        Raises:
-            ValidationError: If address is invalid
-        """
-        if not address:
-            raise ValidationError(
-                "Blockchain address is required", "address", "REQUIRED"
-            )
-        address = address.strip()
-        if network.lower() == "ethereum":
-            if not self.PATTERNS["blockchain_address"].match(address):
-                raise ValidationError(
-                    "Invalid Ethereum address format", "address", "INVALID_FORMAT"
-                )
-            if any((c.isupper() for c in address[2:])):
-                if not self._validate_ethereum_checksum(address):
-                    raise ValidationError(
-                        "Invalid Ethereum address checksum",
-                        "address",
-                        "INVALID_CHECKSUM",
-                    )
-        return address.lower()
-
-    def validate_transaction_hash(self, tx_hash: str) -> str:
-        """
-        Validate transaction hash format
-
-        Args:
-            tx_hash: Transaction hash to validate
-
-        Returns:
-            Validated transaction hash
-
-        Raises:
-            ValidationError: If hash is invalid
-        """
-        if not tx_hash:
-            raise ValidationError("Transaction hash is required", "tx_hash", "REQUIRED")
-        tx_hash = tx_hash.strip()
-        if not self.PATTERNS["transaction_hash"].match(tx_hash):
-            raise ValidationError(
-                "Invalid transaction hash format", "tx_hash", "INVALID_FORMAT"
-            )
-        return tx_hash.lower()
-
-    def validate_phone_number(self, phone: str) -> str:
-        """
-        Validate phone number format
-
-        Args:
-            phone: Phone number to validate
-
-        Returns:
-            Validated phone number
-
-        Raises:
-            ValidationError: If phone number is invalid
-        """
-        if not phone:
-            raise ValidationError("Phone number is required", "phone", "REQUIRED")
-        cleaned_phone = re.sub("[^\\d+]", "", phone)
-        if not self.PATTERNS["phone"].match(cleaned_phone):
-            raise ValidationError(
-                "Invalid phone number format", "phone", "INVALID_FORMAT"
-            )
-        return cleaned_phone
-
-    def validate_date_range(
-        self,
-        start_date: Union[str, date, datetime],
-        end_date: Union[str, date, datetime],
-    ) -> Tuple[date, date]:
-        """
-        Validate date range
-
-        Args:
-            start_date: Start date
-            end_date: End date
-
-        Returns:
-            Tuple of validated dates
-
-        Raises:
-            ValidationError: If date range is invalid
-        """
-        if isinstance(start_date, str):
-            try:
-                start_date = datetime.fromisoformat(start_date).date()
-            except ValueError:
-                raise ValidationError(
-                    "Invalid start date format", "start_date", "INVALID_FORMAT"
-                )
-        if isinstance(end_date, str):
-            try:
-                end_date = datetime.fromisoformat(end_date).date()
-            except ValueError:
-                raise ValidationError(
-                    "Invalid end date format", "end_date", "INVALID_FORMAT"
-                )
-        if isinstance(start_date, datetime):
-            start_date = start_date.date()
-        if isinstance(end_date, datetime):
-            end_date = end_date.date()
-        if start_date > end_date:
-            raise ValidationError(
-                "Start date must be before end date", "date_range", "INVALID_RANGE"
-            )
-        if (end_date - start_date).days > 3650:
-            raise ValidationError(
-                "Date range is too large (max 10 years)",
-                "date_range",
-                "RANGE_TOO_LARGE",
-            )
-        return (start_date, end_date)
+            return amount
+        except InvalidOperation:
+            raise ValidationError("Invalid amount format", "amount")
 
     def sanitize_html(self, html_content: str) -> str:
-        """
-        Sanitize HTML content to prevent XSS attacks
-
-        Args:
-            html_content: HTML content to sanitize
-
-        Returns:
-            Sanitized HTML content
-        """
+        """Sanitize HTML content to prevent XSS"""
         if not html_content:
-            return ""
-        sanitized = bleach.clean(
-            html_content,
-            tags=self.ALLOWED_HTML_TAGS,
-            attributes=self.ALLOWED_HTML_ATTRIBUTES,
-            strip=True,
+            return html_content
+
+        allowed_tags = [
+            "p",
+            "br",
+            "strong",
+            "em",
+            "u",
+            "ol",
+            "ul",
+            "li",
+            "h1",
+            "h2",
+            "h3",
+            "h4",
+            "h5",
+            "h6",
+            "blockquote",
+            "code",
+            "pre",
+        ]
+
+        allowed_attributes = {
+            "*": ["class"],
+            "a": ["href", "title"],
+        }
+
+        return bleach.clean(
+            html_content, tags=allowed_tags, attributes=allowed_attributes, strip=True
         )
-        return sanitized
 
-    def validate_json_input(
-        self, json_data: Union[str, dict], max_size: int = 1024 * 1024
-    ) -> dict:
-        """
-        Validate JSON input
+    def check_security_threats(self, input_string: str) -> List[str]:
+        """Check for common security threats in input"""
+        if not input_string:
+            return []
 
-        Args:
-            json_data: JSON data to validate
-            max_size: Maximum size in bytes
-
-        Returns:
-            Validated JSON data
-
-        Raises:
-            ValidationError: If JSON is invalid
-        """
-        if isinstance(json_data, str):
-            if len(json_data.encode("utf-8")) > max_size:
-                raise ValidationError("JSON data is too large", "json", "TOO_LARGE")
-            try:
-                json_data = json.loads(json_data)
-            except json.JSONDecodeError as e:
-                raise ValidationError(
-                    f"Invalid JSON format: {str(e)}", "json", "INVALID_FORMAT"
-                )
-        if not isinstance(json_data, dict):
-            raise ValidationError("JSON data must be an object", "json", "INVALID_TYPE")
-        return json_data
-
-    def check_security_threats(self, input_data: str) -> List[str]:
-        """
-        Check input for common security threats
-
-        Args:
-            input_data: Input data to check
-
-        Returns:
-            List of detected threats
-        """
         threats = []
-        if not input_data:
-            return threats
-        if self.PATTERNS["sql_injection"].search(input_data):
-            threats.append("sql_injection")
-        if self.PATTERNS["xss_basic"].search(input_data):
-            threats.append("xss")
-        if self.PATTERNS["path_traversal"].search(input_data):
-            threats.append("path_traversal")
-        suspicious_extensions = [".exe", ".bat", ".cmd", ".scr", ".pif", ".com"]
-        if any((ext in input_data.lower() for ext in suspicious_extensions)):
-            threats.append("suspicious_file")
+
+        # Check for SQL injection
+        for pattern in self.sql_injection_patterns:
+            if re.search(pattern, input_string, re.IGNORECASE):
+                threats.append("sql_injection")
+                break
+
+        # Check for XSS
+        for pattern in self.xss_patterns:
+            if re.search(pattern, input_string, re.IGNORECASE):
+                threats.append("xss")
+                break
+
+        # Check for command injection
+        for pattern in self.command_injection_patterns:
+            if re.search(pattern, input_string):
+                threats.append("command_injection")
+                break
+
         return threats
 
-    def validate_ip_address(self, ip_address: str) -> str:
-        """
-        Validate IP address format
+    def validate_date_range(self, start_date: str, end_date: str) -> tuple:
+        """Validate date range"""
+        from datetime import datetime
 
-        Args:
-            ip_address: IP address to validate
-
-        Returns:
-            Validated IP address
-
-        Raises:
-            ValidationError: If IP address is invalid
-        """
-        if not ip_address:
-            raise ValidationError("IP address is required", "ip_address", "REQUIRED")
         try:
-            ip_obj = ipaddress.ip_address(ip_address)
-            if current_config.APP_NAME == "production":
-                if ip_obj.is_private or ip_obj.is_reserved or ip_obj.is_loopback:
-                    raise ValidationError(
-                        "Private/reserved IP addresses not allowed",
-                        "ip_address",
-                        "PRIVATE_IP",
-                    )
-            return str(ip_obj)
+            start = datetime.fromisoformat(start_date)
+            end = datetime.fromisoformat(end_date)
+
+            if start > end:
+                raise ValidationError("Start date must be before end date")
+
+            return start, end
         except ValueError:
-            raise ValidationError(
-                "Invalid IP address format", "ip_address", "INVALID_FORMAT"
-            )
+            raise ValidationError("Invalid date format. Use ISO format (YYYY-MM-DD)")
 
-    def validate_url(self, url: str, allowed_schemes: List[str] = None) -> str:
-        """
-        Validate URL format and scheme
+    def validate_pagination(
+        self, page: int, per_page: int, max_per_page: int = 100
+    ) -> tuple:
+        """Validate pagination parameters"""
+        if page < 1:
+            raise ValidationError("Page must be at least 1")
 
-        Args:
-            url: URL to validate
-            allowed_schemes: List of allowed URL schemes
+        if per_page < 1:
+            raise ValidationError("Per page must be at least 1")
 
-        Returns:
-            Validated URL
+        if per_page > max_per_page:
+            per_page = max_per_page
 
-        Raises:
-            ValidationError: If URL is invalid
-        """
-        if not url:
-            raise ValidationError("URL is required", "url", "REQUIRED")
-        if allowed_schemes is None:
-            allowed_schemes = ["http", "https"]
-        try:
-            parsed = urlparse(url)
-            if not parsed.scheme:
-                raise ValidationError(
-                    "URL must include scheme (http/https)", "url", "MISSING_SCHEME"
-                )
-            if parsed.scheme not in allowed_schemes:
-                raise ValidationError(
-                    f"URL scheme must be one of: {', '.join(allowed_schemes)}",
-                    "url",
-                    "INVALID_SCHEME",
-                )
-            if not parsed.netloc:
-                raise ValidationError(
-                    "URL must include domain", "url", "MISSING_DOMAIN"
-                )
-            return url
-        except Exception as e:
-            raise ValidationError(
-                f"Invalid URL format: {str(e)}", "url", "INVALID_FORMAT"
-            )
-
-    def _validate_ethereum_checksum(self, address: str) -> bool:
-        """
-        Validate Ethereum address checksum (EIP-55)
-
-        Args:
-            address: Ethereum address with checksum
-
-        Returns:
-            True if checksum is valid
-        """
-        address = address[2:]
-        address_hash = hashlib.sha3_256(address.lower().encode()).hexdigest()
-        for i, char in enumerate(address):
-            if char.isalpha():
-                if int(address_hash[i], 16) >= 8:
-                    if char.islower():
-                        return False
-                elif char.isupper():
-                    return False
-        return True
-
-    def validate_request_size(self, max_size: int = 10 * 1024 * 1024) -> Any:
-        """
-        Validate request content length
-
-        Args:
-            max_size: Maximum allowed request size in bytes
-
-        Raises:
-            ValidationError: If request is too large
-        """
-        if request and request.content_length:
-            if request.content_length > max_size:
-                raise ValidationError(
-                    f"Request too large. Maximum size: {max_size} bytes",
-                    "request_size",
-                    "TOO_LARGE",
-                )
-
-    def validate_file_upload(
-        self,
-        file_data: bytes,
-        filename: str,
-        allowed_extensions: List[str] = None,
-        max_size: int = 5 * 1024 * 1024,
-    ) -> bool:
-        """
-        Validate file upload
-
-        Args:
-            file_data: File content
-            filename: Original filename
-            allowed_extensions: List of allowed file extensions
-            max_size: Maximum file size in bytes
-
-        Returns:
-            True if file is valid
-
-        Raises:
-            ValidationError: If file is invalid
-        """
-        if not file_data:
-            raise ValidationError("File data is required", "file", "REQUIRED")
-        if len(file_data) > max_size:
-            raise ValidationError(
-                f"File too large. Maximum size: {max_size} bytes", "file", "TOO_LARGE"
-            )
-        if allowed_extensions:
-            file_ext = filename.lower().split(".")[-1] if "." in filename else ""
-            if file_ext not in allowed_extensions:
-                raise ValidationError(
-                    f"File type not allowed. Allowed types: {', '.join(allowed_extensions)}",
-                    "file",
-                    "INVALID_TYPE",
-                )
-        malicious_signatures = [b"MZ", b"PK\x03\x04"]
-        for signature in malicious_signatures:
-            if file_data.startswith(signature):
-                raise ValidationError("File type not allowed", "file", "MALICIOUS_FILE")
-        return True
+        return page, per_page
 
 
+# Global instance
 security_validator = SecurityValidator()

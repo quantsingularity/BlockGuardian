@@ -10,6 +10,7 @@ from enum import Enum
 from typing import Any, Dict, Optional
 from sqlalchemy import (
     Boolean,
+    CheckConstraint,
     Column,
     DateTime,
     ForeignKey,
@@ -19,7 +20,7 @@ from sqlalchemy import (
     String,
     Text,
 )
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy import JSON, UUID
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 from .base import BaseModel
@@ -107,7 +108,7 @@ class Transaction(BaseModel):
     reportable = Column(Boolean, default=False)
     reported_date = Column(DateTime(timezone=True))
     reporting_jurisdiction = Column(String(10))
-    metadata = Column(JSONB)
+    transaction_metadata = Column(JSON)
     notes = Column(Text)
     tags = Column(String(500))
     created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"))
@@ -188,11 +189,11 @@ class Transaction(BaseModel):
             self.execution_date = datetime.now(timezone.utc)
         elif new_status == TransactionStatus.SETTLED:
             self.settlement_date = datetime.now(timezone.utc)
-        if not self.metadata:
-            self.metadata = {}
-        if "status_history" not in self.metadata:
-            self.metadata["status_history"] = []
-        self.metadata["status_history"].append(
+        if not self.transaction_metadata:
+            self.transaction_metadata = {}
+        if "status_history" not in self.transaction_metadata:
+            self.transaction_metadata["status_history"] = []
+        self.transaction_metadata["status_history"].append(
             {
                 "from_status": old_status,
                 "to_status": new_status.value,
@@ -203,11 +204,11 @@ class Transaction(BaseModel):
 
     def add_compliance_note(self, note: str, user_id: Optional[str] = None) -> Any:
         """Add compliance note to transaction"""
-        if not self.metadata:
-            self.metadata = {}
-        if "compliance_notes" not in self.metadata:
-            self.metadata["compliance_notes"] = []
-        self.metadata["compliance_notes"].append(
+        if not self.transaction_metadata:
+            self.transaction_metadata = {}
+        if "compliance_notes" not in self.transaction_metadata:
+            self.transaction_metadata["compliance_notes"] = []
+        self.transaction_metadata["compliance_notes"].append(
             {
                 "note": note,
                 "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -255,7 +256,7 @@ class Transaction(BaseModel):
                 self.reported_date.isoformat() if self.reported_date else None
             ),
             "reporting_jurisdiction": self.reporting_jurisdiction,
-            "metadata": self.metadata,
+            "metadata": self.transaction_metadata,
             "notes": self.notes,
             "tags": self.tags,
             "created_at": self.created_at.isoformat(),
@@ -280,7 +281,7 @@ class TransactionAudit(BaseModel):
     user_agent = Column(String(500))
     session_id = Column(String(100))
     reason = Column(Text)
-    metadata = Column(JSONB)
+    transaction_metadata = Column(JSON)
     transaction = relationship("Transaction")
     user = relationship("User")
 
@@ -298,7 +299,7 @@ class TransactionAudit(BaseModel):
             "user_agent": self.user_agent,
             "session_id": self.session_id,
             "reason": self.reason,
-            "metadata": self.metadata,
+            "metadata": self.transaction_metadata,
             "created_at": self.created_at.isoformat(),
         }
 
@@ -324,7 +325,7 @@ class SuspiciousActivity(BaseModel):
     investigated_by = Column(UUID(as_uuid=True), ForeignKey("users.id"))
     investigation_notes = Column(Text)
     resolution = Column(Text)
-    metadata = Column(JSONB)
+    transaction_metadata = Column(JSON)
     transaction = relationship("Transaction")
     user = relationship("User", foreign_keys=[user_id])
     investigator = relationship("User", foreign_keys=[investigated_by])
@@ -359,7 +360,7 @@ class SuspiciousActivity(BaseModel):
             ),
             "investigation_notes": self.investigation_notes,
             "resolution": self.resolution,
-            "metadata": self.metadata,
+            "metadata": self.transaction_metadata,
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }

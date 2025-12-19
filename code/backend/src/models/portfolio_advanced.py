@@ -20,7 +20,7 @@ from sqlalchemy import (
     String,
     Text,
 )
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy import JSON, UUID
 from sqlalchemy.orm import relationship
 from .base import BaseModel
 
@@ -134,7 +134,7 @@ class Portfolio(BaseModel):
     last_rebalance_date = Column(DateTime(timezone=True))
     next_rebalance_date = Column(DateTime(timezone=True))
     auto_rebalance = Column(Boolean, default=False)
-    target_allocation = Column(JSONB)
+    target_allocation = Column(JSON)
     is_active = Column(Boolean, default=True, nullable=False)
     is_taxable = Column(Boolean, default=True, nullable=False)
     allow_fractional_shares = Column(Boolean, default=True)
@@ -144,7 +144,7 @@ class Portfolio(BaseModel):
     requires_accredited_investor = Column(Boolean, default=False)
     suitability_score = Column(Integer)
     last_suitability_review = Column(DateTime(timezone=True))
-    metadata = Column(JSONB)
+    metadata = Column(JSON)
     tags = Column(String(500))
     notes = Column(Text)
     user = relationship("User", foreign_keys=[user_id], back_populates="portfolios")
@@ -469,7 +469,7 @@ class Asset(BaseModel):
     )
     data_source = Column(String(50))
     data_quality_score = Column(Integer, default=100)
-    metadata = Column(JSONB)
+    metadata = Column(JSON)
     description = Column(Text)
     holdings = relationship("PortfolioHolding", back_populates="asset")
     price_history = relationship(
@@ -552,11 +552,11 @@ class PortfolioHolding(BaseModel):
     last_transaction_date = Column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
-    tax_lots = Column(JSONB)
+    tax_lots = Column(JSON)
     position_beta = Column(Numeric(10, 4))
     position_var = Column(Numeric(20, 2))
     is_active = Column(Boolean, default=True, nullable=False)
-    metadata = Column(JSONB)
+    metadata = Column(JSON)
     notes = Column(Text)
     portfolio = relationship("Portfolio", back_populates="holdings")
     asset = relationship("Asset", back_populates="holdings")
@@ -695,13 +695,13 @@ class PortfolioSnapshot(BaseModel):
     invested_amount = Column(Numeric(20, 2), nullable=False)
     unrealized_pnl = Column(Numeric(20, 2))
     realized_pnl = Column(Numeric(20, 2))
-    asset_allocation = Column(JSONB)
-    sector_allocation = Column(JSONB)
-    country_allocation = Column(JSONB)
-    performance_metrics = Column(JSONB)
-    risk_violations = Column(JSONB)
+    asset_allocation = Column(JSON)
+    sector_allocation = Column(JSON)
+    country_allocation = Column(JSON)
+    performance_metrics = Column(JSON)
+    risk_violations = Column(JSON)
     risk_score = Column(Integer)
-    market_conditions = Column(JSONB)
+    market_conditions = Column(JSON)
     portfolio = relationship("Portfolio", back_populates="snapshots")
     __table_args__ = (
         Index("idx_snapshot_portfolio_date", "portfolio_id", "snapshot_date"),

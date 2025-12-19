@@ -10,15 +10,26 @@ import logging
 import os
 import secrets
 from datetime import datetime, timedelta, timezone
+from enum import Enum
+from functools import wraps
 from io import BytesIO
 from typing import Any, Dict, List, Optional, Tuple
 import pyotp
 import qrcode
 import redis
-from flask_jwt_extended import JWTManager, create_access_token, create_refresh_token
+from flask import g, jsonify
+from flask_jwt_extended import (
+    JWTManager,
+    create_access_token,
+    create_refresh_token,
+    decode_token,
+    get_jwt,
+    get_jwt_identity,
+    verify_jwt_in_request,
+)
 from werkzeug.security import check_password_hash, generate_password_hash
 from ..models.base import db_manager
-from ..models.user import User
+from ..models.user import User, UserSession
 
 
 class SecurityLevel:
@@ -36,6 +47,20 @@ class AuthenticationError(Exception):
 
 class SecurityViolationError(Exception):
     """Custom security violation exception"""
+
+
+class Permission(Enum):
+    """Permission enumeration for role-based access control"""
+
+    READ_PORTFOLIO = "read_portfolio"
+    CREATE_PORTFOLIO = "create_portfolio"
+    UPDATE_PORTFOLIO = "update_portfolio"
+    DELETE_PORTFOLIO = "delete_portfolio"
+    EXECUTE_TRADE = "execute_trade"
+    READ_MARKET_DATA = "read_market_data"
+    MANAGE_USERS = "manage_users"
+    VIEW_AUDIT_LOGS = "view_audit_logs"
+    SYSTEM_ADMIN = "system_admin"
 
 
 class EnhancedAuthManager:
@@ -209,8 +234,8 @@ class EnhancedAuthManager:
     ) -> int:
         """Calculate login risk score (0-100)"""
         risk_score = 0
-        if user.metadata and "login_history" in user.metadata:
-            login_history = user.metadata["login_history"]
+        if user.user_metadata and "login_history" in user.user_metadata:
+            login_history = user.user_metadata["login_history"]
             recent_ips = [entry.get("ip_address") for entry in login_history[-5:]]
             if ip_address and ip_address not in recent_ips:
                 risk_score += 30
@@ -438,10 +463,14 @@ class EnhancedAuthManager:
                 }
             )
         ip_address = request_data.get("ip_address")
-        if ip_address and user.metadata and ("login_history" in user.metadata):
+        if (
+            ip_address
+            and user.user_metadata
+            and ("login_history" in user.user_metadata)
+        ):
             recent_ips = [
                 entry.get("ip_address")
-                for entry in user.metadata["login_history"][-10:]
+                for entry in user.user_metadata["login_history"][-10:]
             ]
             unique_ips = set(filter(None, recent_ips))
             if len(unique_ips) > 5:
@@ -452,10 +481,10 @@ class EnhancedAuthManager:
                         "message": f"User accessed from {len(unique_ips)} different IP addresses recently",
                     }
                 )
-        if user.metadata and "login_history" in user.metadata:
+        if user.user_metadata and "login_history" in user.user_metadata:
             recent_attempts = [
                 entry
-                for entry in user.metadata["login_history"][-5:]
+                for entry in user.user_metadata["login_history"][-5:]
                 if datetime.fromisoformat(entry["timestamp"].replace("Z", "+00:00"))
                 > datetime.now(timezone.utc) - timedelta(minutes=5)
             ]
@@ -469,5 +498,127 @@ class EnhancedAuthManager:
                 )
         return violations
 
+    def generate_tokens(
+        self, user_id: Any, role: str, permissions: List[str]
+    ) -> Dict[str, Any]:
+        """Generate access and refresh tokens for a user"""
+        additional_claims = {
+            "role": role,
+            "permissions": permissions,
+        }
+
+        access_token = create_access_token(
+            identity=str(user_id), additional_claims=additional_claims
+        )
+        refresh_token = create_refresh_token(
+            identity=str(user_id), additional_claims=additional_claims
+        )
+
+        return {
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "token_type": "Bearer",
+        }
+
+    def get_user_permissions(self, role: Any) -> List[str]:
+        """Get permissions for a role"""
+        from ..models.user import UserRole
+
+        role_permissions = {
+            UserRole.USER: [
+                Permission.READ_PORTFOLIO.value,
+                Permission.CREATE_PORTFOLIO.value,
+                Permission.UPDATE_PORTFOLIO.value,
+                Permission.EXECUTE_TRADE.value,
+                Permission.READ_MARKET_DATA.value,
+            ],
+            UserRole.PREMIUM: [
+                Permission.READ_PORTFOLIO.value,
+                Permission.CREATE_PORTFOLIO.value,
+                Permission.UPDATE_PORTFOLIO.value,
+                Permission.DELETE_PORTFOLIO.value,
+                Permission.EXECUTE_TRADE.value,
+                Permission.READ_MARKET_DATA.value,
+            ],
+            UserRole.ADMIN: [
+                Permission.READ_PORTFOLIO.value,
+                Permission.CREATE_PORTFOLIO.value,
+                Permission.UPDATE_PORTFOLIO.value,
+                Permission.DELETE_PORTFOLIO.value,
+                Permission.EXECUTE_TRADE.value,
+                Permission.READ_MARKET_DATA.value,
+                Permission.MANAGE_USERS.value,
+                Permission.VIEW_AUDIT_LOGS.value,
+            ],
+            UserRole.SUPER_ADMIN: [p.value for p in Permission],
+        }
+
+        return role_permissions.get(role, [])
+
+    def refresh_access_token(self, refresh_token: str) -> Optional[Dict[str, Any]]:
+        """Refresh access token using refresh token"""
+        try:
+            decoded = decode_token(refresh_token)
+            user_id = decoded["sub"]
+            role = decoded.get("role", "user")
+            permissions = decoded.get("permissions", [])
+
+            return self.generate_tokens(user_id, role, permissions)
+        except Exception as e:
+            self.logger.error(f"Token refresh failed: {e}")
+            return None
+
+    def verify_token(self, token: str) -> Optional[Dict[str, Any]]:
+        """Verify token and return payload"""
+        try:
+            decoded = decode_token(token)
+            return decoded
+        except Exception as e:
+            self.logger.error(f"Token verification failed: {e}")
+            return None
+
 
 enhanced_auth_manager = EnhancedAuthManager()
+auth_manager = enhanced_auth_manager
+
+
+def jwt_required(fn):
+    """Decorator to require JWT authentication"""
+
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        try:
+            verify_jwt_in_request()
+            g.current_user_id = get_jwt_identity()
+            g.jwt_claims = get_jwt()
+            return fn(*args, **kwargs)
+        except Exception as e:
+            return jsonify({"error": "Authentication required", "details": str(e)}), 401
+
+    return wrapper
+
+
+def permission_required(permission: Permission):
+    """Decorator to require specific permission"""
+
+    def decorator(fn):
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            try:
+                verify_jwt_in_request()
+                claims = get_jwt()
+                permissions = claims.get("permissions", [])
+
+                if permission.value not in permissions:
+                    return jsonify({"error": "Insufficient permissions"}), 403
+
+                return fn(*args, **kwargs)
+            except Exception as e:
+                return (
+                    jsonify({"error": "Authorization failed", "details": str(e)}),
+                    403,
+                )
+
+        return wrapper
+
+    return decorator

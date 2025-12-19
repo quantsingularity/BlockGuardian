@@ -8,10 +8,17 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 from sqlalchemy import Column, DateTime, Enum as SQLEnum, Integer, String, Text, Index
-from sqlalchemy.dialects.postgresql import JSONB
-from ..models.base import db_manager
+from sqlalchemy import JSON
+from sqlalchemy.ext.declarative import declarative_base
 
 logger = logging.getLogger(__name__)
+
+
+# Lazy import to avoid circular dependency
+def get_db_manager():
+    from ..models.base import db_manager
+
+    return db_manager
 
 
 class AuditEventType(Enum):
@@ -23,6 +30,11 @@ class AuditEventType(Enum):
     USER_UPDATE = "user_update"
     USER_DELETE = "user_delete"
     PASSWORD_CHANGE = "password_change"
+    LOGIN_SUCCESS = "login_success"
+    LOGIN_FAILURE = "login_failure"
+    LOGOUT = "logout"
+    MFA_ENABLED = "mfa_enabled"
+    MFA_DISABLED = "mfa_disabled"
     KYC_SUBMIT = "kyc_submit"
     KYC_APPROVE = "kyc_approve"
     KYC_REJECT = "kyc_reject"
@@ -32,6 +44,9 @@ class AuditEventType(Enum):
     ORDER_CREATE = "order_create"
     ORDER_CANCEL = "order_cancel"
     TRADE_EXECUTE = "trade_execute"
+    TRADE_EXECUTED = "trade_executed"
+    PORTFOLIO_CREATED = "portfolio_created"
+    PORTFOLIO_UPDATED = "portfolio_updated"
     CONFIG_CHANGE = "config_change"
     POLICY_UPDATE = "policy_update"
     SYSTEM_START = "system_start"
@@ -41,7 +56,11 @@ class AuditEventType(Enum):
     SECURITY_ALERT = "security_alert"
 
 
-class AuditLog(db_manager.Base):
+# Create a temporary base for AuditLog
+AuditLogBase = declarative_base()
+
+
+class AuditLog(AuditLogBase):
     """SQLAlchemy model for the Audit Log"""
 
     __tablename__ = "audit_logs"
@@ -55,7 +74,7 @@ class AuditLog(db_manager.Base):
     ip_address = Column(String(45))
     resource_type = Column(String(255), index=True)
     resource_id = Column(String(255), index=True)
-    details = Column(JSONB)
+    details = Column(JSON)
     message = Column(Text, nullable=False)
     success = Column(Integer, default=1)
     __table_args__ = (
@@ -75,12 +94,20 @@ class AuditLogger:
 
     def __init__(self) -> Any:
         self.logger = logging.getLogger(__name__)
+        self.app = None
+        self.AuditEventType = AuditEventType
+
+    def init_app(self, app: Any) -> None:
+        """Initialize with Flask app"""
+        self.app = app
         self._ensure_table_exists()
 
     def _ensure_table_exists(self) -> Any:
         """Creates the AuditLog table if it does not exist."""
         try:
-            db_manager.Base.metadata.create_all(db_manager.engine)
+            db_manager = get_db_manager()
+            if db_manager.engine:
+                AuditLogBase.metadata.create_all(db_manager.engine)
         except Exception as e:
             self.logger.error(f"Failed to ensure AuditLog table exists: {e}")
 
@@ -126,6 +153,7 @@ class AuditLogger:
             message=message,
             success=1 if success else 0,
         )
+        db_manager = get_db_manager()
         session = db_manager.get_session()
         try:
             session.add(log_entry)
@@ -164,6 +192,7 @@ class AuditLogger:
         Returns:
             A list of AuditLog objects.
         """
+        db_manager = get_db_manager()
         session = db_manager.get_session()
         try:
             query = session.query(AuditLog)
@@ -194,6 +223,7 @@ class AuditLogger:
         (Note: Full-text search capabilities depend on the underlying database,
         this implementation uses simple LIKE for portability).
         """
+        db_manager = get_db_manager()
         session = db_manager.get_session()
         try:
             search_pattern = f"%{search_term}%"
@@ -210,6 +240,83 @@ class AuditLogger:
             return []
         finally:
             session.close()
+
+    def log_authentication_event(
+        self,
+        event_type: AuditEventType,
+        user_id: Optional[int] = None,
+        success: bool = True,
+        details: Optional[Dict[str, Any]] = None,
+    ) -> Optional[AuditLog]:
+        """Log authentication event"""
+        from flask import request as flask_request
+
+        return self.log_event(
+            event_type=event_type,
+            user_id=user_id,
+            ip_address=flask_request.remote_addr if flask_request else None,
+            details=details,
+            message=f"Authentication event: {event_type.value}",
+            success=success,
+        )
+
+    def log_security_alert(
+        self,
+        alert_type: str,
+        user_id: Optional[int] = None,
+        details: Optional[Dict[str, Any]] = None,
+    ) -> Optional[AuditLog]:
+        """Log security alert"""
+        from flask import request as flask_request
+
+        return self.log_event(
+            event_type=AuditEventType.SECURITY_ALERT,
+            user_id=user_id,
+            ip_address=flask_request.remote_addr if flask_request else None,
+            resource_type="security",
+            details={"alert_type": alert_type, **(details or {})},
+            message=f"Security alert: {alert_type}",
+            success=False,
+        )
+
+    def log_data_access(
+        self,
+        action: str,
+        resource: str,
+        user_id: Optional[int] = None,
+        details: Optional[Dict[str, Any]] = None,
+    ) -> Optional[AuditLog]:
+        """Log data access event"""
+        from flask import request as flask_request
+
+        return self.log_event(
+            event_type=AuditEventType.DATA_ACCESS,
+            user_id=user_id,
+            ip_address=flask_request.remote_addr if flask_request else None,
+            resource_type=resource,
+            details={"action": action, **(details or {})},
+            message=f"Data access: {action} on {resource}",
+            success=True,
+        )
+
+    def log_financial_event(
+        self,
+        event_type: AuditEventType,
+        user_id: Optional[int] = None,
+        details: Optional[Dict[str, Any]] = None,
+    ) -> Optional[AuditLog]:
+        """Log financial event"""
+        from flask import request as flask_request
+
+        return self.log_event(
+            event_type=event_type,
+            user_id=user_id,
+            ip_address=flask_request.remote_addr if flask_request else None,
+            resource_type="financial",
+            details=details,
+            message=f"Financial event: {event_type.value}",
+            success=True,
+        )
 
 
 audit_logger = AuditLogger()

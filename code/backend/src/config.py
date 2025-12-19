@@ -33,11 +33,11 @@ class SecurityConfig:
     jwt_secret_key: str
     jwt_access_token_expires: timedelta
     jwt_refresh_token_expires: timedelta
+    encryption_key: bytes
     password_hash_rounds: int = 12
     max_login_attempts: int = 5
     lockout_duration: timedelta = timedelta(minutes=30)
     session_timeout: timedelta = timedelta(hours=8)
-    encryption_key: bytes
 
 
 @dataclass

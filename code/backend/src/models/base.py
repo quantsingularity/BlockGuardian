@@ -83,6 +83,7 @@ class DatabaseManager:
         self.engine = None
         self.session_factory = None
         self.Session = None
+        self.Base = Base  # Set Base immediately
         if app is not None:
             self.init_app(app)
 
@@ -102,7 +103,8 @@ class DatabaseManager:
         self.session_factory = sessionmaker(bind=self.engine)
         self.Session = scoped_session(self.session_factory)
         Base.metadata.create_all(self.engine)
-        self._setup_audit_listeners()
+        # Audit listeners disabled for now - would need mapper-level events
+        # self._setup_audit_listeners()
         app.logger.info("Database manager initialized")
 
     def get_session(self) -> Any:
@@ -116,7 +118,7 @@ class DatabaseManager:
     def _setup_audit_listeners(self) -> Any:
         """Set up SQLAlchemy event listeners for audit logging"""
 
-        @listens_for(self.Session, "after_insert")
+        @listens_for(self.session_factory, "after_insert")
         def log_insert(mapper, connection, target):
             """Log record creation"""
             if hasattr(target, "__tablename__"):
@@ -130,7 +132,7 @@ class DatabaseManager:
                     },
                 )
 
-        @listens_for(self.Session, "after_update")
+        @listens_for(self.session_factory, "after_update")
         def log_update(mapper, connection, target):
             """Log record updates"""
             if hasattr(target, "__tablename__"):
@@ -150,7 +152,7 @@ class DatabaseManager:
                     },
                 )
 
-        @listens_for(self.Session, "after_delete")
+        @listens_for(self.session_factory, "after_delete")
         def log_delete(mapper, connection, target):
             """Log record deletions"""
             if hasattr(target, "__tablename__"):

@@ -6,6 +6,7 @@ Implements field-level encryption, key rotation, and secure data handling
 import base64
 import hashlib
 import json
+import logging
 import os
 from datetime import datetime
 from typing import Any, Dict, Optional, Union
@@ -13,6 +14,8 @@ from cryptography.fernet import Fernet, MultiFernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from src.config import current_config
+
+logger = logging.getLogger(__name__)
 
 
 class EncryptionManager:
@@ -80,7 +83,7 @@ class EncryptionManager:
             except json.JSONDecodeError:
                 return data_str
         except Exception as e:
-            current_app.logger.error(f"Decryption failed: {type(e).__name__}")
+            logger.error(f"Decryption failed: {type(e).__name__}")
             return None
 
     def encrypt_pii(self, pii_data: Dict[str, Any]) -> Dict[str, str]:
@@ -247,7 +250,7 @@ class EncryptionManager:
             private_key = password_fernet.decrypt(encrypted_private_key)
             return private_key.decode()
         except Exception as e:
-            current_app.logger.error(
+            logger.error(
                 f"Failed to decrypt blockchain private key: {type(e).__name__}"
             )
             return None
@@ -275,7 +278,7 @@ class EncryptionManager:
             self.fernet = new_fernet
             return True
         except Exception as e:
-            current_app.logger.error(f"Key rotation failed: {e}")
+            logger.error(f"Key rotation failed: {e}")
             return False
 
 

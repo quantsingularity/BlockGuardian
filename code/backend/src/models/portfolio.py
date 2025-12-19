@@ -378,7 +378,7 @@ class Transaction(Base, AuditMixin, EncryptedMixin, TimestampMixin):
     settled_at = Column(DateTime)
     confirmation_number = Column(String(255))
     notes = Column(Text)
-    metadata = Column(Text)
+    transaction_metadata = Column(Text)
     user = relationship("User", backref="transactions")
     portfolio = relationship("Portfolio", back_populates="transactions")
     asset = relationship("Asset", backref="transactions")

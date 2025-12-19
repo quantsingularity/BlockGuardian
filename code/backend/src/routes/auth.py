@@ -4,11 +4,12 @@ Implements secure authentication, registration, and session management
 """
 
 import json
+from typing import Any
 from flask import Blueprint, g, jsonify, request
 from src.models.base import db_manager
 from src.models.user import User, UserStatus
-from src.security.audit import audit_logger
-from src.security.auth import AuditEventType, auth_manager, jwt_required
+from src.security.audit import audit_logger, AuditEventType
+from src.security.auth import auth_manager, jwt_required
 from src.security.rate_limiting import RateLimitScope, rate_limit
 from src.security.validation import ValidationError, security_validator
 

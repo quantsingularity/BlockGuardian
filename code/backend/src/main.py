@@ -7,6 +7,7 @@ import logging
 import os
 import sys
 from datetime import datetime
+from typing import Any
 import redis
 from flask import Flask, g, jsonify, request, send_from_directory
 from flask_cors import CORS
@@ -120,6 +121,8 @@ def create_app(config_name: Any = None) -> Any:
 
 def setup_logging(app: Any) -> Any:
     """Configure application logging"""
+    import logging.handlers as log_handlers
+
     if app.config.get("DEBUG"):
         log_level = logging.DEBUG
     else:
@@ -131,10 +134,8 @@ def setup_logging(app: Any) -> Any:
     )
     app.logger.setLevel(log_level)
     if not app.config.get("DEBUG"):
-        import logging.handlers
-
         os.makedirs("logs", exist_ok=True)
-        file_handler = logging.handlers.RotatingFileHandler(
+        file_handler = log_handlers.RotatingFileHandler(
             "logs/blockguardian.log", maxBytes=10485760, backupCount=10
         )
         file_handler.setLevel(logging.INFO)

@@ -60,7 +60,7 @@ class AuditEventType(Enum):
 AuditLogBase = declarative_base()
 
 
-class AuditLog(AuditLogBase):
+class AuditLog(AuditLogBase):  # type: ignore[misc]
     """SQLAlchemy model for the Audit Log"""
 
     __tablename__ = "audit_logs"
@@ -92,7 +92,7 @@ class AuditLogger:
     Ensures logs are immutable and stored securely in the database.
     """
 
-    def __init__(self) -> Any:
+    def __init__(self) -> None:
         self.logger = logging.getLogger(__name__)
         self.app = None
         self.AuditEventType = AuditEventType

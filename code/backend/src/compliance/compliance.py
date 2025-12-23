@@ -81,7 +81,7 @@ class RegulatoryRequirement:
 class EnhancedComplianceManager:
     """Enhanced compliance manager for financial services"""
 
-    def __init__(self) -> Any:
+    def __init__(self) -> None:
         self.logger = logging.getLogger(__name__)
         self.kyc_thresholds = {
             "basic": Decimal("1000.00"),

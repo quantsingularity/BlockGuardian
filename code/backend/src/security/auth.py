@@ -66,7 +66,7 @@ class Permission(Enum):
 class EnhancedAuthManager:
     """Enhanced authentication manager with financial-grade security"""
 
-    def __init__(self) -> Any:
+    def __init__(self) -> None:
         self.jwt_manager = JWTManager()
         self.redis_client = None
         self.logger = logging.getLogger(__name__)
@@ -177,7 +177,11 @@ class EnhancedAuthManager:
         return (len(errors) == 0, errors)
 
     def authenticate_user(
-        self, email: str, password: str, ip_address: str = None, user_agent: str = None
+        self,
+        email: str,
+        password: str,
+        ip_address: Optional[str] = None,
+        user_agent: Optional[str] = None,
     ) -> Tuple[Optional[User], Dict[str, Any]]:
         """Authenticate user with comprehensive security checks"""
         session = db_manager.get_session()

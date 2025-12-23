@@ -36,7 +36,7 @@ class RateLimitScope(Enum):
 class RateLimiter:
     """Enterprise rate limiting system"""
 
-    def __init__(self, app: Any = None) -> Any:
+    def __init__(self, app: Optional[Any] = None) -> None:
         self.app = app
         self.redis_client = None
         self.default_limits = {

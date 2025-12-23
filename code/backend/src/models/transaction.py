@@ -129,7 +129,7 @@ class Transaction(BaseModel):
         CheckConstraint("total_amount >= 0", name="check_positive_total_amount"),
     )
 
-    def __init__(self, **kwargs) -> Any:
+    def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         if not self.transaction_id:
             self.transaction_id = self.generate_transaction_id()
@@ -330,7 +330,7 @@ class SuspiciousActivity(BaseModel):
     user = relationship("User", foreign_keys=[user_id])
     investigator = relationship("User", foreign_keys=[investigated_by])
 
-    def __init__(self, **kwargs) -> Any:
+    def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         if not self.sar_number:
             self.sar_number = self.generate_sar_number()

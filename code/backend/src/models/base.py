@@ -4,7 +4,7 @@ Implements enterprise-grade database patterns with audit trails and encryption
 """
 
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any, Dict, List, Optional
 from flask import g, has_request_context
 from sqlalchemy import Boolean, Column, DateTime, Integer, Text, create_engine
 from sqlalchemy.event import listens_for
@@ -78,7 +78,7 @@ Base = declarative_base(cls=BaseModel)
 class DatabaseManager:
     """Enterprise database manager with connection pooling and monitoring"""
 
-    def __init__(self, app: Any = None) -> Any:
+    def __init__(self, app: Optional[Any] = None) -> None:
         self.app = app
         self.engine = None
         self.session_factory = None
@@ -211,7 +211,7 @@ class AuditMixin:
 class EncryptedMixin:
     """Mixin for models with encrypted fields"""
 
-    _encrypted_fields = []
+    _encrypted_fields: List[str] = []
 
     def encrypt_field(
         self, field_name: str, value: str, field_type: str = "general"

@@ -13,7 +13,7 @@ import bleach
 class ValidationError(Exception):
     """Custom validation exception"""
 
-    def __init__(self, message: str, field: str = None):
+    def __init__(self, message: str, field: Optional[str] = None):
         self.message = message
         self.field = field
         super().__init__(self.message)

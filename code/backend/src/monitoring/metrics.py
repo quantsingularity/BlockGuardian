@@ -206,9 +206,9 @@ class AlertManager:
 
     def __init__(self, metrics_collector: MetricsCollector) -> Any:
         self.metrics = metrics_collector
-        self.alert_rules = []
+        self.alert_rules: List[Dict[str, Any]] = []
         self.alert_history = deque(maxlen=1000)
-        self.alert_cooldowns = {}
+        self.alert_cooldowns: Dict[str, float] = {}
         self._setup_default_alerts()
 
     def _setup_default_alerts(self) -> Any:
@@ -341,7 +341,7 @@ class HealthChecker:
 
     def __init__(self, metrics_collector: MetricsCollector) -> Any:
         self.metrics = metrics_collector
-        self.health_checks = {}
+        self.health_checks: Dict[str, Callable] = {}
         self._register_default_checks()
 
     def _register_default_checks(self) -> Any:

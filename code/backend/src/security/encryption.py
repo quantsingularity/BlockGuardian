@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 class EncryptionManager:
     """Enterprise encryption manager with key rotation and multiple encryption methods"""
 
-    def __init__(self) -> Any:
+    def __init__(self) -> None:
         self.primary_key = current_config.security.encryption_key
         self.fernet = Fernet(self.primary_key)
         self.multi_fernet = None

@@ -131,7 +131,7 @@ class User(db_manager.Base):
     portfolios = relationship("Portfolio", back_populates="owner")
 
     def __init__(
-        self, username: str, email: str, password: str = None, **kwargs
+        self, username: str, email: str, password: Optional[str] = None, **kwargs
     ) -> None:
         self.username = username
         self.email = email
@@ -195,7 +195,10 @@ class User(db_manager.Base):
         self.last_login_at = datetime.now(timezone.utc)
 
     def record_login_attempt(
-        self, success: bool, ip_address: str = None, user_agent: str = None
+        self,
+        success: bool,
+        ip_address: Optional[str] = None,
+        user_agent: Optional[str] = None,
     ) -> None:
         """Record login attempt in user_metadata"""
         if not self.user_metadata:

@@ -333,7 +333,7 @@ config_map = {
 }
 
 
-def get_config(config_name: str = None) -> Config:
+def get_config(config_name: Optional[str] = None) -> Config:
     """Get configuration instance based on environment"""
     if config_name is None:
         config_name = os.environ.get("FLASK_ENV", "development")

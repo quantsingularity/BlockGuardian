@@ -7,6 +7,7 @@ import csv
 import enum
 import io
 from datetime import datetime, timedelta
+from enum import Enum
 from typing import Any, Dict, List, Optional
 from sqlalchemy import (
     JSON,
@@ -424,7 +425,7 @@ class ComplianceReport(Base, AuditMixin, TimestampMixin):
 
     def _count_by_field(self, records: List[Dict], field: str) -> Dict[str, int]:
         """Count records by field value"""
-        counts = {}
+        counts: Dict[str, int] = {}
         for record in records:
             value = record.get(field, "unknown")
             counts[value] = counts.get(value, 0) + 1
@@ -529,7 +530,7 @@ class ComplianceManager:
     """Main compliance management system"""
 
     def __init__(self) -> Any:
-        self.violation_rules = []
+        self.violation_rules: List[Dict[str, Any]] = []
         self.monitoring_thresholds = {
             "large_transaction": 10000,
             "daily_transaction_limit": 50000,
@@ -753,7 +754,7 @@ class ComplianceManager:
         self, violations: List[ComplianceViolation]
     ) -> Dict[str, int]:
         """Count violations by type"""
-        counts = {}
+        counts: Dict[str, int] = {}
         for violation in violations:
             violation_type = violation.violation_type.value
             counts[violation_type] = counts.get(violation_type, 0) + 1

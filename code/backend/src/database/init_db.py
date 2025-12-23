@@ -4,6 +4,7 @@ Sets up database schema, creates initial data, and configures indexes
 """
 
 import logging
+from typing import Any
 import os
 import sys
 from datetime import datetime, timedelta
@@ -14,10 +15,10 @@ from src.config import get_config
 from src.models.ai_models import AIModel, ModelStatus, ModelType
 from src.models.base import Base, db_manager
 from src.models.portfolio import Asset, AssetType, Portfolio, PortfolioType, RiskLevel
-from src.models.user import AMLRiskLevel, KYCStatus, User, UserStatus, UserTier, db
-from src.security.auth import UserRole, auth_manager
+from src.models.user import AMLRiskLevel, KYCStatus, User, UserStatus, UserRole, db
+from src.security.auth import auth_manager
 from src.security.encryption import encryption_manager
-from core.logging import get_logger
+from src.logging_config import get_logger
 
 logger = get_logger(__name__)
 

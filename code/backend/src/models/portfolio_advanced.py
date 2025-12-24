@@ -1,5 +1,5 @@
 """
-Enhanced Portfolio and Asset Models for Financial Services
+Portfolio and Asset Models for Financial Services
 Implements comprehensive portfolio management with advanced risk analytics and compliance
 """
 
@@ -90,9 +90,9 @@ class RebalanceStrategy(Enum):
 
 
 class Portfolio(BaseModel):
-    """Enhanced portfolio model with comprehensive financial features"""
+    """Portfolio model with comprehensive financial features"""
 
-    __tablename__ = "enhanced_portfolios"
+    __tablename__ = "portfolios"
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     portfolio_number = Column(String(20), unique=True, nullable=False, index=True)
     name = Column(String(200), nullable=False)
@@ -419,9 +419,9 @@ class Portfolio(BaseModel):
 
 
 class Asset(BaseModel):
-    """Enhanced asset model with comprehensive market data"""
+    """Asset model with comprehensive market data"""
 
-    __tablename__ = "enhanced_assets"
+    __tablename__ = "assets"
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     symbol = Column(String(20), unique=True, nullable=False, index=True)
     name = Column(String(200), nullable=False)
@@ -526,18 +526,18 @@ class Asset(BaseModel):
 
 
 class PortfolioHolding(BaseModel):
-    """Enhanced portfolio holding with comprehensive position tracking"""
+    """Portfolio holding with comprehensive position tracking"""
 
-    __tablename__ = "enhanced_portfolio_holdings"
+    __tablename__ = "portfolio_holdings"
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     portfolio_id = Column(
         UUID(as_uuid=True),
-        ForeignKey("enhanced_portfolios.id"),
+        ForeignKey("portfolios.id"),
         nullable=False,
         index=True,
     )
     asset_id = Column(
-        UUID(as_uuid=True), ForeignKey("enhanced_assets.id"), nullable=False, index=True
+        UUID(as_uuid=True), ForeignKey("assets.id"), nullable=False, index=True
     )
     quantity = Column(Numeric(20, 8), nullable=False)
     average_cost = Column(Numeric(20, 8), nullable=False)
@@ -681,7 +681,7 @@ class PortfolioSnapshot(BaseModel):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     portfolio_id = Column(
         UUID(as_uuid=True),
-        ForeignKey("enhanced_portfolios.id"),
+        ForeignKey("portfolios.id"),
         nullable=False,
         index=True,
     )
@@ -737,7 +737,7 @@ class AssetPrice(BaseModel):
     __tablename__ = "asset_prices"
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     asset_id = Column(
-        UUID(as_uuid=True), ForeignKey("enhanced_assets.id"), nullable=False, index=True
+        UUID(as_uuid=True), ForeignKey("assets.id"), nullable=False, index=True
     )
     timestamp = Column(DateTime(timezone=True), nullable=False, index=True)
     open_price = Column(Numeric(20, 8))

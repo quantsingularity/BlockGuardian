@@ -60,7 +60,7 @@ The platform is built on a foundation of robust financial and regulatory capabil
 | **Trading Operations**   | Advanced Order Management    | Support for market, limit, stop, and complex order types.                                               | Implemented |
 |                          | Real-Time Execution          | Low-latency order execution with smart routing and risk controls.                                       | Implemented |
 |                          | Decentralized Exchange (DEX) | On-chain trading platform for tokenized assets with order matching.                                     | Implemented |
-| **Compliance (KYC/AML)** | Enhanced Compliance Manager  | Automated customer verification, sanctions screening, and anti-money laundering monitoring.             | Implemented |
+| **Compliance (KYC/AML)** | Compliance Manager           | Automated customer verification, sanctions screening, and anti-money laundering monitoring.             | Implemented |
 |                          | Regulatory Reporting         | Automated generation of regulatory reports (CTR, SAR, etc.).                                            | Implemented |
 |                          | Immutable Audit Trail        | Comprehensive, database-backed audit logging for all transactions and system activities.                | Implemented |
 | **Security**             | Multi-Factor Authentication  | Advanced MFA with TOTP and backup codes.                                                                | Implemented |

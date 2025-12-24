@@ -1,4 +1,4 @@
-# Enhanced Security Module for Financial Standards Compliance
+# Security Module for Financial Standards Compliance
 # This module implements comprehensive security controls for PCI DSS, SOC 2, and ISO 27001 compliance
 
 # KMS Key for encryption at rest
@@ -53,7 +53,7 @@ resource "aws_kms_alias" "main" {
 # Data source for current AWS account
 data "aws_caller_identity" "current" {}
 
-# Enhanced Application Security Group with strict controls
+# Application Security Group with strict controls
 resource "aws_security_group" "app" {
   name        = "${var.app_name}-${var.environment}-app-sg"
   description = "Enhanced security group for ${var.app_name} application in ${var.environment} - Financial Grade"

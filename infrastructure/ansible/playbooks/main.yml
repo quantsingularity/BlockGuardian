@@ -1,5 +1,5 @@
 ---
-# Enhanced Main Playbook for Financial-Grade Infrastructure
+# Main Playbook for Financial-Grade Infrastructure
 # This playbook implements comprehensive security hardening and compliance measures
 
 - name: Security Hardening and Compliance Setup

@@ -1,5 +1,5 @@
 """
-Enhanced Authentication System for Financial Services
+Authentication System for Financial Services
 Implements multi-factor authentication, session management, and advanced security features
 """
 
@@ -63,8 +63,8 @@ class Permission(Enum):
     SYSTEM_ADMIN = "system_admin"
 
 
-class EnhancedAuthManager:
-    """Enhanced authentication manager with financial-grade security"""
+class AuthManage:
+    """Authentication manager with financial-grade security"""
 
     def __init__(self) -> None:
         self.jwt_manager = JWTManager()
@@ -582,8 +582,8 @@ class EnhancedAuthManager:
             return None
 
 
-enhanced_auth_manager = EnhancedAuthManager()
-auth_manager = enhanced_auth_manager
+auth_manager = AuthManage()
+auth_manager = auth_manager
 
 
 def jwt_required(fn):

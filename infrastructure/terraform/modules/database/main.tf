@@ -1,4 +1,4 @@
-# Enhanced Database Module for Financial Standards Compliance
+# Database Module for Financial Standards Compliance
 # This module implements secure database configurations with encryption, monitoring, and compliance features
 
 # KMS key for database encryption (if not provided)
@@ -53,7 +53,7 @@ resource "aws_kms_alias" "db_encryption" {
 # Data source for current AWS account
 data "aws_caller_identity" "current" {}
 
-# Enhanced DB Parameter Group with security configurations
+# DB Parameter Group with security configurations
 resource "aws_db_parameter_group" "main" {
   family = var.db_family
   name   = "${var.db_name}-${var.environment}-params"
@@ -84,7 +84,7 @@ resource "aws_db_parameter_group" "main" {
   })
 }
 
-# Enhanced DB Option Group (for MySQL)
+# DB Option Group (for MySQL)
 resource "aws_db_option_group" "main" {
   count                    = var.engine == "mysql" ? 1 : 0
   name                     = "${var.db_name}-${var.environment}-options"
@@ -129,7 +129,7 @@ resource "aws_secretsmanager_secret_version" "db_credentials" {
   depends_on = [aws_db_instance.main]
 }
 
-# Enhanced RDS Instance with comprehensive security
+# RDS Instance with comprehensive security
 resource "aws_db_instance" "main" {
   identifier = "${var.db_name}-${var.environment}"
 

@@ -1,4 +1,4 @@
-# Enhanced Network Module for Financial Standards Compliance
+# Network Module for Financial Standards Compliance
 # This module implements secure networking with VPC Flow Logs, NACLs, and enhanced monitoring
 
 resource "aws_vpc" "main" {

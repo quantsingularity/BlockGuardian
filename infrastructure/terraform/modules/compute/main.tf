@@ -1,4 +1,4 @@
-# Enhanced Compute Module for Financial Standards Compliance
+# Compute Module for Financial Standards Compliance
 # This module implements secure compute infrastructure with hardened instances, monitoring, and compliance features
 
 # Data source for latest hardened AMI
@@ -36,7 +36,7 @@ locals {
   }))
 }
 
-# Enhanced Launch Template with security hardening
+# Launch Template with security hardening
 resource "aws_launch_template" "app" {
   name_prefix = "${var.app_name}-${var.environment}-"
   description = "Launch template for ${var.app_name} in ${var.environment} - Financial Grade"

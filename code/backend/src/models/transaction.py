@@ -1,5 +1,5 @@
 """
-Enhanced Transaction Models for Financial Operations
+Transaction Models for Financial Operations
 Implements comprehensive transaction tracking with compliance and audit features
 """
 
@@ -64,7 +64,7 @@ class RiskLevel(Enum):
 
 
 class Transaction(BaseModel):
-    """Enhanced transaction model with comprehensive financial features"""
+    """Transaction model with comprehensive financial features"""
 
     __tablename__ = "transactions"
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)

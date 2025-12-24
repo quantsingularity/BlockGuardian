@@ -1,5 +1,5 @@
 """
-Enhanced Compliance System for Financial Services
+Compliance System for Financial Services
 Implements KYC/AML, regulatory reporting, and comprehensive compliance monitoring
 """
 
@@ -426,7 +426,7 @@ class ComplianceManager:
                 monitoring_result["actions_required"].append("manual_review")
             elif monitoring_result["risk_score"] >= 40:
                 monitoring_result["status"] = "requires_review"
-                monitoring_result["actions_required"].append("enhanced_monitoring")
+                monitoring_result["actions_required"].append("monitoring")
             if "generate_sar" in monitoring_result["actions_required"]:
                 self._generate_sar(transaction, monitoring_result, session)
             self.logger.info(

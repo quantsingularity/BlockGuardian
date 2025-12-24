@@ -78,8 +78,8 @@ class RegulatoryRequirement:
     mandatory: bool = True
 
 
-class EnhancedComplianceManager:
-    """Enhanced compliance manager for financial services"""
+class ComplianceManager:
+    """Compliance manager for financial services"""
 
     def __init__(self) -> None:
         self.logger = logging.getLogger(__name__)
@@ -802,4 +802,4 @@ class EnhancedComplianceManager:
         return f"AML-{timestamp}-{random_suffix}"
 
 
-enhanced_compliance_manager = EnhancedComplianceManager()
+compliance_manager = ComplianceManager()

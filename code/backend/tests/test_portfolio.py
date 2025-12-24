@@ -6,6 +6,7 @@ Tests portfolio creation, asset management, and trading functionality
 import json
 import os
 import sys
+from typing import Any
 from decimal import Decimal
 import pytest
 

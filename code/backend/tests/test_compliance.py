@@ -5,6 +5,7 @@ Tests KYC/AML compliance, regulatory reporting, and risk management features
 
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
+from typing import Any
 from unittest.mock import Mock, patch
 import pytest
 from flask import Flask
@@ -13,7 +14,7 @@ from src.compliance.compliance import (
     ComplianceRule,
     ComplianceStatus,
     DocumentType,
-    EnhancedComplianceManager,
+    ComplianceManager,
     RegulatoryRequirement,
     RiskLevel,
 )
@@ -22,7 +23,7 @@ from src.models.user import User
 
 
 class TestComplianceManager(TestCase):
-    """Test cases for EnhancedComplianceManager class"""
+    """Test cases for ComplianceManager class"""
 
     def create_app(self) -> Any:
         """Create test Flask application"""
@@ -32,7 +33,7 @@ class TestComplianceManager(TestCase):
 
     def setUp(self) -> Any:
         """Set up test fixtures"""
-        self.compliance_manager = EnhancedComplianceManager()
+        self.compliance_manager = ComplianceManager()
         self.test_user = Mock(spec=User)
         self.test_user.id = "user_123"
         self.test_user.email = "test@example.com"

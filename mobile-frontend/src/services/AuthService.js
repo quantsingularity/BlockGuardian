@@ -1,5 +1,6 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../lib/api';
-import { API_ENDPOINTS } from '../lib/constants';
+import { API_ENDPOINTS, STORAGE_KEYS } from '../lib/constants';
 
 /**
  * Authentication service for user login, registration, and token management
@@ -20,8 +21,14 @@ class AuthService {
             });
 
             // Store token if provided
-            if (response.token) {
-                await this.setToken(response.token);
+            if (response.token || response.access_token) {
+                const token = response.token || response.access_token;
+                await this.setToken(token);
+            }
+
+            // Store user profile if provided
+            if (response.user) {
+                await this.setUserProfile(response.user);
             }
 
             return response;
@@ -42,8 +49,14 @@ class AuthService {
             const response = await api.post(API_ENDPOINTS.AUTH.REGISTER, userData);
 
             // Store token if provided
-            if (response.token) {
-                await this.setToken(response.token);
+            if (response.token || response.access_token) {
+                const token = response.token || response.access_token;
+                await this.setToken(token);
+            }
+
+            // Store user profile if provided
+            if (response.user) {
+                await this.setUserProfile(response.user);
             }
 
             return response;
@@ -60,18 +73,31 @@ class AuthService {
      */
     async logout() {
         try {
-            // Call logout endpoint if needed
-            await api.post(API_ENDPOINTS.AUTH.LOGOUT);
+            const token = await this.getToken();
 
-            // Clear stored token
-            await this.clearToken();
+            // Call logout endpoint if we have a token
+            if (token) {
+                try {
+                    await api.post(API_ENDPOINTS.AUTH.LOGOUT, {}, token);
+                } catch (apiError) {
+                    console.warn('Logout API call failed:', apiError);
+                    // Continue with local logout even if API fails
+                }
+            }
+
+            // Clear all stored auth data
+            await this.clearAuthData();
 
             return { success: true };
         } catch (error) {
             console.error('Logout error:', error);
 
-            // Still clear token even if API call fails
-            await this.clearToken();
+            // Still clear auth data even if there are errors
+            try {
+                await this.clearAuthData();
+            } catch (clearError) {
+                console.error('Failed to clear auth data:', clearError);
+            }
 
             throw error;
         }
@@ -84,9 +110,7 @@ class AuthService {
      */
     async getToken() {
         try {
-            // Implementation would use AsyncStorage in a real app
-            // For now, we'll use a mock implementation
-            return localStorage.getItem('auth_token');
+            return await AsyncStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
         } catch (error) {
             console.error('Get token error:', error);
             return null;
@@ -101,8 +125,7 @@ class AuthService {
      */
     async setToken(token) {
         try {
-            // Implementation would use AsyncStorage in a real app
-            localStorage.setItem('auth_token', token);
+            await AsyncStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
         } catch (error) {
             console.error('Set token error:', error);
             throw error;
@@ -112,12 +135,11 @@ class AuthService {
     /**
      * Clear authentication token
      *
-     * @returns {Promise} - Resolved when token is cleared
+     * @returns {Promise} - Resolved when token is removed
      */
     async clearToken() {
         try {
-            // Implementation would use AsyncStorage in a real app
-            localStorage.removeItem('auth_token');
+            await AsyncStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
         } catch (error) {
             console.error('Clear token error:', error);
             throw error;
@@ -125,13 +147,62 @@ class AuthService {
     }
 
     /**
+     * Get user profile from storage
+     *
+     * @returns {Promise<Object|null>} - Resolved with user profile or null
+     */
+    async getUserProfile() {
+        try {
+            const profileJson = await AsyncStorage.getItem(STORAGE_KEYS.USER_PROFILE);
+            return profileJson ? JSON.parse(profileJson) : null;
+        } catch (error) {
+            console.error('Get user profile error:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Set user profile in storage
+     *
+     * @param {Object} profile - User profile data
+     * @returns {Promise} - Resolved when profile is stored
+     */
+    async setUserProfile(profile) {
+        try {
+            await AsyncStorage.setItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(profile));
+        } catch (error) {
+            console.error('Set user profile error:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Clear all authentication data
+     *
+     * @returns {Promise} - Resolved when all data is cleared
+     */
+    async clearAuthData() {
+        try {
+            await AsyncStorage.multiRemove([STORAGE_KEYS.AUTH_TOKEN, STORAGE_KEYS.USER_PROFILE]);
+        } catch (error) {
+            console.error('Clear auth data error:', error);
+            throw error;
+        }
+    }
+
+    /**
      * Check if user is authenticated
      *
-     * @returns {Promise<boolean>} - Resolved with authentication status
+     * @returns {Promise<boolean>} - True if authenticated
      */
     async isAuthenticated() {
-        const token = await this.getToken();
-        return !!token;
+        try {
+            const token = await this.getToken();
+            return !!token;
+        } catch (error) {
+            console.error('Check authentication error:', error);
+            return false;
+        }
     }
 
     /**
@@ -141,15 +212,45 @@ class AuthService {
      */
     async refreshToken() {
         try {
-            const response = await api.post(API_ENDPOINTS.AUTH.REFRESH);
+            const currentToken = await this.getToken();
+            if (!currentToken) {
+                throw new Error('No token to refresh');
+            }
 
-            if (response.token) {
-                await this.setToken(response.token);
+            const response = await api.post(API_ENDPOINTS.AUTH.REFRESH, {}, currentToken);
+
+            if (response.token || response.access_token) {
+                const newToken = response.token || response.access_token;
+                await this.setToken(newToken);
             }
 
             return response;
         } catch (error) {
             console.error('Refresh token error:', error);
+            // Clear token if refresh fails
+            await this.clearToken();
+            throw error;
+        }
+    }
+
+    /**
+     * Get current user profile from API
+     *
+     * @returns {Promise} - Resolved with user profile
+     */
+    async fetchProfile() {
+        try {
+            const token = await this.getToken();
+            if (!token) {
+                throw new Error('No authentication token');
+            }
+
+            const profile = await api.get(API_ENDPOINTS.AUTH.PROFILE, {}, token);
+            await this.setUserProfile(profile);
+
+            return profile;
+        } catch (error) {
+            console.error('Fetch profile error:', error);
             throw error;
         }
     }

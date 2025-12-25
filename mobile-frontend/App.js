@@ -1,37 +1,42 @@
+import 'react-native-get-random-values';
+import '@walletconnect/react-native-compat';
 import React from 'react';
 import AppNavigator from './src/navigation/AppNavigator';
-import {
-    WalletConnectModal,
-    IProviderMetadata,
-    SessionParams,
-} from '@walletconnect/modal-react-native';
+import { WalletConnectModal } from '@walletconnect/modal-react-native';
 
 // --- WalletConnect Configuration ---
-// IMPORTANT: You need to replace '<YOUR_PROJECT_ID>' with your actual Project ID
-// obtained from WalletConnect Cloud (https://cloud.walletconnect.com/)
-const projectId = '<YOUR_PROJECT_ID>';
+// Get project ID from environment variables or use demo ID
+const projectId = process.env.EXPO_PUBLIC_WALLETCONNECT_PROJECT_ID || 'demo-project-id-change-this';
 
 const providerMetadata = {
-    name: 'BlockGuardian Mobile',
-    description: 'BlockGuardian Mobile App - Secure your crypto assets.',
-    url: 'https://yourapp.com/', // Replace with your app's URL
-    icons: ['https://yourapp.com/icon.png'], // Replace with your app's icon URL
+    name: process.env.EXPO_PUBLIC_APP_NAME || 'BlockGuardian Mobile',
+    description:
+        'BlockGuardian Mobile App - Secure your crypto assets and monitor blockchain security.',
+    url: process.env.EXPO_PUBLIC_APP_URL || 'https://blockguardian.io',
+    icons: [process.env.EXPO_PUBLIC_APP_ICON_URL || 'https://blockguardian.io/icon.png'],
     redirect: {
-        native: 'blockguardian://', // Replace with your app's deep link scheme
-        universal: 'https://yourapp.com', // Replace with your app's universal link
+        native: `${process.env.EXPO_PUBLIC_DEEP_LINK_SCHEME || 'blockguardian'}://`,
+        universal: process.env.EXPO_PUBLIC_APP_URL || 'https://blockguardian.io',
     },
 };
 
-// Optional: Define session parameters if needed
-// const sessionParams: SessionParams = {
-//   namespaces: {
-//     eip155: {
-//       methods: ['eth_sendTransaction', 'personal_sign'],
-//       chains: ['eip155:1'], // Example: Ethereum Mainnet
-//       events: ['accountsChanged', 'chainChanged'],
-//     },
-//   },
-// };
+// Session parameters for WalletConnect
+const sessionParams = {
+    namespaces: {
+        eip155: {
+            methods: [
+                'eth_sendTransaction',
+                'eth_signTransaction',
+                'eth_sign',
+                'personal_sign',
+                'eth_signTypedData',
+            ],
+            chains: ['eip155:1'], // Ethereum Mainnet
+            events: ['accountsChanged', 'chainChanged'],
+            rpcMap: {},
+        },
+    },
+};
 // --- End WalletConnect Configuration ---
 
 export default function App() {
@@ -41,8 +46,7 @@ export default function App() {
             <WalletConnectModal
                 projectId={projectId}
                 providerMetadata={providerMetadata}
-                // sessionParams={sessionParams} // Uncomment if you defined sessionParams
-                // Other optional props like `themeMode`, `accentColor`, etc.
+                sessionParams={sessionParams}
             />
         </>
     );

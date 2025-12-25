@@ -2,8 +2,8 @@
  * API utility functions for making network requests
  */
 
-// Base API URL - would be configured based on environment
-const API_BASE_URL = 'https://api.blockguardian.io';
+// Base API URL - configured based on environment
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
 
 /**
  * Handles API response and error checking
@@ -73,17 +73,22 @@ const createRequestOptions = (method, data, token) => {
  * @returns {Promise} - Resolved with response data
  */
 export const get = async (endpoint, params = {}, token = null) => {
-    // Build query string from params
-    const queryString =
-        Object.keys(params).length > 0 ? `?${new URLSearchParams(params).toString()}` : '';
+    try {
+        // Build query string from params
+        const queryString =
+            Object.keys(params).length > 0 ? `?${new URLSearchParams(params).toString()}` : '';
 
-    // Make request
-    const response = await fetch(
-        `${API_BASE_URL}${endpoint}${queryString}`,
-        createRequestOptions('GET', null, token),
-    );
+        // Make request
+        const response = await fetch(
+            `${API_BASE_URL}${endpoint}${queryString}`,
+            createRequestOptions('GET', null, token),
+        );
 
-    return handleResponse(response);
+        return handleResponse(response);
+    } catch (error) {
+        console.error(`GET ${endpoint} error:`, error);
+        throw error;
+    }
 };
 
 /**
@@ -95,12 +100,17 @@ export const get = async (endpoint, params = {}, token = null) => {
  * @returns {Promise} - Resolved with response data
  */
 export const post = async (endpoint, data = {}, token = null) => {
-    const response = await fetch(
-        `${API_BASE_URL}${endpoint}`,
-        createRequestOptions('POST', data, token),
-    );
+    try {
+        const response = await fetch(
+            `${API_BASE_URL}${endpoint}`,
+            createRequestOptions('POST', data, token),
+        );
 
-    return handleResponse(response);
+        return handleResponse(response);
+    } catch (error) {
+        console.error(`POST ${endpoint} error:`, error);
+        throw error;
+    }
 };
 
 /**
@@ -112,12 +122,17 @@ export const post = async (endpoint, data = {}, token = null) => {
  * @returns {Promise} - Resolved with response data
  */
 export const put = async (endpoint, data = {}, token = null) => {
-    const response = await fetch(
-        `${API_BASE_URL}${endpoint}`,
-        createRequestOptions('PUT', data, token),
-    );
+    try {
+        const response = await fetch(
+            `${API_BASE_URL}${endpoint}`,
+            createRequestOptions('PUT', data, token),
+        );
 
-    return handleResponse(response);
+        return handleResponse(response);
+    } catch (error) {
+        console.error(`PUT ${endpoint} error:`, error);
+        throw error;
+    }
 };
 
 /**
@@ -128,12 +143,17 @@ export const put = async (endpoint, data = {}, token = null) => {
  * @returns {Promise} - Resolved with response data
  */
 export const del = async (endpoint, token = null) => {
-    const response = await fetch(
-        `${API_BASE_URL}${endpoint}`,
-        createRequestOptions('DELETE', null, token),
-    );
+    try {
+        const response = await fetch(
+            `${API_BASE_URL}${endpoint}`,
+            createRequestOptions('DELETE', null, token),
+        );
 
-    return handleResponse(response);
+        return handleResponse(response);
+    } catch (error) {
+        console.error(`DELETE ${endpoint} error:`, error);
+        throw error;
+    }
 };
 
 /**
@@ -145,12 +165,17 @@ export const del = async (endpoint, token = null) => {
  * @returns {Promise} - Resolved with response data
  */
 export const patch = async (endpoint, data = {}, token = null) => {
-    const response = await fetch(
-        `${API_BASE_URL}${endpoint}`,
-        createRequestOptions('PATCH', data, token),
-    );
+    try {
+        const response = await fetch(
+            `${API_BASE_URL}${endpoint}`,
+            createRequestOptions('PATCH', data, token),
+        );
 
-    return handleResponse(response);
+        return handleResponse(response);
+    } catch (error) {
+        console.error(`PATCH ${endpoint} error:`, error);
+        throw error;
+    }
 };
 
 export default {

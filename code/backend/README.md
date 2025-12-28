@@ -1,512 +1,204 @@
-# BlockGuardian Backend - Production-Ready Financial Services Platform
+# BlockGuardian Backend
 
-## Overview
+Enterprise-grade financial services backend with comprehensive security, compliance, and scalability features.
 
-BlockGuardian Backend is an enterprise-grade financial services platform built with Flask, designed to meet the highest standards of security, compliance, and scalability required in the financial industry. This production-ready backend provides comprehensive features for portfolio management, asset trading, fraud detection, and regulatory compliance.
+## Features
 
-## 🚀 Key Features
+- **Authentication & Authorization**: JWT-based auth with multi-factor authentication (MFA)
+- **Portfolio Management**: Complete portfolio tracking and management
+- **Security**: Enterprise-grade encryption, audit logging, and rate limiting
+- **Compliance**: KYC/AML compliance features
+- **Database**: SQLAlchemy ORM with PostgreSQL/SQLite support
+- **API**: RESTful API with comprehensive error handling
 
-### Security & Authentication
-
-- **Multi-Factor Authentication (MFA)** with TOTP support
-- **JWT-based authentication** with refresh tokens
-- **Role-based access control** (RBAC)
-- **Advanced password policies** and account lockout protection
-- **Rate limiting** and DDoS protection
-- **Data encryption** at rest and in transit
-- **Comprehensive audit logging** for compliance
-
-### Financial Services
-
-- **Portfolio Management** with real-time valuation
-- **Asset Trading** (stocks, cryptocurrencies, ETFs, commodities)
-- **Transaction Processing** with settlement tracking
-- **Risk Assessment** and portfolio analytics
-- **Performance Monitoring** and reporting
-
-### AI/ML Capabilities
-
-- **Fraud Detection** using machine learning models
-- **Risk Assessment** algorithms
-- **Market Prediction** models
-- **Anomaly Detection** for suspicious activities
-- **Automated Compliance Monitoring**
-
-### Compliance & Regulatory
-
-- **KYC/AML** compliance workflows
-- **Suspicious Activity Reporting** (SAR)
-- **Large Transaction Reporting** (CTR)
-- **Regulatory Filing** automation
-- **Audit Trail** maintenance
-- **Data Privacy** (GDPR/CCPA compliance)
-
-### Monitoring & Operations
-
-- **Real-time Monitoring** with Prometheus metrics
-- **Health Checks** and alerting
-- **Performance Tracking** and optimization
-- **Comprehensive Logging** with structured logs
-- **Error Tracking** and debugging
-
-## 🏗️ Architecture
-
-### Technology Stack
-
-- **Framework**: Flask 3.1.1 with production extensions
-- **Database**: SQLAlchemy with PostgreSQL/SQLite support
-- **Authentication**: JWT with Flask-JWT-Extended
-- **Caching**: Redis for session management and caching
-- **Security**: bcrypt, cryptography, rate limiting
-- **AI/ML**: TensorFlow, PyTorch, scikit-learn
-- **Monitoring**: Prometheus, structured logging
-- **Testing**: pytest with comprehensive test coverage
-
-### Project Structure
-
-```
-blockguardian_backend/
-├── src/
-│   ├── main.py                 # Application factory and main entry point
-│   ├── config.py              # Configuration management
-│   ├── models/                # Database models
-│   │   ├── base.py           # Base model classes
-│   │   ├── user.py           # User and authentication models
-│   │   ├── portfolio.py      # Portfolio and trading models
-│   │   └── ai_models.py      # AI/ML model tracking
-│   ├── routes/               # API endpoints
-│   │   ├── auth.py          # Authentication routes
-│   │   └── portfolio.py     # Portfolio management routes
-│   ├── security/            # Security components
-│   │   ├── auth.py         # Authentication manager
-│   │   ├── encryption.py   # Data encryption
-│   │   ├── audit.py        # Audit logging
-│   │   ├── rate_limiting.py # Rate limiting
-│   │   └── validation.py   # Input validation
-│   ├── monitoring/          # Monitoring and metrics
-│   │   └── metrics.py      # Performance monitoring
-│   ├── compliance/          # Compliance and regulatory
-│   │   └── reporting.py    # Compliance reporting
-│   └── database/           # Database management
-│       └── init_db.py     # Database initialization
-├── tests/                  # Comprehensive test suite
-│   ├── test_auth.py       # Authentication tests
-│   └── test_portfolio.py  # Portfolio management tests
-├── requirements.txt        # Production dependencies
-├── Dockerfile             # Container configuration
-└── README.md              # This file
-```
-
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
-- Python 3.11+
-- PostgreSQL 13+ (or SQLite for development)
-- Redis 6+ (optional, for caching and rate limiting)
-- Git
+- Python 3.8+
+- pip
+- Redis (optional, for rate limiting)
 
-### Installation
-
-1. **Clone the repository**
-
-    ```bash
-    git clone <repository-url>
-    cd blockguardian_backend
-    ```
-
-2. **Create virtual environment**
-
-    ```bash
-    python -m venv venv
-    source venv/bin/activate  # On Windows: venv\Scripts\activate
-    ```
-
-3. **Install dependencies**
-
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-4. **Set up environment variables**
-
-    ```bash
-    cp .env.example .env
-    # Edit .env with your configuration
-    ```
-
-5. **Initialize database**
-
-    ```bash
-    python src/database/init_db.py
-    ```
-
-6. **Run the application**
-    ```bash
-    python src/main.py
-    ```
-
-The application will be available at `http://localhost:5000`
-
-### Environment Configuration
-
-Create a `.env` file with the following variables:
-
-```env
-# Application Configuration
-FLASK_ENV=development
-SECRET_KEY=your-secret-key-here
-DEBUG=True
-
-# Database Configuration
-DATABASE_URL=postgresql://user:password@localhost/blockguardian
-# Or for SQLite: sqlite:///./database/app.db
-
-# Redis Configuration (optional)
-REDIS_URL=redis://localhost:6379/0
-
-# Security Configuration
-JWT_SECRET_KEY=your-jwt-secret-key
-JWT_ACCESS_TOKEN_EXPIRES=3600
-JWT_REFRESH_TOKEN_EXPIRES=2592000
-
-# Email Configuration (for notifications)
-MAIL_SERVER=smtp.gmail.com
-MAIL_PORT=587
-MAIL_USE_TLS=True
-MAIL_USERNAME=your-email@gmail.com
-MAIL_PASSWORD=your-app-password
-
-# External API Keys
-ALPHA_VANTAGE_API_KEY=your-alpha-vantage-key
-FINNHUB_API_KEY=your-finnhub-key
-
-# Monitoring Configuration
-SENTRY_DSN=your-sentry-dsn
-PROMETHEUS_PORT=9090
-```
-
-## 🐳 Docker Deployment
-
-### Build and run with Docker
-
-1. **Build the image**
-
-    ```bash
-    docker build -t blockguardian-backend .
-    ```
-
-2. **Run the container**
-    ```bash
-    docker run -p 5000:5000 \
-      -e DATABASE_URL=postgresql://user:password@host/db \
-      -e SECRET_KEY=your-secret-key \
-      blockguardian-backend
-    ```
-
-### Docker Compose (Recommended)
-
-Create a `docker-compose.yml` file:
-
-```yaml
-version: '3.8'
-
-services:
-    app:
-        build: .
-        ports:
-            - '5000:5000'
-        environment:
-            - DATABASE_URL=postgresql://postgres:password@db:5432/blockguardian
-            - REDIS_URL=redis://redis:6379/0
-            - SECRET_KEY=your-secret-key
-        depends_on:
-            - db
-            - redis
-        volumes:
-            - ./logs:/app/logs
-
-    db:
-        image: postgres:15
-        environment:
-            - POSTGRES_DB=blockguardian
-            - POSTGRES_USER=postgres
-            - POSTGRES_PASSWORD=password
-        volumes:
-            - postgres_data:/var/lib/postgresql/data
-        ports:
-            - '5432:5432'
-
-    redis:
-        image: redis:7-alpine
-        ports:
-            - '6379:6379'
-
-volumes:
-    postgres_data:
-```
-
-Run with:
+### Installation & Running
 
 ```bash
-docker-compose up -d
+# Make the run script executable (if not already)
+chmod +x run.sh
+
+# Run the backend
+./run.sh
 ```
 
-## 🔧 Production Deployment
+The server will start on `http://localhost:5000`
 
-### Using Gunicorn
+### Manual Installation
 
-1. **Install Gunicorn** (included in requirements.txt)
-
-2. **Create Gunicorn configuration** (`gunicorn.conf.py`):
-
-    ```python
-    bind = "0.0.0.0:5000"
-    workers = 4
-    worker_class = "gevent"
-    worker_connections = 1000
-    max_requests = 1000
-    max_requests_jitter = 100
-    timeout = 30
-    keepalive = 2
-    preload_app = True
-    ```
-
-3. **Run with Gunicorn**:
-    ```bash
-    gunicorn -c gunicorn.conf.py src.main:app
-    ```
-
-### Nginx Configuration
-
-Create `/etc/nginx/sites-available/blockguardian`:
-
-```nginx
-server {
-    listen 80;
-    server_name your-domain.com;
-
-    location / {
-        proxy_pass http://127.0.0.1:5000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    # Security headers
-    add_header X-Content-Type-Options nosniff;
-    add_header X-Frame-Options DENY;
-    add_header X-XSS-Protection "1; mode=block";
-}
-```
-
-### SSL/TLS Configuration
-
-Use Let's Encrypt for SSL certificates:
+If you prefer manual setup:
 
 ```bash
-sudo certbot --nginx -d your-domain.com
+# Create virtual environment
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the application
+python src/main.py
 ```
 
-## 🧪 Testing
+## API Endpoints
 
-### Run Tests
+### Health Check
 
-```bash
-# Run all tests
-pytest
+- `GET /health` - System health status
 
-# Run with coverage
-pytest --cov=src --cov-report=html
+### Authentication
 
-# Run specific test file
-pytest tests/test_auth.py
-
-# Run with verbose output
-pytest -v
-```
-
-### Test Categories
-
-- **Unit Tests**: Test individual components and functions
-- **Integration Tests**: Test API endpoints and database interactions
-- **Security Tests**: Test authentication, authorization, and security features
-- **Performance Tests**: Test system performance under load
-
-## 📊 Monitoring and Observability
-
-### Health Checks
-
-The application provides comprehensive health checks:
-
-- **GET /health**: Overall system health
-- **GET /api/info**: API information and status
-
-### Metrics
-
-Prometheus metrics are available at `/metrics` (when enabled):
-
-- Request latency and throughput
-- Database connection pool status
-- Authentication success/failure rates
-- Business metrics (transactions, portfolios, etc.)
-
-### Logging
-
-Structured logging with different levels:
-
-- **DEBUG**: Detailed debugging information
-- **INFO**: General operational messages
-- **WARNING**: Warning conditions
-- **ERROR**: Error conditions
-- **CRITICAL**: Critical system failures
-
-Logs are written to:
-
-- Console (development)
-- Files (`logs/blockguardian.log`)
-- External systems (Sentry, ELK stack)
-
-## 🔒 Security Considerations
-
-### Authentication & Authorization
-
-- JWT tokens with configurable expiration
-- Refresh token rotation
-- Multi-factor authentication (TOTP)
-- Role-based access control
-- Account lockout after failed attempts
-
-### Data Protection
-
-- Passwords hashed with bcrypt
-- Sensitive data encrypted at rest
-- PII data anonymization
-- Secure session management
-- CSRF protection
-
-### API Security
-
-- Rate limiting per endpoint
-- Input validation and sanitization
-- SQL injection prevention
-- XSS protection
-- CORS configuration
-
-### Compliance
-
-- GDPR/CCPA data privacy compliance
-- PCI DSS for payment data
-- SOX compliance for financial reporting
-- Audit trail for all operations
-
-## 📋 API Documentation
-
-### Authentication Endpoints
-
-- `POST /api/auth/register` - User registration
-- `POST /api/auth/login` - User login
-- `POST /api/auth/logout` - User logout
-- `POST /api/auth/refresh` - Token refresh
+- `POST /api/auth/register` - Register new user
+- `POST /api/auth/login` - Login user
+- `POST /api/auth/logout` - Logout user
+- `POST /api/auth/refresh` - Refresh access token
 - `POST /api/auth/setup-mfa` - Setup MFA
-- `POST /api/auth/verify-mfa` - Verify MFA token
+- `POST /api/auth/enable-mfa` - Enable MFA
+- `POST /api/auth/disable-mfa` - Disable MFA
+- `POST /api/auth/change-password` - Change password
 - `GET /api/auth/profile` - Get user profile
 - `PUT /api/auth/profile` - Update user profile
 
 ### Portfolio Management
 
-- `GET /api/portfolios` - List user portfolios
+- `GET /api/portfolios` - List all portfolios
 - `POST /api/portfolios` - Create new portfolio
-- `GET /api/portfolios/{id}` - Get portfolio details
-- `PUT /api/portfolios/{id}` - Update portfolio
-- `DELETE /api/portfolios/{id}` - Delete portfolio
-- `GET /api/portfolios/{id}/holdings` - Get portfolio holdings
-- `GET /api/portfolios/{id}/performance` - Get performance metrics
+- `GET /api/portfolios/<id>` - Get portfolio details
+- `PUT /api/portfolios/<id>` - Update portfolio
+- `DELETE /api/portfolios/<id>` - Delete portfolio
+- `POST /api/portfolios/<id>/holdings` - Add holding
+- `GET /api/portfolios/<id>/performance` - Get performance metrics
 
-### Trading
+## Configuration
 
-- `POST /api/portfolios/{id}/transactions` - Create transaction
-- `GET /api/portfolios/{id}/transactions` - Get transaction history
-- `POST /api/portfolios/{id}/transactions/{tid}/cancel` - Cancel transaction
-
-### Assets
-
-- `GET /api/portfolios/assets` - List available assets
-- `GET /api/portfolios/assets/{id}` - Get asset details
-
-## 🚨 Troubleshooting
-
-### Common Issues
-
-1. **Database Connection Errors**
-    - Check DATABASE_URL configuration
-    - Ensure database server is running
-    - Verify credentials and permissions
-
-2. **Authentication Issues**
-    - Check JWT_SECRET_KEY configuration
-    - Verify token expiration settings
-    - Check user account status
-
-3. **Performance Issues**
-    - Monitor database query performance
-    - Check Redis connection for caching
-    - Review application logs for bottlenecks
-
-### Debug Mode
-
-Enable debug mode for development:
+Configuration is managed through environment variables. Copy `.env.example` to `.env` and customize:
 
 ```bash
-export FLASK_ENV=development
-export DEBUG=True
-python src/main.py
+# Application
+FLASK_ENV=development
+SECRET_KEY=your-secret-key-here
+JWT_SECRET_KEY=your-jwt-secret-key-here
+
+# Database
+DATABASE_URL=postgresql://user:password@localhost:5432/blockguardian
+# Or use SQLite for development
+# DATABASE_URL=sqlite:///./database/app.db
+
+# Redis (optional)
+REDIS_URL=redis://localhost:6379/0
+
+# Security
+ENCRYPTION_KEY=your-encryption-key-here
+JWT_ACCESS_EXPIRES_HOURS=1
+JWT_REFRESH_EXPIRES_DAYS=30
 ```
 
-### Logging Configuration
+## Development
 
-Increase log verbosity:
+### Project Structure
 
-```python
-import logging
-logging.basicConfig(level=logging.DEBUG)
+```
+backend/
+├── src/
+│   ├── __init__.py
+│   ├── main.py              # Application entry point
+│   ├── config.py            # Configuration management
+│   ├── logging_config.py    # Logging configuration
+│   ├── compliance/          # Compliance features
+│   ├── database/            # Database initialization
+│   ├── models/              # Data models
+│   ├── monitoring/          # Monitoring and metrics
+│   ├── routes/              # API routes
+│   ├── security/            # Security features
+│   └── static/              # Static files
+├── tests/                   # Test files
+├── requirements.txt         # Python dependencies
+├── run.sh                   # Startup script
+└── README.md               # This file
 ```
 
-## 🤝 Contributing
-
-### Development Setup
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
-5. Run the test suite
-6. Submit a pull request
-
-### Code Standards
-
-- Follow PEP 8 style guidelines
-- Use type hints where appropriate
-- Write comprehensive docstrings
-- Maintain test coverage above 80%
-- Use meaningful commit messages
-
-### Pre-commit Hooks
-
-Install pre-commit hooks:
+### Running Tests
 
 ```bash
-pre-commit install
+source venv/bin/activate
+pytest tests/
 ```
 
-This will run:
+## Security Features
 
-- Code formatting (black)
-- Linting (flake8)
-- Type checking (mypy)
-- Security scanning
+- **Password Hashing**: PBKDF2-SHA256 with salting
+- **JWT Authentication**: Secure token-based authentication
+- **MFA Support**: TOTP-based multi-factor authentication
+- **Rate Limiting**: Protection against abuse
+- **Audit Logging**: Comprehensive audit trails
+- **Field Encryption**: Sensitive data encryption
+- **Input Validation**: XSS and SQL injection protection
 
-## 📄 License
+## Database
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+The backend uses SQLAlchemy ORM with support for:
+
+- PostgreSQL (recommended for production)
+- SQLite (development/testing)
+
+Database tables are automatically created on first run.
+
+## Monitoring
+
+- Health check endpoint at `/health`
+- Comprehensive logging to `logs/blockguardian.log`
+- Audit logs for security events
+
+## Production Deployment
+
+For production deployment:
+
+1. Set `FLASK_ENV=production`
+2. Use PostgreSQL database
+3. Configure Redis for rate limiting
+4. Set strong secret keys
+5. Use a production WSGI server (gunicorn recommended)
+6. Enable HTTPS
+7. Configure CORS properly
+8. Set up monitoring and alerting
+
+### Using Gunicorn
+
+```bash
+pip install gunicorn
+gunicorn -w 4 -b 0.0.0.0:5000 "src.main:create_app()"
+```
+
+## Troubleshooting
+
+### Import Errors
+
+If you encounter import errors, ensure you're running from the backend directory and the virtual environment is activated.
+
+### Database Errors
+
+Delete the database file and restart to recreate tables:
+
+```bash
+rm src/database/app.db
+./run.sh
+```
+
+### Redis Connection Errors
+
+Redis is optional. The backend will work without it, but rate limiting will be disabled. Install and start Redis if you need rate limiting features.
+
+## Support
+
+For issues and questions, please refer to the project documentation or create an issue in the repository.
+
+## License
+
+[Add your license information here]

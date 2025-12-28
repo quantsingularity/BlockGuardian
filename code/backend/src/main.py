@@ -47,8 +47,10 @@ def create_app(config_name: Any = None) -> Any:
     def health_check():
         """Health check endpoint for monitoring"""
         try:
+            from sqlalchemy import text
+
             session = db_manager.get_session()
-            session.execute("SELECT 1")
+            session.execute(text("SELECT 1"))
             session.close()
             db_status = "healthy"
         except Exception as e:

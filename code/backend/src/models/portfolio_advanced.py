@@ -92,7 +92,7 @@ class RebalanceStrategy(Enum):
 class Portfolio(BaseModel):
     """Portfolio model with comprehensive financial features"""
 
-    __tablename__ = "portfolios"
+    __tablename__ = "portfolios"  # type: ignore[assignment]
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     portfolio_number = Column(String(20), unique=True, nullable=False, index=True)
     name = Column(String(200), nullable=False)
@@ -166,10 +166,10 @@ class Portfolio(BaseModel):
         CheckConstraint("cash_balance >= 0", name="check_positive_cash_balance"),
     )
 
-    def __init__(self, **kwargs) -> Any:
+    def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         if not self.portfolio_number:
-            self.portfolio_number = self.generate_portfolio_number()
+            self.portfolio_number = self.generate_portfolio_number()  # type: ignore[assignment]
 
     @staticmethod
     def generate_portfolio_number() -> str:
@@ -188,19 +188,19 @@ class Portfolio(BaseModel):
 
     def update_portfolio_metrics(self) -> Any:
         """Update all portfolio metrics"""
-        self.total_value = self.calculate_total_value()
+        self.total_value = self.calculate_total_value()  # type: ignore[assignment]
         invested_amount = Decimal("0.00")
         unrealized_pnl = Decimal("0.00")
         for holding in self.holdings:
             if holding.is_active:
                 invested_amount += holding.cost_basis or Decimal("0.00")
                 unrealized_pnl += holding.unrealized_pnl or Decimal("0.00")
-        self.invested_amount = invested_amount
-        self.unrealized_pnl = unrealized_pnl
-        self.total_return = self.realized_pnl + self.unrealized_pnl
-        self.available_cash = self.cash_balance
+        self.invested_amount = invested_amount  # type: ignore[assignment]
+        self.unrealized_pnl = unrealized_pnl  # type: ignore[assignment]
+        self.total_return = self.realized_pnl + self.unrealized_pnl  # type: ignore[assignment]
+        self.available_cash = self.cash_balance  # type: ignore[assignment]
         if not self.metadata:
-            self.metadata = {}
+            self.metadata = {}  # type: ignore[assignment]
         self.metadata["last_metrics_update"] = datetime.now(timezone.utc).isoformat()
 
     def calculate_total_return_percentage(self) -> Decimal:
@@ -421,7 +421,7 @@ class Portfolio(BaseModel):
 class Asset(BaseModel):
     """Asset model with comprehensive market data"""
 
-    __tablename__ = "assets"
+    __tablename__ = "assets"  # type: ignore[assignment]
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     symbol = Column(String(20), unique=True, nullable=False, index=True)
     name = Column(String(200), nullable=False)
@@ -482,23 +482,23 @@ class Asset(BaseModel):
         Index("idx_asset_tradeable", "is_tradeable", "is_active"),
     )
 
-    def update_price_data(self, price_data: Dict[str, Any]) -> Any:
+    def update_price_data(self, price_data: Dict[str, Any]) -> None:
         """Update asset price and market data"""
-        self.previous_close = self.current_price
-        self.current_price = Decimal(str(price_data.get("price", 0)))
-        self.open_price = Decimal(str(price_data.get("open", 0)))
-        self.high_price = Decimal(str(price_data.get("high", 0)))
-        self.low_price = Decimal(str(price_data.get("low", 0)))
-        self.volume = price_data.get("volume", 0)
+        self.previous_close = self.current_price  # type: ignore[assignment]
+        self.current_price = Decimal(str(price_data.get("price", 0)))  # type: ignore[assignment]
+        self.open_price = Decimal(str(price_data.get("open", 0)))  # type: ignore[assignment]
+        self.high_price = Decimal(str(price_data.get("high", 0)))  # type: ignore[assignment]
+        self.low_price = Decimal(str(price_data.get("low", 0)))  # type: ignore[assignment]
+        self.volume = price_data.get("volume", 0)  # type: ignore[assignment]
         if self.previous_close and self.current_price:
-            self.day_change = self.current_price - self.previous_close
+            self.day_change = self.current_price - self.previous_close  # type: ignore[assignment]
             if self.previous_close > 0:
-                self.day_change_percent = (
+                self.day_change_percent = (  # type: ignore[assignment]
                     self.day_change / self.previous_close * 100
                 ).quantize(Decimal("0.01"))
-        self.last_updated = datetime.now(timezone.utc)
+        self.last_updated = datetime.now(timezone.utc)  # type: ignore[assignment]
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self, include_sensitive: bool = False) -> Dict[str, Any]:
         """Convert asset to dictionary"""
         return {
             "id": str(self.id),
@@ -528,7 +528,7 @@ class Asset(BaseModel):
 class PortfolioHolding(BaseModel):
     """Portfolio holding with comprehensive position tracking"""
 
-    __tablename__ = "portfolio_holdings"
+    __tablename__ = "portfolio_holdings"  # type: ignore[assignment]
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     portfolio_id = Column(
         UUID(as_uuid=True),
@@ -567,36 +567,36 @@ class PortfolioHolding(BaseModel):
         CheckConstraint("cost_basis >= 0", name="check_positive_cost_basis"),
     )
 
-    def update_valuation(self) -> Any:
+    def update_valuation(self) -> None:
         """Update current valuation based on asset price"""
         if self.asset and self.asset.current_price:
-            self.current_price = self.asset.current_price
-            self.current_value = (self.quantity * self.current_price).quantize(
+            self.current_price = self.asset.current_price  # type: ignore[assignment]
+            self.current_value = (self.quantity * self.current_price).quantize(  # type: ignore[assignment]
                 Decimal("0.01")
             )
-            self.unrealized_pnl = self.current_value - self.cost_basis
+            self.unrealized_pnl = self.current_value - self.cost_basis  # type: ignore[assignment]
             if self.cost_basis > 0:
-                self.unrealized_pnl_percent = (
+                self.unrealized_pnl_percent = (  # type: ignore[assignment]
                     self.unrealized_pnl / self.cost_basis * 100
                 ).quantize(Decimal("0.01"))
 
     def add_position(
         self, quantity: Decimal, price: Decimal, transaction_date: datetime = None
-    ) -> Any:
+    ) -> None:
         """Add to position (buy transaction)"""
         if transaction_date is None:
             transaction_date = datetime.now(timezone.utc)
         total_cost = quantity * price
         new_total_quantity = self.quantity + quantity
         new_total_cost = self.cost_basis + total_cost
-        self.average_cost = (new_total_cost / new_total_quantity).quantize(
+        self.average_cost = (new_total_cost / new_total_quantity).quantize(  # type: ignore[assignment]
             Decimal("0.01")
         )
-        self.quantity = new_total_quantity
-        self.cost_basis = new_total_cost.quantize(Decimal("0.01"))
-        self.last_transaction_date = transaction_date
+        self.quantity = new_total_quantity  # type: ignore[assignment]
+        self.cost_basis = new_total_cost.quantize(Decimal("0.01"))  # type: ignore[assignment]
+        self.last_transaction_date = transaction_date  # type: ignore[assignment]
         if not self.tax_lots:
-            self.tax_lots = []
+            self.tax_lots = []  # type: ignore[assignment]
         self.tax_lots.append(
             {
                 "quantity": float(quantity),
@@ -638,14 +638,14 @@ class PortfolioHolding(BaseModel):
                 remaining_to_sell = Decimal("0.00")
         self.quantity -= quantity
         self.cost_basis -= (self.average_cost * quantity).quantize(Decimal("0.01"))
-        self.tax_lots = updated_tax_lots
-        self.last_transaction_date = transaction_date
+        self.tax_lots = updated_tax_lots  # type: ignore[assignment]
+        self.last_transaction_date = transaction_date  # type: ignore[assignment]
         if self.quantity == 0:
-            self.is_active = False
+            self.is_active = False  # type: ignore[assignment]
         self.update_valuation()
         return realized_pnl.quantize(Decimal("0.01"))
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self, include_sensitive: bool = False) -> Dict[str, Any]:
         """Convert holding to dictionary"""
         return {
             "id": str(self.id),
@@ -677,7 +677,7 @@ class PortfolioHolding(BaseModel):
 class PortfolioSnapshot(BaseModel):
     """Portfolio performance snapshot for historical tracking"""
 
-    __tablename__ = "portfolio_snapshots"
+    __tablename__ = "portfolio_snapshots"  # type: ignore[assignment]
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     portfolio_id = Column(
         UUID(as_uuid=True),
@@ -708,7 +708,7 @@ class PortfolioSnapshot(BaseModel):
         Index("idx_snapshot_date", "snapshot_date"),
     )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self, include_sensitive: bool = False) -> Dict[str, Any]:
         """Convert snapshot to dictionary"""
         return {
             "id": str(self.id),
@@ -734,7 +734,7 @@ class PortfolioSnapshot(BaseModel):
 class AssetPrice(BaseModel):
     """Historical asset price data"""
 
-    __tablename__ = "asset_prices"
+    __tablename__ = "asset_prices"  # type: ignore[assignment]
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     asset_id = Column(
         UUID(as_uuid=True), ForeignKey("assets.id"), nullable=False, index=True
@@ -754,7 +754,7 @@ class AssetPrice(BaseModel):
         Index("idx_price_timestamp", "timestamp"),
     )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self, include_sensitive: bool = False) -> Dict[str, Any]:
         """Convert price data to dictionary"""
         return {
             "id": str(self.id),

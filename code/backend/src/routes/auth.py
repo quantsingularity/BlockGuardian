@@ -18,7 +18,7 @@ auth_bp = Blueprint("auth", __name__)
 
 @auth_bp.route("/register", methods=["POST"])
 @rate_limit(limit=5, window=300, scope=RateLimitScope.PER_IP)
-def register() -> Any:
+def register() -> None:
     """Register a new user account"""
     try:
         security_validator.validate_request_size()
@@ -245,7 +245,7 @@ def refresh_token() -> Any:
 
 @auth_bp.route("/setup-mfa", methods=["POST"])
 @jwt_required
-def setup_mfa() -> Any:
+def setup_mfa() -> None:
     """Set up multi-factor authentication"""
     try:
         session = db_manager.get_session()

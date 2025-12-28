@@ -22,20 +22,20 @@ class EncryptionManager:
     """Enterprise encryption manager with key rotation and multiple encryption methods"""
 
     def __init__(self) -> None:
-        self.primary_key = current_config.security.encryption_key
-        self.fernet = Fernet(self.primary_key)
-        self.multi_fernet = None
+        self.primary_key: bytes = current_config.security.encryption_key
+        self.fernet: Fernet = Fernet(self.primary_key)
+        self.multi_fernet: Optional[MultiFernet] = None
         self._initialize_key_rotation()
 
-    def _initialize_key_rotation(self) -> Any:
+    def _initialize_key_rotation(self) -> None:
         """Initialize key rotation system"""
-        rotation_keys = [self.primary_key]
-        fernet_keys = [Fernet(key) for key in rotation_keys]
+        rotation_keys: list[bytes] = [self.primary_key]
+        fernet_keys: list[Fernet] = [Fernet(key) for key in rotation_keys]
         self.multi_fernet = MultiFernet(fernet_keys)
 
     def encrypt_field(
-        self, data: Union[str, dict, list], field_type: str = "general"
-    ) -> str:
+        self, data: Union[str, dict, list, None], field_type: str = "general"
+    ) -> Optional[str]:
         """
         Encrypt sensitive field data with metadata
 
@@ -61,7 +61,7 @@ class EncryptionManager:
         encrypted_data = self.fernet.encrypt(json.dumps(payload).encode())
         return base64.b64encode(encrypted_data).decode()
 
-    def decrypt_field(self, encrypted_data: str) -> Any:
+    def decrypt_field(self, encrypted_data: Optional[str]) -> Any:
         """
         Decrypt field data and return original value
 
@@ -75,6 +75,8 @@ class EncryptionManager:
             return None
         try:
             encrypted_bytes = base64.b64decode(encrypted_data.encode())
+            if self.multi_fernet is None:
+                raise ValueError("MultiFernet not initialized")
             decrypted_bytes = self.multi_fernet.decrypt(encrypted_bytes)
             payload = json.loads(decrypted_bytes.decode())
             data_str = payload["data"]
@@ -86,7 +88,7 @@ class EncryptionManager:
             logger.error(f"Decryption failed: {type(e).__name__}")
             return None
 
-    def encrypt_pii(self, pii_data: Dict[str, Any]) -> Dict[str, str]:
+    def encrypt_pii(self, pii_data: Dict[str, Any]) -> Dict[str, Optional[str]]:
         """
         Encrypt personally identifiable information
 
@@ -117,7 +119,9 @@ class EncryptionManager:
             decrypted_pii[field] = self.decrypt_field(encrypted_value)
         return decrypted_pii
 
-    def encrypt_financial_data(self, financial_data: Dict[str, Any]) -> Dict[str, str]:
+    def encrypt_financial_data(
+        self, financial_data: Dict[str, Any]
+    ) -> Dict[str, Optional[str]]:
         """
         Encrypt financial data with enhanced security
 
@@ -148,7 +152,9 @@ class EncryptionManager:
             decrypted_data[field] = self.decrypt_field(encrypted_value)
         return decrypted_data
 
-    def hash_sensitive_identifier(self, identifier: str, salt: str = None) -> str:
+    def hash_sensitive_identifier(
+        self, identifier: str, salt: Optional[str] = None
+    ) -> str:
         """
         Create a one-way hash of sensitive identifiers for indexing
 
@@ -165,7 +171,9 @@ class EncryptionManager:
         hash_obj = hashlib.sha256(data)
         return hash_obj.hexdigest()
 
-    def generate_api_key(self, user_id: int, permissions: list = None) -> str:
+    def generate_api_key(
+        self, user_id: int, permissions: Optional[list[str]] = None
+    ) -> Optional[str]:
         """
         Generate encrypted API key for external integrations
 
@@ -201,7 +209,7 @@ class EncryptionManager:
 
     def encrypt_blockchain_private_key(
         self, private_key: str, user_password: str
-    ) -> str:
+    ) -> Optional[str]:
         """
         Encrypt blockchain private key with user password
 
@@ -255,7 +263,7 @@ class EncryptionManager:
             )
             return None
 
-    def rotate_encryption_key(self, new_key: bytes = None) -> bool:
+    def rotate_encryption_key(self, new_key: Optional[bytes] = None) -> bool:
         """
         Rotate encryption keys (for scheduled key rotation)
 
@@ -269,6 +277,8 @@ class EncryptionManager:
             if new_key is None:
                 new_key = Fernet.generate_key()
             new_fernet = Fernet(new_key)
+            if self.multi_fernet is None:
+                return False
             current_keys = list(self.multi_fernet._fernets)
             current_keys.insert(0, new_fernet)
             if len(current_keys) > 3:

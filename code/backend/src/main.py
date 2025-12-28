@@ -148,7 +148,7 @@ def setup_logging(app: Any) -> Any:
     app.logger.info("Logging configured successfully")
 
 
-def initialize_extensions(app: Any) -> Any:
+def initialize_extensions(app: Any) -> None:
     """Initialize Flask extensions"""
     CORS(
         app,
@@ -177,14 +177,14 @@ def initialize_extensions(app: Any) -> Any:
     app.logger.info("Extensions initialized successfully")
 
 
-def register_blueprints(app: Any) -> Any:
+def register_blueprints(app: Any) -> None:
     """Register application blueprints"""
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(portfolio_bp, url_prefix="/api/portfolios")
     app.logger.info("Blueprints registered successfully")
 
 
-def register_error_handlers(app: Any) -> Any:
+def register_error_handlers(app: Any) -> None:
     """Register global error handlers"""
 
     @app.errorhandler(400)
@@ -304,7 +304,7 @@ def register_error_handlers(app: Any) -> Any:
     app.logger.info("Error handlers registered successfully")
 
 
-def register_middleware(app: Any) -> Any:
+def register_middleware(app: Any) -> None:
     """Register application middleware"""
 
     @app.before_request

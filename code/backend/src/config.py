@@ -110,10 +110,12 @@ class Config:
     # Security settings
     SECRET_KEY = os.environ.get("SECRET_KEY") or secrets.token_urlsafe(32)
     JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY") or secrets.token_urlsafe(32)
-    ENCRYPTION_KEY = (
-        os.environ.get("ENCRYPTION_KEY", Fernet.generate_key()).encode()
-        if isinstance(os.environ.get("ENCRYPTION_KEY", Fernet.generate_key()), str)
-        else os.environ.get("ENCRYPTION_KEY", Fernet.generate_key())
+    # ENCRYPTION_KEY generation with proper type handling
+    _enc_key_env = os.environ.get("ENCRYPTION_KEY")
+    ENCRYPTION_KEY: bytes = (
+        _enc_key_env.encode()
+        if isinstance(_enc_key_env, str)
+        else _enc_key_env if isinstance(_enc_key_env, bytes) else Fernet.generate_key()
     )
 
     # CORS settings

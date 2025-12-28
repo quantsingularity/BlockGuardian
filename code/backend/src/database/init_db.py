@@ -34,7 +34,7 @@ def create_database_schema() -> Any:
         return False
 
 
-def create_indexes() -> Any:
+def create_indexes() -> None:
     """Create additional database indexes for performance"""
     try:
         with db_manager.engine.connect() as conn:
@@ -129,7 +129,7 @@ def create_admin_user() -> Any:
         return False
 
 
-def create_sample_assets() -> Any:
+def create_sample_assets() -> None:
     """Create sample assets for testing"""
     try:
         session = db_manager.get_session()
@@ -399,7 +399,7 @@ def create_demo_user() -> Any:
         return False
 
 
-def initialize_database() -> Any:
+def initialize_database() -> None:
     """Main function to initialize the database"""
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"

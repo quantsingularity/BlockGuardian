@@ -540,7 +540,7 @@ class ComplianceManager:
         }
         self._setup_monitoring_rules()
 
-    def _setup_monitoring_rules(self) -> Any:
+    def _setup_monitoring_rules(self) -> None:
         """Set up compliance monitoring rules"""
 
     def check_transaction_compliance(

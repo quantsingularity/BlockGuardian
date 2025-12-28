@@ -19,7 +19,7 @@ class BaseModel:
     """Base model with common fields and functionality"""
 
     @declared_attr
-    def __tablename__(cls: Any) -> Any:
+    def __tablename__(cls: Any) -> None:
         return cls.__name__.lower()
 
     id = Column(Integer, primary_key=True)
@@ -34,7 +34,7 @@ class BaseModel:
     def to_dict(self, include_sensitive: bool = False) -> Dict[str, Any]:
         """Convert model to dictionary"""
         result = {}
-        for column in self.__table__.columns:
+        for column in self.__table__.columns:  # type: ignore[attr-defined]
             value = getattr(self, column.name)
             if isinstance(value, datetime):
                 value = value.isoformat()
@@ -50,8 +50,8 @@ class BaseModel:
         return result
 
     def update_from_dict(
-        self, data: Dict[str, Any], exclude_fields: list = None
-    ) -> Any:
+        self, data: Dict[str, Any], exclude_fields: Optional[list[str]] = None
+    ) -> None:
         """Update model from dictionary"""
         if exclude_fields is None:
             exclude_fields = ["id", "created_at", "created_by"]
@@ -60,14 +60,14 @@ class BaseModel:
                 if hasattr(self, "_encrypted_fields") and key in self._encrypted_fields:
                     value = encryption_manager.encrypt_field(value)
                 setattr(self, key, value)
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.utcnow()  # type: ignore[assignment]
         if has_request_context() and hasattr(g, "current_user_id"):
             self.updated_by = g.current_user_id
 
-    def soft_delete(self) -> Any:
+    def soft_delete(self) -> None:
         """Soft delete the record"""
-        self.is_active = False
-        self.updated_at = datetime.utcnow()
+        self.is_active = False  # type: ignore[assignment]
+        self.updated_at = datetime.utcnow()  # type: ignore[assignment]
         if has_request_context() and hasattr(g, "current_user_id"):
             self.updated_by = g.current_user_id
 
@@ -79,15 +79,15 @@ class DatabaseManager:
     """Enterprise database manager with connection pooling and monitoring"""
 
     def __init__(self, app: Optional[Any] = None) -> None:
-        self.app = app
-        self.engine = None
-        self.session_factory = None
-        self.Session = None
+        self.app: Optional[Any] = app
+        self.engine: Optional[Any] = None
+        self.session_factory: Optional[Any] = None
+        self.Session: Optional[Any] = None
         self.Base = Base  # Set Base immediately
         if app is not None:
             self.init_app(app)
 
-    def init_app(self, app: Any) -> Any:
+    def init_app(self, app: Any) -> None:
         """Initialize database manager with Flask app"""
         self.app = app
         db_config = current_config.database
@@ -107,15 +107,18 @@ class DatabaseManager:
         # self._setup_audit_listeners()
         app.logger.info("Database manager initialized")
 
-    def get_session(self) -> Any:
+    def get_session(self) -> None:
         """Get database session"""
+        if self.Session is None:
+            raise RuntimeError("Database not initialized")
         return self.Session()
 
-    def close_session(self) -> Any:
+    def close_session(self) -> None:
         """Close database session"""
-        self.Session.remove()
+        if self.Session is not None:
+            self.Session.remove()
 
-    def _setup_audit_listeners(self) -> Any:
+    def _setup_audit_listeners(self) -> None:
         """Set up SQLAlchemy event listeners for audit logging"""
 
         @listens_for(self.session_factory, "after_insert")
@@ -176,8 +179,11 @@ class AuditMixin:
     audit_log = Column(Text)
 
     def add_audit_entry(
-        self, action: str, details: Dict[str, Any] = None, user_id: int = None
-    ) -> Any:
+        self,
+        action: str,
+        details: Optional[Dict[str, Any]] = None,
+        user_id: Optional[int] = None,
+    ) -> None:
         """Add audit entry to the model"""
         if user_id is None and has_request_context() and hasattr(g, "current_user_id"):
             user_id = g.current_user_id
@@ -190,13 +196,13 @@ class AuditMixin:
         import json
 
         try:
-            audit_log = json.loads(self.audit_log) if self.audit_log else []
+            audit_log_data: list[Dict[str, Any]] = json.loads(self.audit_log) if self.audit_log else []  # type: ignore[arg-type] if self.audit_log else []
         except (json.JSONDecodeError, TypeError):
-            audit_log = []
-        audit_log.append(audit_entry)
-        if len(audit_log) > 100:
-            audit_log = audit_log[-100:]
-        self.audit_log = json.dumps(audit_log)
+            pass
+        audit_log_data.append(audit_entry)
+        if len(audit_log_data) > 100:
+            audit_log_data = audit_log_data[-100:]
+        self.audit_log = json.dumps(audit_log_data)  # type: ignore[assignment]
 
     def get_audit_trail(self) -> list:
         """Get audit trail for the model"""
@@ -225,7 +231,7 @@ class EncryptedMixin:
 
     def set_encrypted_field(
         self, field_name: str, value: str, field_type: str = "general"
-    ) -> Any:
+    ) -> None:
         """Set an encrypted field value"""
         if field_name in self._encrypted_fields:
             encrypted_value = self.encrypt_field(field_name, value, field_type)
@@ -256,10 +262,10 @@ class TimestampMixin:
         """Check if record is soft deleted"""
         return self.deleted_at is not None
 
-    def soft_delete(self) -> Any:
+    def soft_delete(self) -> None:
         """Soft delete the record"""
-        self.deleted_at = datetime.utcnow()
-        self.is_active = False
+        self.deleted_at = datetime.utcnow()  # type: ignore[assignment]
+        self.is_active = False  # type: ignore[assignment]
 
 
 class VersionMixin:
@@ -267,12 +273,12 @@ class VersionMixin:
 
     version = Column(Integer, default=1, nullable=False)
 
-    def increment_version(self) -> Any:
+    def increment_version(self) -> None:
         """Increment version number"""
-        self.version += 1
+        self.version += 1  # type: ignore[assignment]
 
 
-def get_or_create(session: Any, model: Any, defaults: Any = None, **kwargs) -> Any:
+def get_or_create(session: Any, model: Any, defaults: Any = None, **kwargs) -> None:
     """Get existing record or create new one"""
     instance = session.query(model).filter_by(**kwargs).first()
     if instance:
@@ -288,7 +294,7 @@ def get_or_create(session: Any, model: Any, defaults: Any = None, **kwargs) -> A
 
 def bulk_insert_or_update(
     session: Any, model: Any, data_list: Any, update_fields: Any = None
-) -> Any:
+) -> None:
     """Bulk insert or update records"""
     if not data_list:
         return
@@ -296,11 +302,12 @@ def bulk_insert_or_update(
         session.bulk_update_mappings(model, data_list)
     else:
         session.bulk_insert_mappings(model, data_list)
+        return None
 
 
 def paginate_query(
     query: Any, page: int = 1, per_page: int = 20, max_per_page: int = 100
-) -> Any:
+) -> None:
     """Paginate SQLAlchemy query"""
     if per_page > max_per_page:
         per_page = max_per_page

@@ -7,7 +7,7 @@ import re
 from decimal import Decimal, InvalidOperation
 from typing import Any, Dict, List, Optional
 from flask import request
-import bleach
+import bleach  # type: ignore[import-untyped]
 
 
 class ValidationError(Exception):

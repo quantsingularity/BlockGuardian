@@ -165,7 +165,7 @@ def get_portfolio(portfolio_id: Any) -> Any:
 @jwt_required
 @permission_required(Permission.UPDATE_PORTFOLIO)
 @rate_limit(limit=20, window=3600, scope=RateLimitScope.PER_USER)
-def update_portfolio(portfolio_id: Any) -> Any:
+def update_portfolio(portfolio_id: Any) -> None:
     """Update portfolio settings"""
     try:
         data = security_validator.validate_json_input(request.get_json())
@@ -279,7 +279,7 @@ def get_portfolio_transactions(portfolio_id: Any) -> Any:
 @jwt_required
 @permission_required(Permission.EXECUTE_TRADE)
 @rate_limit(limit=50, window=3600, scope=RateLimitScope.PER_USER)
-def buy_asset(portfolio_id: Any) -> Any:
+def buy_asset(portfolio_id: Any) -> None:
     """Buy an asset for the portfolio"""
     try:
         data = security_validator.validate_json_input(request.get_json())
@@ -406,7 +406,7 @@ def buy_asset(portfolio_id: Any) -> Any:
 @jwt_required
 @permission_required(Permission.EXECUTE_TRADE)
 @rate_limit(limit=50, window=3600, scope=RateLimitScope.PER_USER)
-def sell_asset(portfolio_id: Any) -> Any:
+def sell_asset(portfolio_id: Any) -> None:
     """Sell an asset from the portfolio"""
     try:
         data = security_validator.validate_json_input(request.get_json())
@@ -579,7 +579,7 @@ def get_portfolio_performance(portfolio_id: Any) -> Any:
 @portfolio_bp.route("/assets/search", methods=["GET"])
 @jwt_required
 @permission_required(Permission.READ_MARKET_DATA)
-def search_assets() -> Any:
+def search_assets() -> None:
     """Search for tradeable assets"""
     try:
         query = request.args.get("q", "").strip()

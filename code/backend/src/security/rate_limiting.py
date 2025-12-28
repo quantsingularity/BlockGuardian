@@ -47,7 +47,7 @@ class RateLimiter:
         if app is not None:
             self.init_app(app)
 
-    def init_app(self, app: Any) -> Any:
+    def init_app(self, app: Any) -> None:
         """Initialize rate limiter with Flask app"""
         self.app = app
         try:

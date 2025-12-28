@@ -97,7 +97,7 @@ def update_current_user() -> Any:
 
 @user_bp.route("/me/settings", methods=["GET"])
 @jwt_required
-def get_user_settings() -> Any:
+def get_user_settings() -> None:
     """Get user settings"""
     try:
         session = db_manager.get_session()
@@ -123,7 +123,7 @@ def get_user_settings() -> Any:
 @user_bp.route("/me/settings", methods=["PUT"])
 @jwt_required
 @rate_limit(limit=10, window=3600, scope=RateLimitScope.PER_USER)
-def update_user_settings() -> Any:
+def update_user_settings() -> None:
     """Update user settings"""
     try:
         data = security_validator.validate_json_input(request.get_json())

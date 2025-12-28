@@ -8,10 +8,11 @@ import threading
 import time
 from collections import defaultdict, deque
 from dataclasses import dataclass
-from datetime import datetime, timedelta
-from typing import Any, Dict, List
+from datetime import datetime, timedelta, timezone
+from typing import Any, Callable, Dict, List, Optional
 import psutil
 from flask import g
+from sqlalchemy import text
 from src.models.base import db_manager
 from src.security.audit import audit_logger
 
@@ -22,7 +23,7 @@ class MetricPoint:
 
     timestamp: datetime
     value: float
-    tags: Dict[str, str] = None
+    tags: Optional[Dict[str, str]] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -35,48 +36,58 @@ class MetricPoint:
 class MetricsCollector:
     """Centralized metrics collection and storage"""
 
-    def __init__(self, max_points_per_metric: int = 1000) -> Any:
-        self.metrics = defaultdict(lambda: deque(maxlen=max_points_per_metric))
-        self.counters = defaultdict(int)
-        self.gauges = defaultdict(float)
-        self.histograms = defaultdict(list)
-        self.lock = threading.Lock()
+    def __init__(self, max_points_per_metric: int = 1000) -> None:
+        self.metrics: Dict[str, Any] = defaultdict(
+            lambda: deque(maxlen=max_points_per_metric)
+        )
+        self.counters: Dict[str, int] = defaultdict(int)
+        self.gauges: Dict[str, float] = defaultdict(float)
+        self.histograms: Dict[str, List[float]] = defaultdict(list)
+        self.lock = threading.RLock()
         self.collection_thread = threading.Thread(
             target=self._collect_system_metrics, daemon=True
         )
         self.collection_thread.start()
 
     def record_counter(
-        self, name: str, value: float = 1, tags: Dict[str, str] = None
-    ) -> Any:
+        self, name: str, value: float = 1, tags: Optional[Dict[str, str]] = None
+    ) -> None:
         """Record a counter metric"""
         with self.lock:
-            self.counters[name] += value
-            self.metrics[name].append(MetricPoint(datetime.utcnow(), value, tags))
+            self.counters[name] += int(value)
+            self.metrics[name].append(
+                MetricPoint(datetime.now(timezone.utc), value, tags)
+            )
 
-    def record_gauge(self, name: str, value: float, tags: Dict[str, str] = None) -> Any:
+    def record_gauge(
+        self, name: str, value: float, tags: Optional[Dict[str, str]] = None
+    ) -> None:
         """Record a gauge metric"""
         with self.lock:
             self.gauges[name] = value
-            self.metrics[name].append(MetricPoint(datetime.utcnow(), value, tags))
+            self.metrics[name].append(
+                MetricPoint(datetime.now(timezone.utc), value, tags)
+            )
 
     def record_histogram(
-        self, name: str, value: float, tags: Dict[str, str] = None
-    ) -> Any:
+        self, name: str, value: float, tags: Optional[Dict[str, str]] = None
+    ) -> None:
         """Record a histogram metric"""
         with self.lock:
             self.histograms[name].append(value)
-            self.metrics[name].append(MetricPoint(datetime.utcnow(), value, tags))
+            self.metrics[name].append(
+                MetricPoint(datetime.now(timezone.utc), value, tags)
+            )
 
     def record_timing(
-        self, name: str, duration_ms: float, tags: Dict[str, str] = None
-    ) -> Any:
+        self, name: str, duration_ms: float, tags: Optional[Dict[str, str]] = None
+    ) -> None:
         """Record a timing metric"""
         self.record_histogram(f"{name}.duration_ms", duration_ms, tags)
 
     def get_metric_summary(self, name: str, minutes: int = 60) -> Dict[str, Any]:
         """Get summary statistics for a metric"""
-        cutoff_time = datetime.utcnow() - timedelta(minutes=minutes)
+        cutoff_time = datetime.now(timezone.utc) - timedelta(minutes=minutes)
         with self.lock:
             recent_points = [
                 point for point in self.metrics[name] if point.timestamp >= cutoff_time
@@ -104,7 +115,7 @@ class MetricsCollector:
         result["gauges"] = dict(self.gauges)
         return result
 
-    def _collect_system_metrics(self) -> Any:
+    def _collect_system_metrics(self) -> None:
         """Background thread to collect system metrics"""
         while True:
             try:
@@ -138,16 +149,16 @@ class MetricsCollector:
 class PerformanceMonitor:
     """Performance monitoring for API endpoints and database operations"""
 
-    def __init__(self, metrics_collector: MetricsCollector) -> Any:
+    def __init__(self, metrics_collector: MetricsCollector) -> None:
         self.metrics = metrics_collector
         self.slow_query_threshold = 1000
         self.slow_request_threshold = 5000
 
-    def start_request_timing(self) -> Any:
+    def start_request_timing(self) -> None:
         """Start timing a request"""
         g.request_start_time = time.time()
 
-    def end_request_timing(self, endpoint: str, method: str, status_code: int) -> Any:
+    def end_request_timing(self, endpoint: str, method: str, status_code: int) -> None:
         """End timing a request and record metrics"""
         if not hasattr(g, "request_start_time"):
             return
@@ -157,15 +168,15 @@ class PerformanceMonitor:
         self.metrics.record_timing("api.requests", duration_ms, tags)
         if duration_ms > self.slow_request_threshold:
             self.metrics.record_counter("api.requests.slow", 1, tags)
-            audit_logger.log_performance_event(
-                event_type="slow_request",
-                details={
-                    "endpoint": endpoint,
-                    "method": method,
-                    "duration_ms": duration_ms,
-                    "threshold_ms": self.slow_request_threshold,
-                },
-            )
+            # audit_logger.log_performance_event(
+            #     event_type="slow_request",
+            #     details={
+            #         "endpoint": endpoint,
+            #         "method": method,
+            #         "duration_ms": duration_ms,
+            #         "threshold_ms": self.slow_request_threshold,
+            #     },
+            # )
         if status_code >= 400:
             self.metrics.record_counter("api.errors.total", 1, tags)
             if status_code >= 500:
@@ -174,8 +185,8 @@ class PerformanceMonitor:
                 self.metrics.record_counter("api.errors.client", 1, tags)
 
     def record_database_query(
-        self, query_type: str, duration_ms: float, table: str = None
-    ) -> Any:
+        self, query_type: str, duration_ms: float, table: Optional[str] = None
+    ) -> None:
         """Record database query performance"""
         tags = {"query_type": query_type}
         if table:
@@ -184,19 +195,19 @@ class PerformanceMonitor:
         self.metrics.record_counter("database.queries.total", 1, tags)
         if duration_ms > self.slow_query_threshold:
             self.metrics.record_counter("database.queries.slow", 1, tags)
-            audit_logger.log_performance_event(
-                event_type="slow_query",
-                details={
-                    "query_type": query_type,
-                    "table": table,
-                    "duration_ms": duration_ms,
-                    "threshold_ms": self.slow_query_threshold,
-                },
-            )
+            # audit_logger.log_performance_event(
+            #     event_type="slow_query",
+            #     details={
+            #         "query_type": query_type,
+            #         "table": table,
+            #         "duration_ms": duration_ms,
+            #         "threshold_ms": self.slow_query_threshold,
+            #     },
+            # )
 
     def record_business_metric(
-        self, metric_name: str, value: float, tags: Dict[str, str] = None
-    ) -> Any:
+        self, metric_name: str, value: float, tags: Optional[Dict[str, str]] = None
+    ) -> None:
         """Record business-specific metrics"""
         self.metrics.record_gauge(f"business.{metric_name}", value, tags)
 
@@ -204,14 +215,14 @@ class PerformanceMonitor:
 class AlertManager:
     """Alert management system for monitoring thresholds"""
 
-    def __init__(self, metrics_collector: MetricsCollector) -> Any:
+    def __init__(self, metrics_collector: MetricsCollector) -> None:
         self.metrics = metrics_collector
         self.alert_rules: List[Dict[str, Any]] = []
-        self.alert_history = deque(maxlen=1000)
-        self.alert_cooldowns: Dict[str, float] = {}
+        self.alert_history: deque = deque(maxlen=1000)
+        self.alert_cooldowns: Dict[str, datetime] = {}
         self._setup_default_alerts()
 
-    def _setup_default_alerts(self) -> Any:
+    def _setup_default_alerts(self) -> None:
         """Set up default alert rules"""
         self.add_alert_rule(
             name="high_cpu_usage",
@@ -254,7 +265,7 @@ class AlertManager:
         comparison: str,
         duration_minutes: int,
         severity: str,
-    ) -> Any:
+    ) -> None:
         """Add a new alert rule"""
         rule = {
             "name": name,
@@ -267,9 +278,9 @@ class AlertManager:
         }
         self.alert_rules.append(rule)
 
-    def check_alerts(self) -> Any:
+    def check_alerts(self) -> None:
         """Check all alert rules and trigger alerts if necessary"""
-        current_time = datetime.utcnow()
+        current_time = datetime.now(timezone.utc)
         for rule in self.alert_rules:
             if not rule["enabled"]:
                 continue
@@ -299,10 +310,10 @@ class AlertManager:
 
     def _trigger_alert(
         self, rule: Dict[str, Any], current_value: float, metric_summary: Dict[str, Any]
-    ) -> Any:
+    ) -> None:
         """Trigger an alert"""
         alert = {
-            "timestamp": datetime.utcnow(),
+            "timestamp": datetime.now(timezone.utc),
             "rule_name": rule["name"],
             "metric": rule["metric"],
             "severity": rule["severity"],
@@ -317,15 +328,15 @@ class AlertManager:
         )
         self._send_alert_notification(alert)
 
-    def _send_alert_notification(self, alert: Dict[str, Any]) -> Any:
+    def _send_alert_notification(self, alert: Dict[str, Any]) -> None:
         """Send alert notification (placeholder for actual implementation)"""
         logging.warning(
             f"ALERT: {alert['rule_name']} - {alert['metric']} = {alert['current_value']} (threshold: {alert['threshold']})"
         )
 
-    def get_active_alerts(self, severity: str = None) -> List[Dict[str, Any]]:
+    def get_active_alerts(self, severity: Optional[str] = None) -> List[Dict[str, Any]]:
         """Get currently active alerts"""
-        cutoff_time = datetime.utcnow() - timedelta(hours=1)
+        cutoff_time = datetime.now(timezone.utc) - timedelta(hours=1)
         active_alerts = [
             alert for alert in self.alert_history if alert["timestamp"] >= cutoff_time
         ]
@@ -339,12 +350,12 @@ class AlertManager:
 class HealthChecker:
     """System health checking and reporting"""
 
-    def __init__(self, metrics_collector: MetricsCollector) -> Any:
+    def __init__(self, metrics_collector: MetricsCollector) -> None:
         self.metrics = metrics_collector
-        self.health_checks: Dict[str, Callable] = {}
+        self.health_checks: Dict[str, Callable[[], Dict[str, Any]]] = {}
         self._register_default_checks()
 
-    def _register_default_checks(self) -> Any:
+    def _register_default_checks(self) -> None:
         """Register default health checks"""
         self.register_check("database", self._check_database)
         self.register_check("redis", self._check_redis)
@@ -352,14 +363,16 @@ class HealthChecker:
         self.register_check("memory", self._check_memory)
         self.register_check("cpu", self._check_cpu)
 
-    def register_check(self, name: str, check_function: Any) -> Any:
+    def register_check(
+        self, name: str, check_function: Callable[[], Dict[str, Any]]
+    ) -> None:
         """Register a health check function"""
         self.health_checks[name] = check_function
 
     def run_health_checks(self) -> Dict[str, Any]:
         """Run all health checks and return results"""
         results = {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "overall_status": "healthy",
             "checks": {},
         }
@@ -376,7 +389,7 @@ class HealthChecker:
                 results["checks"][name] = {
                     "status": "critical",
                     "message": f"Health check failed: {str(e)}",
-                    "timestamp": datetime.utcnow().isoformat(),
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
                 }
                 results["overall_status"] = "critical"
         return results
@@ -385,18 +398,20 @@ class HealthChecker:
         """Check database connectivity"""
         try:
             session = db_manager.get_session()
-            session.execute("SELECT 1")
-            session.close()
+            try:
+                session.execute(text("SELECT 1"))
+            finally:
+                db_manager.close_session()
             return {
                 "status": "healthy",
                 "message": "Database connection successful",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
         except Exception as e:
             return {
                 "status": "critical",
                 "message": f"Database connection failed: {str(e)}",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
     def _check_redis(self) -> Dict[str, Any]:
@@ -405,13 +420,13 @@ class HealthChecker:
             return {
                 "status": "healthy",
                 "message": "Redis not configured",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
         except Exception as e:
             return {
                 "status": "warning",
                 "message": f"Redis check failed: {str(e)}",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
     def _check_disk_space(self) -> Dict[str, Any]:
@@ -432,13 +447,13 @@ class HealthChecker:
                 "status": status,
                 "message": message,
                 "free_percent": free_percent,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
         except Exception as e:
             return {
                 "status": "critical",
                 "message": f"Disk space check failed: {str(e)}",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
     def _check_memory(self) -> Dict[str, Any]:
@@ -458,13 +473,13 @@ class HealthChecker:
                 "status": status,
                 "message": message,
                 "usage_percent": memory.percent,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
         except Exception as e:
             return {
                 "status": "critical",
                 "message": f"Memory check failed: {str(e)}",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
     def _check_cpu(self) -> Dict[str, Any]:
@@ -484,13 +499,13 @@ class HealthChecker:
                 "status": status,
                 "message": message,
                 "usage_percent": cpu_percent,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
         except Exception as e:
             return {
                 "status": "critical",
                 "message": f"CPU check failed: {str(e)}",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
 
@@ -500,7 +515,7 @@ alert_manager = AlertManager(metrics_collector)
 health_checker = HealthChecker(metrics_collector)
 
 
-def start_alert_monitoring() -> Any:
+def start_alert_monitoring() -> None:
     """Start background alert monitoring"""
 
     def alert_loop():
@@ -514,6 +529,3 @@ def start_alert_monitoring() -> Any:
 
     alert_thread = threading.Thread(target=alert_loop, daemon=True)
     alert_thread.start()
-
-
-start_alert_monitoring()

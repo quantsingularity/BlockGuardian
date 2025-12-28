@@ -66,7 +66,7 @@ class RiskLevel(Enum):
 class Transaction(BaseModel):
     """Transaction model with comprehensive financial features"""
 
-    __tablename__ = "transactions"
+    __tablename__ = "transactions"  # type: ignore[assignment]
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     transaction_id = Column(String(50), unique=True, nullable=False, index=True)
     external_id = Column(String(100), index=True)
@@ -132,7 +132,7 @@ class Transaction(BaseModel):
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         if not self.transaction_id:
-            self.transaction_id = self.generate_transaction_id()
+            self.transaction_id = self.generate_transaction_id()  # type: ignore[assignment]
 
     @staticmethod
     def generate_transaction_id() -> str:
@@ -183,14 +183,14 @@ class Transaction(BaseModel):
     ) -> Any:
         """Update transaction status with audit trail"""
         old_status = self.status
-        self.status = new_status.value
-        self.updated_at = datetime.now(timezone.utc)
+        self.status = new_status.value  # type: ignore[assignment]
+        self.updated_at = datetime.now(timezone.utc)  # type: ignore[assignment]
         if new_status == TransactionStatus.COMPLETED:
-            self.execution_date = datetime.now(timezone.utc)
+            self.execution_date = datetime.now(timezone.utc)  # type: ignore[assignment]
         elif new_status == TransactionStatus.SETTLED:
-            self.settlement_date = datetime.now(timezone.utc)
+            self.settlement_date = datetime.now(timezone.utc)  # type: ignore[assignment]
         if not self.transaction_metadata:
-            self.transaction_metadata = {}
+            self.transaction_metadata = {}  # type: ignore[assignment]
         if "status_history" not in self.transaction_metadata:
             self.transaction_metadata["status_history"] = []
         self.transaction_metadata["status_history"].append(
@@ -202,10 +202,10 @@ class Transaction(BaseModel):
             }
         )
 
-    def add_compliance_note(self, note: str, user_id: Optional[str] = None) -> Any:
+    def add_compliance_note(self, note: str, user_id: Optional[str] = None) -> None:
         """Add compliance note to transaction"""
         if not self.transaction_metadata:
-            self.transaction_metadata = {}
+            self.transaction_metadata = {}  # type: ignore[assignment]
         if "compliance_notes" not in self.transaction_metadata:
             self.transaction_metadata["compliance_notes"] = []
         self.transaction_metadata["compliance_notes"].append(
@@ -216,7 +216,7 @@ class Transaction(BaseModel):
             }
         )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self, include_sensitive: bool = False) -> Dict[str, Any]:
         """Convert transaction to dictionary"""
         return {
             "id": str(self.id),
@@ -267,7 +267,7 @@ class Transaction(BaseModel):
 class TransactionAudit(BaseModel):
     """Transaction audit log for compliance tracking"""
 
-    __tablename__ = "transaction_audits"
+    __tablename__ = "transaction_audits"  # type: ignore[assignment]
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     transaction_id = Column(
         UUID(as_uuid=True), ForeignKey("transactions.id"), nullable=False, index=True
@@ -285,7 +285,7 @@ class TransactionAudit(BaseModel):
     transaction = relationship("Transaction")
     user = relationship("User")
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self, include_sensitive: bool = False) -> Dict[str, Any]:
         """Convert audit record to dictionary"""
         return {
             "id": str(self.id),
@@ -307,7 +307,7 @@ class TransactionAudit(BaseModel):
 class SuspiciousActivity(BaseModel):
     """Suspicious activity reporting for AML compliance"""
 
-    __tablename__ = "suspicious_activities"
+    __tablename__ = "suspicious_activities"  # type: ignore[assignment]
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     transaction_id = Column(
         UUID(as_uuid=True), ForeignKey("transactions.id"), nullable=False, index=True
@@ -333,7 +333,7 @@ class SuspiciousActivity(BaseModel):
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         if not self.sar_number:
-            self.sar_number = self.generate_sar_number()
+            self.sar_number = self.generate_sar_number()  # type: ignore[assignment]
 
     @staticmethod
     def generate_sar_number() -> str:
@@ -342,7 +342,7 @@ class SuspiciousActivity(BaseModel):
         random_suffix = str(uuid.uuid4())[:6].upper()
         return f"SAR-{timestamp}-{random_suffix}"
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self, include_sensitive: bool = False) -> Dict[str, Any]:
         """Convert SAR to dictionary"""
         return {
             "id": str(self.id),

@@ -60,7 +60,7 @@ class AuditEventType(Enum):
 AuditLogBase = declarative_base()
 
 
-class AuditLog(AuditLogBase):  # type: ignore[misc]
+class AuditLog(AuditLogBase):  # type: ignore  # type: ignore[misc]
     """SQLAlchemy model for the Audit Log"""
 
     __tablename__ = "audit_logs"
@@ -68,7 +68,9 @@ class AuditLog(AuditLogBase):  # type: ignore[misc]
     timestamp = Column(
         DateTime(timezone=True), default=datetime.now(timezone.utc), nullable=False
     )
-    event_type = Column(SQLEnum(AuditEventType), nullable=False, index=True)
+    event_type: Column[AuditEventType] = Column(
+        SQLEnum(AuditEventType), nullable=False, index=True
+    )
     user_id = Column(Integer, index=True)
     username = Column(String(255))
     ip_address = Column(String(45))

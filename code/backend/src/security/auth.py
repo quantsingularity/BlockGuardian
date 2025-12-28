@@ -92,7 +92,7 @@ class AuthManage:
             "platform",
         ]
 
-    def init_app(self, app: Any) -> Any:
+    def init_app(self, app: Any) -> None:
         """Initialize with Flask app"""
         self.jwt_manager.init_app(app)
         try:
@@ -458,7 +458,10 @@ class AuthManage:
     ) -> List[Dict[str, Any]]:
         """Check for security violations"""
         violations = []
-        if user.active_sessions > user.max_sessions:
+        if (
+            hasattr(user, "active_sessions")
+            and user.active_sessions > user.max_sessions
+        ):
             violations.append(
                 {
                     "type": "excessive_sessions",

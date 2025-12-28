@@ -90,7 +90,7 @@ class RiskLevel(enum.Enum):
 class Portfolio(Base, AuditMixin, TimestampMixin):
     """Portfolio model for managing investment portfolios"""
 
-    __tablename__ = "portfolios"
+    __tablename__ = "portfolios"  # type: ignore[assignment]
     name = Column(String(255), nullable=False)
     description = Column(Text)
     portfolio_type = Column(
@@ -138,14 +138,14 @@ class Portfolio(Base, AuditMixin, TimestampMixin):
 
     def update_portfolio_metrics(self) -> Any:
         """Update portfolio metrics based on current holdings"""
-        self.total_value = self.calculate_total_value()
+        self.total_value = self.calculate_total_value()  # type: ignore[assignment]
         unrealized_pnl = Decimal("0")
         invested_amount = Decimal("0")
         for holding in self.holdings.filter_by(is_active=True):
             invested_amount += holding.cost_basis
             unrealized_pnl += holding.unrealized_pnl
-        self.invested_amount = invested_amount
-        self.unrealized_pnl = unrealized_pnl
+        self.invested_amount = invested_amount  # type: ignore[assignment]
+        self.unrealized_pnl = unrealized_pnl  # type: ignore[assignment]
         self.add_audit_entry(
             "metrics_updated",
             {
@@ -219,7 +219,7 @@ class Portfolio(Base, AuditMixin, TimestampMixin):
 class Asset(Base, TimestampMixin):
     """Financial asset model"""
 
-    __tablename__ = "assets"
+    __tablename__ = "assets"  # type: ignore[assignment]
     symbol = Column(String(20), unique=True, nullable=False, index=True)
     name = Column(String(255), nullable=False)
     asset_type = Column(Enum(AssetType), nullable=False, index=True)
@@ -246,19 +246,19 @@ class Asset(Base, TimestampMixin):
     def __repr__(self) -> Any:
         return f"<Asset {self.symbol}>"
 
-    def update_price(self, new_price: Decimal, volume: int = None) -> Any:
+    def update_price(self, new_price: Decimal, volume: int = None) -> None:
         """Update asset price and calculate changes"""
         if self.current_price:
-            self.previous_close = self.current_price
-            self.day_change = new_price - self.current_price
+            self.previous_close = self.current_price  # type: ignore[assignment]
+            self.day_change = new_price - self.current_price  # type: ignore[assignment]
             if self.current_price > 0:
-                self.day_change_percent = float(
+                self.day_change_percent = float(  # type: ignore[assignment]
                     self.day_change / self.current_price * 100
                 )
-        self.current_price = new_price
+        self.current_price = new_price  # type: ignore[assignment]
         if volume:
-            self.volume = volume
-        self.last_updated = datetime.utcnow()
+            self.volume = volume  # type: ignore[assignment]
+        self.last_updated = datetime.utcnow()  # type: ignore[assignment]
 
     def get_price_history(self, days: int = 30) -> List[Dict[str, Any]]:
         """Get price history for specified number of days"""
@@ -274,7 +274,7 @@ class Asset(Base, TimestampMixin):
 class PortfolioHolding(Base, AuditMixin, TimestampMixin):
     """Individual asset holding within a portfolio"""
 
-    __tablename__ = "portfolio_holdings"
+    __tablename__ = "portfolio_holdings"  # type: ignore[assignment]
     portfolio_id = Column(
         Integer, ForeignKey("portfolios.id"), nullable=False, index=True
     )
@@ -296,26 +296,26 @@ class PortfolioHolding(Base, AuditMixin, TimestampMixin):
     def __repr__(self) -> Any:
         return f"<Holding {self.asset.symbol} in {self.portfolio.name}>"
 
-    def update_valuation(self) -> Any:
+    def update_valuation(self) -> None:
         """Update current valuation based on asset price"""
         if self.asset.current_price:
-            self.current_price = self.asset.current_price
-            self.current_value = self.quantity * self.current_price
-            self.unrealized_pnl = self.current_value - self.cost_basis
+            self.current_price = self.asset.current_price  # type: ignore[assignment]
+            self.current_value = self.quantity * self.current_price  # type: ignore[assignment]
+            self.unrealized_pnl = self.current_value - self.cost_basis  # type: ignore[assignment]
             if self.cost_basis > 0:
-                self.unrealized_pnl_percent = float(
+                self.unrealized_pnl_percent = float(  # type: ignore[assignment]
                     self.unrealized_pnl / self.cost_basis * 100
                 )
 
-    def add_shares(self, quantity: Decimal, price: Decimal) -> Any:
+    def add_shares(self, quantity: Decimal, price: Decimal) -> None:
         """Add shares to the holding (buy transaction)"""
         total_cost = quantity * price
         new_total_quantity = self.quantity + quantity
         new_total_cost = self.cost_basis + total_cost
-        self.average_cost = new_total_cost / new_total_quantity
-        self.quantity = new_total_quantity
-        self.cost_basis = new_total_cost
-        self.last_transaction_date = datetime.utcnow()
+        self.average_cost = new_total_cost / new_total_quantity  # type: ignore[assignment]
+        self.quantity = new_total_quantity  # type: ignore[assignment]
+        self.cost_basis = new_total_cost  # type: ignore[assignment]
+        self.last_transaction_date = datetime.utcnow()  # type: ignore[assignment]
         self.update_valuation()
         self.add_audit_entry(
             "shares_added",
@@ -334,9 +334,9 @@ class PortfolioHolding(Base, AuditMixin, TimestampMixin):
         realized_pnl = (price - cost_per_share) * quantity
         self.quantity -= quantity
         self.cost_basis -= cost_per_share * quantity
-        self.last_transaction_date = datetime.utcnow()
+        self.last_transaction_date = datetime.utcnow()  # type: ignore[assignment]
         if self.quantity == 0:
-            self.is_active = False
+            self.is_active = False  # type: ignore[assignment]
         self.update_valuation()
         self.add_audit_entry(
             "shares_removed",
@@ -352,7 +352,7 @@ class PortfolioHolding(Base, AuditMixin, TimestampMixin):
 class Transaction(Base, AuditMixin, EncryptedMixin, TimestampMixin):
     """Financial transaction model"""
 
-    __tablename__ = "transactions"
+    __tablename__ = "transactions"  # type: ignore[assignment]
     _encrypted_fields = ["external_account_number", "routing_number"]
     transaction_type = Column(Enum(TransactionType), nullable=False, index=True)
     status = Column(
@@ -397,9 +397,9 @@ class Transaction(Base, AuditMixin, EncryptedMixin, TimestampMixin):
         """Execute the transaction"""
         if self.status != TransactionStatus.PENDING:
             raise ValueError("Transaction is not in pending status")
-        self.status = TransactionStatus.PROCESSING
-        self.executed_at = datetime.utcnow()
-        self.net_amount = self.amount - (self.fee or 0)
+        self.status = TransactionStatus.PROCESSING  # type: ignore[assignment]
+        self.executed_at = datetime.utcnow()  # type: ignore[assignment]
+        self.net_amount = self.amount - (self.fee or 0)  # type: ignore[assignment]
         self.add_audit_entry(
             "transaction_executed",
             {
@@ -413,31 +413,31 @@ class Transaction(Base, AuditMixin, EncryptedMixin, TimestampMixin):
         """Mark transaction as completed"""
         if self.status != TransactionStatus.PROCESSING:
             raise ValueError("Transaction is not in processing status")
-        self.status = TransactionStatus.COMPLETED
-        self.settled_at = datetime.utcnow()
+        self.status = TransactionStatus.COMPLETED  # type: ignore[assignment]
+        self.settled_at = datetime.utcnow()  # type: ignore[assignment]
         if confirmation_number:
-            self.confirmation_number = confirmation_number
+            self.confirmation_number = confirmation_number  # type: ignore[assignment]
         self.add_audit_entry(
             "transaction_completed", {"confirmation_number": confirmation_number}
         )
 
     def fail(self, reason: str) -> Any:
         """Mark transaction as failed"""
-        self.status = TransactionStatus.FAILED
+        self.status = TransactionStatus.FAILED  # type: ignore[assignment]
         self.add_audit_entry("transaction_failed", {"reason": reason})
 
     def cancel(self, reason: str = None) -> Any:
         """Cancel the transaction"""
         if self.status in [TransactionStatus.COMPLETED, TransactionStatus.FAILED]:
             raise ValueError("Cannot cancel completed or failed transaction")
-        self.status = TransactionStatus.CANCELLED
+        self.status = TransactionStatus.CANCELLED  # type: ignore[assignment]
         self.add_audit_entry("transaction_cancelled", {"reason": reason})
 
 
 class AssetPrice(Base):
     """Historical asset price data"""
 
-    __tablename__ = "asset_prices"
+    __tablename__ = "asset_prices"  # type: ignore[assignment]
     asset_id = Column(Integer, ForeignKey("assets.id"), nullable=False, index=True)
     open_price = Column(Numeric(20, 8))
     high_price = Column(Numeric(20, 8))
@@ -454,7 +454,7 @@ class AssetPrice(Base):
             f"<AssetPrice {self.asset.symbol} {self.close_price} at {self.timestamp}>"
         )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self, include_sensitive: bool = False) -> Dict[str, Any]:
         """Convert to dictionary for API responses"""
         return {
             "asset_id": self.asset_id,
@@ -470,7 +470,7 @@ class AssetPrice(Base):
 class PortfolioSnapshot(Base):
     """Portfolio performance snapshots for historical tracking"""
 
-    __tablename__ = "portfolio_snapshots"
+    __tablename__ = "portfolio_snapshots"  # type: ignore[assignment]
     portfolio_id = Column(
         Integer, ForeignKey("portfolios.id"), nullable=False, index=True
     )

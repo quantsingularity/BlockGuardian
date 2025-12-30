@@ -66,7 +66,3 @@ The CI/CD pipeline includes security scanning for:
 - Dependency vulnerabilities
 - Smart contract security issues
 - Code quality and best practices
-
-## Contact
-
-For questions about secret management or to report security concerns, contact the security team.

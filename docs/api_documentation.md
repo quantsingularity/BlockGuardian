@@ -895,5 +895,3 @@ Official client libraries are available for:
 - Python
 - Java
 - Ruby
-
-Visit our [GitHub repository](https://github.com/BlockGuardian/api-clients) for documentation and examples.

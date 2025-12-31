@@ -1,42 +1,111 @@
-# Docs Directory
+# BlockGuardian Documentation
 
-This directory contains comprehensive documentation for the BlockGuardian project, covering technical specifications, user guides, API references, and security practices. The documentation serves as the central knowledge base for developers, administrators, and end-users of the BlockGuardian platform.
+**Version:** 1.0.0  
+**Last Updated:** 2025-12-30
 
-## Structure
+BlockGuardian is a comprehensive blockchain security and monitoring platform that helps organizations protect their blockchain assets, detect vulnerabilities, and ensure compliance with regulatory requirements.
 
-The docs directory contains various Markdown files that document different aspects of the BlockGuardian system:
+## Quick Navigation
 
-- **api_documentation.md**: Detailed API reference for all endpoints exposed by the BlockGuardian backend services
-- **technical_documentation.md**: In-depth technical specifications covering architecture, components, and implementation details
-- **user_guide.md**: Comprehensive guide for end-users on how to use the BlockGuardian platform
-- **User_Manual.md**: Additional user-focused documentation (appears to be a duplicate or alternative version)
-- **Fraud_Detection_Methodologies.md**: Documentation of the fraud detection approaches implemented in BlockGuardian
-- **security-quality.md**: Security practices and quality assurance measures implemented in the project
-- **secret-management.md**: Guidelines for managing secrets and sensitive information within the codebase
-- **project structure.md**: Overview of the project's directory structure and organization
-- **ui-design-concept.md**: Design specifications and concepts for the user interface
-- **images/**: Directory containing images used in the documentation files
+| Section                               | Description                                                 |
+| ------------------------------------- | ----------------------------------------------------------- |
+| [Installation](INSTALLATION.md)       | System requirements, installation methods, and setup guides |
+| [Usage](USAGE.md)                     | Common usage patterns for CLI and library integration       |
+| [API Reference](API.md)               | Complete REST API documentation with examples               |
+| [CLI Reference](CLI.md)               | Command-line interface documentation                        |
+| [Configuration](CONFIGURATION.md)     | Configuration options and environment variables             |
+| [Feature Matrix](FEATURE_MATRIX.md)   | Complete feature overview and availability                  |
+| [Architecture](ARCHITECTURE.md)       | System architecture and component design                    |
+| [Examples](EXAMPLES/)                 | Practical examples and use cases                            |
+| [Contributing](CONTRIBUTING.md)       | Guidelines for contributing to the project                  |
+| [Troubleshooting](TROUBLESHOOTING.md) | Common issues and solutions                                 |
 
-## Purpose
+## Quick Start
 
-The documentation in this directory serves multiple purposes:
+BlockGuardian is a multi-component platform consisting of backend services, blockchain smart contracts, web and mobile frontends, and data analysis tools.
 
-1. **Developer Reference**: Technical documentation and API references help developers understand the system architecture and interfaces.
+### 3-Step Quickstart
 
-2. **User Guidance**: User manuals and guides assist end-users in navigating and utilizing the BlockGuardian platform effectively.
+1. **Clone and Setup**
 
-3. **Security Practices**: Documentation on fraud detection, security measures, and secret management ensures consistent security practices across the project.
+    ```bash
+    git clone https://github.com/abrar2030/BlockGuardian.git
+    cd BlockGuardian
+    ./scripts/setup_blockguardian_env.sh
+    ```
 
-4. **Design Guidelines**: UI design concepts provide a reference for maintaining visual consistency and user experience standards.
+2. **Start Services**
 
-## Usage
+    ```bash
+    docker-compose up --build
+    # Or use the convenience script
+    ./scripts/run_blockguardian.sh
+    ```
 
-Documentation should be kept up-to-date as the project evolves. When making significant changes to the codebase, corresponding updates to the relevant documentation files should be made. The Markdown format allows for easy version control and collaboration on documentation changes.
+3. **Access the Platform**
+    - Web Dashboard: http://localhost:3000
+    - Backend API: http://localhost:5000
+    - API Health: http://localhost:5000/health
 
-## Best Practices
+## What's New
 
-1. **Consistency**: Maintain consistent formatting and structure across all documentation files
-2. **Completeness**: Ensure all major features and components are documented
-3. **Clarity**: Write documentation with both technical and non-technical audiences in mind
-4. **Visual Aids**: Use diagrams and screenshots (stored in the images directory) to enhance understanding
-5. **Version Alignment**: Keep documentation synchronized with the current version of the software
+### Recent Features (v1.0.0)
+
+- **Multi-Factor Authentication (MFA)**: Enhanced security with TOTP-based 2FA
+- **Portfolio Management Smart Contracts**: On-chain portfolio tracking and rebalancing
+- **Advanced Compliance Reporting**: Automated KYC/AML compliance checks
+- **Real-time Monitoring Dashboard**: Live blockchain transaction monitoring
+- **AI-Powered Anomaly Detection**: Machine learning models for threat detection
+
+## Core Capabilities
+
+BlockGuardian provides four main capability areas:
+
+1. **Security Monitoring**: Real-time transaction monitoring, anomaly detection, smart contract auditing
+2. **Compliance & Governance**: KYC/AML compliance, audit trails, regulatory reporting
+3. **Analytics & Reporting**: Security dashboards, incident response, forensic analysis
+4. **Developer Tools**: Secure development guidelines, code analysis, testing frameworks
+
+## Technology Overview
+
+- **Backend**: Python (Flask), PostgreSQL, Redis, Celery
+- **Smart Contracts**: Solidity, Hardhat, OpenZeppelin
+- **Web Frontend**: React, TypeScript, Next.js, Tailwind CSS
+- **Mobile**: React Native
+- **Infrastructure**: Docker, Kubernetes, Terraform, Ansible
+
+## Documentation Structure
+
+```
+docs/
+├── README.md                    # This file - documentation index
+├── INSTALLATION.md              # Installation and setup
+├── USAGE.md                     # Usage patterns and workflows
+├── API.md                       # REST API reference
+├── CLI.md                       # Command-line interface
+├── CONFIGURATION.md             # Configuration reference
+├── FEATURE_MATRIX.md            # Feature availability matrix
+├── ARCHITECTURE.md              # Architecture documentation
+├── CONTRIBUTING.md              # Contribution guidelines
+├── TROUBLESHOOTING.md           # Common issues and fixes
+├── DELIVERABLE_CHECKLIST.md     # Quality assurance checklist
+├── examples/                    # Example code and tutorials
+│   ├── basic-portfolio.md
+│   ├── security-monitoring.md
+│   └── smart-contract-audit.md
+├── api/                         # Detailed API specifications
+└── diagnostics/                 # Test results and diagnostics
+```
+
+## Support and Resources
+
+- **GitHub Repository**: https://github.com/abrar2030/BlockGuardian
+- **Issues & Bug Reports**: https://github.com/abrar2030/BlockGuardian/issues
+- **License**: MIT License - see [LICENSE](../LICENSE)
+
+## Next Steps
+
+- New users: Start with [Installation Guide](INSTALLATION.md)
+- Developers: Review [API Documentation](API.md) and [Examples](EXAMPLES/)
+- DevOps: Check [Architecture](ARCHITECTURE.md) and [Configuration](CONFIGURATION.md)
+- Contributors: Read [Contributing Guidelines](CONTRIBUTING.md)

@@ -109,7 +109,7 @@ See [Component Setup](#component-setup) section below for detailed manual instal
 | 4. Install Node.js          | `curl -fsSL https://deb.nodesource.com/setup_18.x \| sudo -E bash - && sudo apt install -y nodejs` | Node 18 LTS                  |
 | 5. Install Python           | `sudo apt install -y python3.9 python3-pip python3-venv`                                           | Python 3.9+                  |
 | 6. Install Git              | `sudo apt install -y git`                                                                          | Version control              |
-| 7. Clone BlockGuardian      | `git clone https://github.com/quantsingularity/BlockGuardian.git`                                         | Get source code              |
+| 7. Clone BlockGuardian      | `git clone https://github.com/quantsingularity/BlockGuardian.git`                                  | Get source code              |
 | 8. Run setup                | `cd BlockGuardian && ./scripts/setup_blockguardian_env.sh`                                         | Automated setup              |
 
 ### macOS
@@ -121,7 +121,7 @@ See [Component Setup](#component-setup) section below for detailed manual instal
 | 3. Install Node.js        | `brew install node@18`                                                                            | Node 18 LTS     |
 | 4. Install Python         | `brew install python@3.9`                                                                         | Python 3.9+     |
 | 5. Install Git            | `brew install git`                                                                                | Version control |
-| 6. Clone BlockGuardian    | `git clone https://github.com/quantsingularity/BlockGuardian.git`                                        | Get source code |
+| 6. Clone BlockGuardian    | `git clone https://github.com/quantsingularity/BlockGuardian.git`                                 | Get source code |
 | 7. Run setup              | `cd BlockGuardian && ./scripts/setup_blockguardian_env.sh`                                        | Automated setup |
 
 ### Windows

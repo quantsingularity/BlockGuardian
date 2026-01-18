@@ -82,7 +82,7 @@ curl -s https://raw.githubusercontent.com/aquasecurity/tfsec/master/scripts/inst
 ### 1. Clone and Navigate
 
 ```bash
-git clone https://github.com/abrar2030/BlockGuardian.git
+git clone https://github.com/quantsingularity/BlockGuardian.git
 cd BlockGuardian/infrastructure
 ```
 

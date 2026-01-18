@@ -29,7 +29,7 @@ BlockGuardian is a multi-component platform consisting of backend services, bloc
 1. **Clone and Setup**
 
     ```bash
-    git clone https://github.com/abrar2030/BlockGuardian.git
+    git clone https://github.com/quantsingularity/BlockGuardian.git
     cd BlockGuardian
     ./scripts/setup_blockguardian_env.sh
     ```
@@ -99,8 +99,8 @@ docs/
 
 ## Support and Resources
 
-- **GitHub Repository**: https://github.com/abrar2030/BlockGuardian
-- **Issues & Bug Reports**: https://github.com/abrar2030/BlockGuardian/issues
+- **GitHub Repository**: https://github.com/quantsingularity/BlockGuardian
+- **Issues & Bug Reports**: https://github.com/quantsingularity/BlockGuardian/issues
 - **License**: MIT License - see [LICENSE](../LICENSE)
 
 ## Next Steps

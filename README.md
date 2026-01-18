@@ -1,7 +1,7 @@
 # BlockGuardian
 
-![CI/CD Status](https://img.shields.io/github/actions/workflow/status/abrar2030/BlockGuardian/cicd.yml?branch=main&label=CI/CD&logo=github)
-[![Test Coverage](https://img.shields.io/badge/coverage-79%25-brightgreen)](https://github.com/abrar2030/BlockGuardian/actions)
+![CI/CD Status](https://img.shields.io/github/actions/workflow/status/quantsingularity/BlockGuardian/cicd.yml?branch=main&label=CI/CD&logo=github)
+[![Test Coverage](https://img.shields.io/badge/coverage-79%25-brightgreen)](https://github.com/quantsingularity/BlockGuardian/actions)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 ## 🔒 Blockchain Security & Monitoring Platform
@@ -155,7 +155,7 @@ The easiest way to set up the development environment is to use the provided set
 
 ```bash
 # Clone the repository
-git clone https://github.com/abrar2030/BlockGuardian.git
+git clone https://github.com/quantsingularity/BlockGuardian.git
 cd BlockGuardian
 
 # Run the setup script

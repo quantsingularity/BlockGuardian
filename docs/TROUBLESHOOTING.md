@@ -701,7 +701,7 @@ If your issue isn't listed here:
     ```
 
 2. **Search GitHub Issues:**
-   https://github.com/abrar2030/BlockGuardian/issues
+   https://github.com/quantsingularity/BlockGuardian/issues
 
 3. **Create a new issue:**
    Use the bug report template with:
@@ -712,7 +712,7 @@ If your issue isn't listed here:
     - Relevant logs
 
 4. **Join Discussions:**
-   https://github.com/abrar2030/BlockGuardian/discussions
+   https://github.com/quantsingularity/BlockGuardian/discussions
 
 ## Diagnostic Commands
 

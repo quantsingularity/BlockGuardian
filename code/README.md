@@ -135,7 +135,7 @@ Before installing BlockGuardian, ensure you have the following prerequisites:
 1. **Clone the Repository**
 
     ```bash
-    git clone https://github.com/abrar2030/BlockGuardian.git
+    git clone https://github.com/quantsingularity/BlockGuardian.git
     cd BlockGuardian/code/backend
     ```
 

@@ -50,7 +50,7 @@ git clone https://github.com/YOUR_USERNAME/BlockGuardian.git
 cd BlockGuardian
 
 # Add upstream remote
-git remote add upstream https://github.com/abrar2030/BlockGuardian.git
+git remote add upstream https://github.com/quantsingularity/BlockGuardian.git
 ```
 
 ### Setup Development Environment

@@ -26,6 +26,7 @@ BlockGuardian is a comprehensive blockchain security and monitoring platform tha
 - [Infrastructure](#infrastructure)
 - [Testing](#testing)
 - [CI/CD Pipeline](#cicd-pipeline)
+- [Documentation](#documentation)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -128,15 +129,20 @@ The project is organized into several main components:
 
 ```
 BlockGuardian/
-├── backend/                # Backend services and API
-├── blockchain/             # Blockchain interaction libraries
-├── blockchain-contracts/   # Smart contracts and related code
-├── code/                   # Shared code and utilities
-├── data-analysis/          # Data analysis and ML components
-├── docs/                   # Documentation
-├── infrastructure/         # DevOps and infrastructure code
+├── code/                   # Core backend logic, services, and shared utilities
+├── docs/                   # Project documentation
+├── infrastructure/         # DevOps, deployment, and infra-related code
 ├── mobile-frontend/        # Mobile application
-└── web-frontend/           # Web dashboard
+├── web-frontend/           # Web dashboard
+├── resources/              # Static assets, configs, and auxiliary resources
+├── scripts/                # Automation, setup, and utility scripts
+├── LICENSE                 # License information
+├── README.md               # Project overview and instructions
+├── docker-compose.yml      # Local / production service orchestration
+├── eslint.config.js        # ESLint configuration
+├── package.json            # Node.js project metadata and dependencies
+└── package.json                  # Python virtual environment (local)
+
 ```
 
 ## Installation & Setup
@@ -175,25 +181,7 @@ cd BlockGuardian
     - Set up environment variables: `cp .env.example .env` and edit as needed
     - Run the development server: `uvicorn main:app --reload`
 
-2. **Blockchain Contracts (`blockchain-contracts/`):**
-    - Navigate to the `blockchain-contracts` directory: `cd blockchain-contracts`
-    - Install dependencies: `npm install`
-    - Compile contracts: `npx hardhat compile`
-    - Run tests: `npx hardhat test`
-    - Deploy contracts: `npx hardhat run scripts/deploy.js --network <network_name>`
-
-3. **Data Analysis (`data-analysis/`):**
-    - Navigate to the `data-analysis` directory: `cd data-analysis`
-    - Create a virtual environment: `python -m venv venv`
-    - Activate the virtual environment: `source venv/bin/activate` (Linux/Mac) or `venv\Scripts\activate` (Windows)
-    - Install dependencies: `pip install -r requirements.txt`
-    - Run Jupyter notebook: `jupyter notebook`
-
-4. **Blockchain Interaction (`blockchain/`):**
-    - Navigate to the `blockchain` directory: `cd blockchain`
-    - Install dependencies: `npm install` or `go mod download` depending on the implementation
-
-5. **Mobile Frontend (`mobile-frontend/`):**
+2. **Mobile Frontend (`mobile-frontend/`):**
     - Navigate to the `mobile-frontend` directory: `cd mobile-frontend`
     - Install dependencies: `npm install` or `yarn install`
     - Start the development server: `npm start` or `yarn start`
@@ -202,8 +190,7 @@ cd BlockGuardian
         yarn android # or npx react-native run-android
         yarn ios   # or npx react-native run-ios
         ```
-
-6. **Web Frontend (`web-frontend/`):**
+3. **Web Frontend (`web-frontend/`):**
     - Navigate to the `web-frontend` directory: `cd web-frontend`
     - Install dependencies: `npm install`
     - Run in development mode: `npm run dev` (usually accessible at `http://localhost:3000`)
@@ -284,11 +271,38 @@ npm test
 
 BlockGuardian uses GitHub Actions for continuous integration and deployment:
 
-- Automated testing on each pull request
-- Smart contract security scanning
-- Code quality checks
-- Docker image building
-- Automated deployment to staging and production environments
+| Stage                   | Control Area                    | Institutional-Grade Detail                                                              |
+| :---------------------- | :------------------------------ | :-------------------------------------------------------------------------------------- |
+| **CI Formatting Check** | Change Triggers                 | Enforced on all `push` and `pull_request` events to `main` and `develop`                |
+|                         | Manual Oversight                | On-demand execution via controlled `workflow_dispatch`                                  |
+|                         | Source Integrity                | Full repository checkout with complete Git history for auditability                     |
+|                         | Python Runtime Standardization  | Python 3.10 with deterministic dependency caching                                       |
+|                         | Backend Code Hygiene            | `autoflake` to detect unused imports/variables using non-mutating diff-based validation |
+|                         | Backend Style Compliance        | `black --check` to enforce institutional formatting standards                           |
+|                         | Non-Intrusive Validation        | Temporary workspace comparison to prevent unauthorized source modification              |
+|                         | Node.js Runtime Control         | Node.js 18 with locked dependency installation via `npm ci`                             |
+|                         | Web Frontend Formatting Control | Prettier checks for web-facing assets                                                   |
+|                         | Mobile Frontend Formatting      | Prettier enforcement for mobile application codebases                                   |
+|                         | Documentation Governance        | Repository-wide Markdown formatting enforcement                                         |
+|                         | Infrastructure Configuration    | Prettier validation for YAML/YML infrastructure definitions                             |
+|                         | Compliance Gate                 | Any formatting deviation fails the pipeline and blocks merge                            |
+
+## Documentation
+
+For detailed documentation, please refer to the following resources:
+
+| Document                    | Path                 | Description                                                 |
+| :-------------------------- | :------------------- | :---------------------------------------------------------- |
+| **README**                  | `README.md`          | High-level overview, project scope, and quickstart          |
+| **API Reference**           | `API.md`             | Detailed documentation for all API endpoints                |
+| **CLI Reference**           | `CLI.md`             | Command-line interface usage, commands, and examples        |
+| **Installation Guide**      | `INSTALLATION.md`    | Step-by-step installation and environment setup             |
+| **User Guide**              | `USAGE.md`           | Comprehensive guide for end-users, workflows, and examples  |
+| **Contributing Guidelines** | `CONTRIBUTING.md`    | Contribution process, coding standards, and PR requirements |
+| **Architecture Overview**   | `ARCHITECTURE.md`    | System architecture, components, and design rationale       |
+| **Configuration Guide**     | `CONFIGURATION.md`   | Configuration options, environment variables, and tuning    |
+| **Feature Matrix**          | `FEATURE_MATRIX.md`  | Feature capabilities, coverage, and roadmap alignment       |
+| **Troubleshooting**         | `TROUBLESHOOTING.md` | Common issues, diagnostics, and remediation steps           |
 
 ## Contributing
 

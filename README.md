@@ -134,15 +134,12 @@ BlockGuardian/
 ├── infrastructure/         # DevOps, deployment, and infra-related code
 ├── mobile-frontend/        # Mobile application
 ├── web-frontend/           # Web dashboard
-├── resources/              # Static assets, configs, and auxiliary resources
 ├── scripts/                # Automation, setup, and utility scripts
 ├── LICENSE                 # License information
 ├── README.md               # Project overview and instructions
 ├── docker-compose.yml      # Local / production service orchestration
 ├── eslint.config.js        # ESLint configuration
-├── package.json            # Node.js project metadata and dependencies
-└── package.json                  # Python virtual environment (local)
-
+└── package.json            # Node.js project metadata and dependencies
 ```
 
 ## Installation & Setup

@@ -34,6 +34,24 @@ BlockGuardian is a comprehensive blockchain security and monitoring platform tha
 
 BlockGuardian provides a robust set of tools for monitoring blockchain networks, analyzing smart contract vulnerabilities, detecting suspicious transactions, and ensuring compliance with regulatory requirements. The platform combines advanced security techniques with user-friendly interfaces to make blockchain security accessible to organizations of all sizes.
 
+## Project Structure
+
+The project is organized into several main components:
+
+```
+BlockGuardian/
+├── code/                   # Core backend logic, services, and shared utilities
+├── docs/                   # Project documentation
+├── infrastructure/         # DevOps, deployment, and infra-related code
+├── mobile-frontend/        # Mobile application
+├── web-frontend/           # Web dashboard
+├── scripts/                # Automation, setup, and utility scripts
+├── LICENSE                 # License information
+├── README.md               # Project overview and instructions
+├── eslint.config.js        # ESLint configuration
+└── package.json            # Node.js project metadata and dependencies
+```
+
 ## Key Features
 
 ### Security Monitoring
@@ -122,25 +140,6 @@ BlockGuardian/
 - **CI/CD**: GitHub Actions
 - **Monitoring**: Prometheus, Grafana
 - **Infrastructure as Code**: Terraform, Ansible
-
-## Project Structure
-
-The project is organized into several main components:
-
-```
-BlockGuardian/
-├── code/                   # Core backend logic, services, and shared utilities
-├── docs/                   # Project documentation
-├── infrastructure/         # DevOps, deployment, and infra-related code
-├── mobile-frontend/        # Mobile application
-├── web-frontend/           # Web dashboard
-├── scripts/                # Automation, setup, and utility scripts
-├── LICENSE                 # License information
-├── README.md               # Project overview and instructions
-├── docker-compose.yml      # Local / production service orchestration
-├── eslint.config.js        # ESLint configuration
-└── package.json            # Node.js project metadata and dependencies
-```
 
 ## Installation & Setup
 

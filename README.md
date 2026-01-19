@@ -17,10 +17,10 @@ BlockGuardian is a comprehensive blockchain security and monitoring platform tha
 ## Table of Contents
 
 - [Overview](#overview)
+- [Project Structure](#project-structure)
 - [Key Features](#key-features)
 - [Architecture](#architecture)
 - [Technology Stack](#technology-stack)
-- [Project Structure](#project-structure)
 - [Installation & Setup](#installation--setup)
 - [Key Scripts](#key-scripts)
 - [Infrastructure](#infrastructure)

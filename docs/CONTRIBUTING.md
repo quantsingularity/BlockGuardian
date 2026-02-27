@@ -231,13 +231,13 @@ Example:
 ```javascript
 // Good
 const fetchPortfolios = async (userId) => {
-    try {
-        const response = await api.get(`/portfolios?user_id=${userId}`);
-        return response.data;
-    } catch (error) {
-        console.error('Failed to fetch portfolios:', error);
-        throw error;
-    }
+  try {
+    const response = await api.get(`/portfolios?user_id=${userId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Failed to fetch portfolios:", error);
+    throw error;
+  }
 };
 ```
 
@@ -306,25 +306,28 @@ def test_create_portfolio(client, auth_token):
 **Frontend Tests (Jest + React Testing Library):**
 
 ```javascript
-test('renders portfolio list', async () => {
-    render(<PortfolioList />);
-    await waitFor(() => {
-        expect(screen.getByText('My Portfolios')).toBeInTheDocument();
-    });
+test("renders portfolio list", async () => {
+  render(<PortfolioList />);
+  await waitFor(() => {
+    expect(screen.getByText("My Portfolios")).toBeInTheDocument();
+  });
 });
 ```
 
 **Smart Contract Tests (Hardhat):**
 
 ```javascript
-describe('PortfolioManager', function () {
-    it('Should create a portfolio', async function () {
-        const [owner] = await ethers.getSigners();
-        const tx = await portfolioManager.createPortfolio('Test Portfolio', 'Description');
-        await tx.wait();
-        const portfolios = await portfolioManager.getUserPortfolios(owner.address);
-        expect(portfolios.length).to.equal(1);
-    });
+describe("PortfolioManager", function () {
+  it("Should create a portfolio", async function () {
+    const [owner] = await ethers.getSigners();
+    const tx = await portfolioManager.createPortfolio(
+      "Test Portfolio",
+      "Description",
+    );
+    await tx.wait();
+    const portfolios = await portfolioManager.getUserPortfolios(owner.address);
+    expect(portfolios.length).to.equal(1);
+  });
 });
 ```
 

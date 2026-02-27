@@ -313,41 +313,41 @@ echo "Database failover completed successfully"
 apiVersion: v1
 kind: ConfigMap
 metadata:
-    name: backup-monitoring-alerts
+  name: backup-monitoring-alerts
 data:
-    backup-alerts.yml: |
-        groups:
-        - name: backup.rules
-          rules:
-          - alert: BackupFailed
-            expr: backup_job_success == 0
-            for: 5m
-            labels:
-              severity: critical
-              compliance: pci-dss
-            annotations:
-              summary: "Backup job failed"
-              description: "Backup job {{ $labels.job }} has failed"
+  backup-alerts.yml: |
+    groups:
+    - name: backup.rules
+      rules:
+      - alert: BackupFailed
+        expr: backup_job_success == 0
+        for: 5m
+        labels:
+          severity: critical
+          compliance: pci-dss
+        annotations:
+          summary: "Backup job failed"
+          description: "Backup job {{ $labels.job }} has failed"
 
-          - alert: BackupDelayed
-            expr: time() - backup_job_last_success_time > 86400
-            for: 0m
-            labels:
-              severity: critical
-              compliance: all
-            annotations:
-              summary: "Backup is overdue"
-              description: "Backup job {{ $labels.job }} hasn't run successfully in 24 hours"
+      - alert: BackupDelayed
+        expr: time() - backup_job_last_success_time > 86400
+        for: 0m
+        labels:
+          severity: critical
+          compliance: all
+        annotations:
+          summary: "Backup is overdue"
+          description: "Backup job {{ $labels.job }} hasn't run successfully in 24 hours"
 
-          - alert: RPOViolation
-            expr: time() - backup_job_last_success_time > 900
-            for: 0m
-            labels:
-              severity: critical
-              compliance: all
-            annotations:
-              summary: "RPO violation detected"
-              description: "Recovery Point Objective violated - last backup was {{ $value }} seconds ago"
+      - alert: RPOViolation
+        expr: time() - backup_job_last_success_time > 900
+        for: 0m
+        labels:
+          severity: critical
+          compliance: all
+        annotations:
+          summary: "RPO violation detected"
+          description: "Recovery Point Objective violated - last backup was {{ $value }} seconds ago"
 ```
 
 ## Testing and Validation

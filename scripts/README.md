@@ -16,9 +16,9 @@ This package contains a set of automation scripts designed to enhance the develo
 
 1. Extract the contents of this zip file to the root directory of your BlockGuardian repository.
 2. Make the scripts executable:
-    ```bash
-    chmod +x scripts/*.sh
-    ```
+   ```bash
+   chmod +x scripts/*.sh
+   ```
 
 ## Usage
 

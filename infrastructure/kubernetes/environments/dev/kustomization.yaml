@@ -4,47 +4,47 @@ kind: Kustomization
 namespace: dev
 
 bases:
-    - ../../base
+  - ../../base
 
 namePrefix: dev-
 
 commonLabels:
-    environment: dev
+  environment: dev
 
 images:
-    - name: blockguardian/backend
-      newTag: dev-latest
-    - name: blockguardian/frontend
-      newTag: dev-latest
+  - name: blockguardian/backend
+    newTag: dev-latest
+  - name: blockguardian/frontend
+    newTag: dev-latest
 
 replicas:
-    - name: blockguardian-backend
-      count: 1
-    - name: blockguardian-frontend
-      count: 1
+  - name: blockguardian-backend
+    count: 1
+  - name: blockguardian-frontend
+    count: 1
 
 configMapGenerator:
-    - name: blockguardian-config
-      behavior: merge
-      literals:
-          - NODE_ENV=development
-          - LOG_LEVEL=debug
+  - name: blockguardian-config
+    behavior: merge
+    literals:
+      - NODE_ENV=development
+      - LOG_LEVEL=debug
 
 secretGenerator:
-    - name: blockguardian-secrets
-      behavior: replace
-      literals:
-          - database-url=postgresql://dev:dev@database:5432/blockguardian_dev
-          - jwt-secret=dev-jwt-secret-change-in-production
+  - name: blockguardian-secrets
+    behavior: replace
+    literals:
+      - database-url=postgresql://dev:dev@database:5432/blockguardian_dev
+      - jwt-secret=dev-jwt-secret-change-in-production
 
 patches:
-    - target:
-          kind: Ingress
-          name: blockguardian-ingress
-      patch: |-
-          - op: replace
-            path: /spec/rules/0/host
-            value: dev.blockguardian.local
-          - op: replace
-            path: /spec/tls/0/hosts/0
-            value: dev.blockguardian.local
+  - target:
+      kind: Ingress
+      name: blockguardian-ingress
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: dev.blockguardian.local
+      - op: replace
+        path: /spec/tls/0/hosts/0
+        value: dev.blockguardian.local

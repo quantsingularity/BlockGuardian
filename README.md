@@ -170,28 +170,28 @@ cd BlockGuardian
 ### Manual Setup for Individual Components
 
 1. **Backend (`backend/`):**
-    - Navigate to the `backend` directory: `cd backend`
-    - Create a virtual environment: `python -m venv venv`
-    - Activate the virtual environment: `source venv/bin/activate` (Linux/Mac) or `venv\Scripts\activate` (Windows)
-    - Install dependencies: `pip install -r requirements.txt`
-    - Set up environment variables: `cp .env.example .env` and edit as needed
-    - Run the development server: `uvicorn main:app --reload`
+   - Navigate to the `backend` directory: `cd backend`
+   - Create a virtual environment: `python -m venv venv`
+   - Activate the virtual environment: `source venv/bin/activate` (Linux/Mac) or `venv\Scripts\activate` (Windows)
+   - Install dependencies: `pip install -r requirements.txt`
+   - Set up environment variables: `cp .env.example .env` and edit as needed
+   - Run the development server: `uvicorn main:app --reload`
 
 2. **Mobile Frontend (`mobile-frontend/`):**
-    - Navigate to the `mobile-frontend` directory: `cd mobile-frontend`
-    - Install dependencies: `npm install` or `yarn install`
-    - Start the development server: `npm start` or `yarn start`
-    - Run on Android or iOS:
-        ```bash
-        yarn android # or npx react-native run-android
-        yarn ios   # or npx react-native run-ios
-        ```
+   - Navigate to the `mobile-frontend` directory: `cd mobile-frontend`
+   - Install dependencies: `npm install` or `yarn install`
+   - Start the development server: `npm start` or `yarn start`
+   - Run on Android or iOS:
+     ```bash
+     yarn android # or npx react-native run-android
+     yarn ios   # or npx react-native run-ios
+     ```
 3. **Web Frontend (`web-frontend/`):**
-    - Navigate to the `web-frontend` directory: `cd web-frontend`
-    - Install dependencies: `npm install`
-    - Run in development mode: `npm run dev` (usually accessible at `http://localhost:3000`)
-    - Build for production: `npm run build`
-    - Start production server: `npm run start`
+   - Navigate to the `web-frontend` directory: `cd web-frontend`
+   - Install dependencies: `npm install`
+   - Run in development mode: `npm run dev` (usually accessible at `http://localhost:3000`)
+   - Build for production: `npm run build`
+   - Start production server: `npm run start`
 
 ### Running the Entire Project (using Docker Compose)
 

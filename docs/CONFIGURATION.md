@@ -293,24 +293,24 @@ Edit `code/blockchain/hardhat.config.js` for network settings:
 
 ```javascript
 module.exports = {
-    networks: {
-        localhost: {
-            url: 'http://127.0.0.1:8545',
-            chainId: 31337,
-        },
-        sepolia: {
-            url: process.env.SEPOLIA_RPC_URL,
-            accounts: [process.env.TESTNET_PRIVATE_KEY],
-            chainId: 11155111,
-            gasPrice: 20000000000,
-        },
-        mainnet: {
-            url: process.env.MAINNET_RPC_URL,
-            accounts: [process.env.DEPLOYER_PRIVATE_KEY],
-            chainId: 1,
-            gasPrice: 50000000000,
-        },
+  networks: {
+    localhost: {
+      url: "http://127.0.0.1:8545",
+      chainId: 31337,
     },
+    sepolia: {
+      url: process.env.SEPOLIA_RPC_URL,
+      accounts: [process.env.TESTNET_PRIVATE_KEY],
+      chainId: 11155111,
+      gasPrice: 20000000000,
+    },
+    mainnet: {
+      url: process.env.MAINNET_RPC_URL,
+      accounts: [process.env.DEPLOYER_PRIVATE_KEY],
+      chainId: 1,
+      gasPrice: 50000000000,
+    },
+  },
 };
 ```
 
@@ -332,76 +332,76 @@ module.exports = {
 Edit `docker-compose.yml` for service configuration:
 
 ```yaml
-version: '3.8'
+version: "3.8"
 
 services:
-    backend:
-        build:
-            context: ./code/backend
-            dockerfile: Dockerfile
-        container_name: blockguardian_backend
-        ports:
-            - '5000:5000'
-        environment:
-            - FLASK_ENV=development
-            - DATABASE_URL=postgresql://postgres:password@db:5432/blockguardian
-            - REDIS_URL=redis://redis:6379/0
-        depends_on:
-            - db
-            - redis
-        volumes:
-            - ./code/backend:/app
-        networks:
-            - blockguardian_net
+  backend:
+    build:
+      context: ./code/backend
+      dockerfile: Dockerfile
+    container_name: blockguardian_backend
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=development
+      - DATABASE_URL=postgresql://postgres:password@db:5432/blockguardian
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - ./code/backend:/app
+    networks:
+      - blockguardian_net
 
-    web_frontend:
-        build:
-            context: ./web-frontend
-            dockerfile: Dockerfile
-        container_name: blockguardian_web_frontend
-        ports:
-            - '3000:3000'
-        environment:
-            - NEXT_PUBLIC_API_URL=http://backend:5000
-        depends_on:
-            - backend
-        volumes:
-            - ./web-frontend:/app
-            - /app/node_modules
-        networks:
-            - blockguardian_net
+  web_frontend:
+    build:
+      context: ./web-frontend
+      dockerfile: Dockerfile
+    container_name: blockguardian_web_frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:5000
+    depends_on:
+      - backend
+    volumes:
+      - ./web-frontend:/app
+      - /app/node_modules
+    networks:
+      - blockguardian_net
 
-    db:
-        image: postgres:15-alpine
-        container_name: blockguardian_db
-        environment:
-            - POSTGRES_USER=postgres
-            - POSTGRES_PASSWORD=password
-            - POSTGRES_DB=blockguardian
-        ports:
-            - '5432:5432'
-        volumes:
-            - postgres_data:/var/lib/postgresql/data
-        networks:
-            - blockguardian_net
+  db:
+    image: postgres:15-alpine
+    container_name: blockguardian_db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=blockguardian
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - blockguardian_net
 
-    redis:
-        image: redis:7-alpine
-        container_name: blockguardian_redis
-        ports:
-            - '6379:6379'
-        volumes:
-            - redis_data:/data
-        networks:
-            - blockguardian_net
+  redis:
+    image: redis:7-alpine
+    container_name: blockguardian_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - blockguardian_net
 
 networks:
-    blockguardian_net:
-        driver: bridge
+  blockguardian_net:
+    driver: bridge
 
 volumes:
-    postgres_data:
-    redis_data:
+  postgres_data:
+  redis_data:
 ```
 
 ### Kubernetes Configuration
@@ -412,42 +412,42 @@ Example Kubernetes deployment configuration (`infrastructure/kubernetes/base/bac
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-    name: blockguardian-backend
+  name: blockguardian-backend
 spec:
-    replicas: 3
-    selector:
-        matchLabels:
-            app: blockguardian-backend
-    template:
-        metadata:
-            labels:
-                app: blockguardian-backend
-        spec:
-            containers:
-                - name: backend
-                  image: blockguardian/backend:latest
-                  ports:
-                      - containerPort: 5000
-                  env:
-                      - name: FLASK_ENV
-                        value: 'production'
-                      - name: DATABASE_URL
-                        valueFrom:
-                            secretKeyRef:
-                                name: blockguardian-secrets
-                                key: database-url
-                      - name: REDIS_URL
-                        valueFrom:
-                            configMapKeyRef:
-                                name: blockguardian-config
-                                key: redis-url
-                  resources:
-                      requests:
-                          memory: '256Mi'
-                          cpu: '250m'
-                      limits:
-                          memory: '512Mi'
-                          cpu: '500m'
+  replicas: 3
+  selector:
+    matchLabels:
+      app: blockguardian-backend
+  template:
+    metadata:
+      labels:
+        app: blockguardian-backend
+    spec:
+      containers:
+        - name: backend
+          image: blockguardian/backend:latest
+          ports:
+            - containerPort: 5000
+          env:
+            - name: FLASK_ENV
+              value: "production"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: blockguardian-secrets
+                  key: database-url
+            - name: REDIS_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: blockguardian-config
+                  key: redis-url
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
 ```
 
 ## Environment-Specific Settings

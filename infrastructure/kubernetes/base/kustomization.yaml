@@ -2,43 +2,43 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-    - backend-service-account.yaml
-    - backend-role.yaml
-    - backend-rolebinding.yaml
-    - backend-service.yaml
-    - backend-deployment-fixed.yaml
-    - frontend-service.yaml
-    - frontend-deployment-fixed.yaml
-    - database-service.yaml
-    - database-statefulset-fixed.yaml
-    - redis-service.yaml
-    - redis-deployment-fixed.yaml
-    - redis-pvc.yaml
-    - ingress-fixed.yaml
-    - app-configmap-fixed.yaml
-    - app-secrets-example.yaml
-    - monitoring/prometheus/prometheus.yaml
-    - monitoring/alertmanager/alertmanager.yaml
-    - monitoring/loki/loki-grafana.yaml
+  - backend-service-account.yaml
+  - backend-role.yaml
+  - backend-rolebinding.yaml
+  - backend-service.yaml
+  - backend-deployment-fixed.yaml
+  - frontend-service.yaml
+  - frontend-deployment-fixed.yaml
+  - database-service.yaml
+  - database-statefulset-fixed.yaml
+  - redis-service.yaml
+  - redis-deployment-fixed.yaml
+  - redis-pvc.yaml
+  - ingress-fixed.yaml
+  - app-configmap-fixed.yaml
+  - app-secrets-example.yaml
+  - monitoring/prometheus/prometheus.yaml
+  - monitoring/alertmanager/alertmanager.yaml
+  - monitoring/loki/loki-grafana.yaml
 
 namespace: default
 
 commonLabels:
-    app.kubernetes.io/name: blockguardian
-    app.kubernetes.io/managed-by: kustomize
+  app.kubernetes.io/name: blockguardian
+  app.kubernetes.io/managed-by: kustomize
 
 configMapGenerator:
-    - name: blockguardian-config
-      literals:
-          - NODE_ENV=production
-          - LOG_LEVEL=info
-          - ENABLE_AUDIT_LOGS=true
+  - name: blockguardian-config
+    literals:
+      - NODE_ENV=production
+      - LOG_LEVEL=info
+      - ENABLE_AUDIT_LOGS=true
 
 secretGenerator:
-    - name: blockguardian-secrets
-      literals:
-          - database-url=postgres://user:pass@localhost:5432/db # Override in overlays
-          - jwt-secret=change-me-in-overlays
+  - name: blockguardian-secrets
+    literals:
+      - database-url=postgres://user:pass@localhost:5432/db # Override in overlays
+      - jwt-secret=change-me-in-overlays
 
 generatorOptions:
-    disableNameSuffixHash: false
+  disableNameSuffixHash: false

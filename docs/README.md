@@ -28,24 +28,24 @@ BlockGuardian is a multi-component platform consisting of backend services, bloc
 
 1. **Clone and Setup**
 
-    ```bash
-    git clone https://github.com/quantsingularity/BlockGuardian.git
-    cd BlockGuardian
-    ./scripts/setup_blockguardian_env.sh
-    ```
+   ```bash
+   git clone https://github.com/quantsingularity/BlockGuardian.git
+   cd BlockGuardian
+   ./scripts/setup_blockguardian_env.sh
+   ```
 
 2. **Start Services**
 
-    ```bash
-    docker-compose up --build
-    # Or use the convenience script
-    ./scripts/run_blockguardian.sh
-    ```
+   ```bash
+   docker-compose up --build
+   # Or use the convenience script
+   ./scripts/run_blockguardian.sh
+   ```
 
 3. **Access the Platform**
-    - Web Dashboard: http://localhost:3000
-    - Backend API: http://localhost:5000
-    - API Health: http://localhost:5000/health
+   - Web Dashboard: http://localhost:3000
+   - Backend API: http://localhost:5000
+   - API Health: http://localhost:5000/health
 
 ## What's New
 

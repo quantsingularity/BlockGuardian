@@ -53,14 +53,14 @@ curl -X POST http://localhost:5000/api/portfolios \
 
 ```json
 {
-    "id": "pf_abc123",
-    "name": "Growth Portfolio",
-    "description": "Long-term cryptocurrency growth strategy",
-    "risk_tolerance": "high",
-    "target_return": 25.0,
-    "total_value": 0.0,
-    "created_at": "2025-12-30T10:00:00Z",
-    "owner_id": "usr_def456"
+  "id": "pf_abc123",
+  "name": "Growth Portfolio",
+  "description": "Long-term cryptocurrency growth strategy",
+  "risk_tolerance": "high",
+  "target_return": 25.0,
+  "total_value": 0.0,
+  "created_at": "2025-12-30T10:00:00Z",
+  "owner_id": "usr_def456"
 }
 ```
 
@@ -133,67 +133,67 @@ curl http://localhost:5000/api/portfolios/$PORTFOLIO_ID \
 
 ```json
 {
-    "id": "pf_abc123",
-    "name": "Growth Portfolio",
-    "description": "Long-term cryptocurrency growth strategy",
-    "risk_tolerance": "high",
-    "target_return": 25.0,
-    "total_value": 50000.0,
-    "created_at": "2025-01-01T00:00:00Z",
-    "last_updated": "2025-12-30T10:00:00Z",
-    "assets": [
-        {
-            "id": "asset_001",
-            "symbol": "BTC",
-            "name": "Bitcoin",
-            "amount": 0.5,
-            "current_price": 45000.0,
-            "total_value": 22500.0,
-            "allocation": 45.0,
-            "target_allocation": 40.0,
-            "change_24h": 2.5
-        },
-        {
-            "id": "asset_002",
-            "symbol": "ETH",
-            "name": "Ethereum",
-            "amount": 5.0,
-            "current_price": 3000.0,
-            "total_value": 15000.0,
-            "allocation": 30.0,
-            "target_allocation": 30.0,
-            "change_24h": 1.8
-        },
-        {
-            "id": "asset_003",
-            "symbol": "SOL",
-            "name": "Solana",
-            "amount": 100.0,
-            "current_price": 100.0,
-            "total_value": 10000.0,
-            "allocation": 20.0,
-            "target_allocation": 20.0,
-            "change_24h": -0.5
-        },
-        {
-            "id": "asset_004",
-            "symbol": "ADA",
-            "name": "Cardano",
-            "amount": 5000.0,
-            "current_price": 0.5,
-            "total_value": 2500.0,
-            "allocation": 5.0,
-            "target_allocation": 10.0,
-            "change_24h": 0.2
-        }
-    ],
-    "performance": {
-        "24h": 2.1,
-        "7d": 5.2,
-        "30d": 12.8,
-        "ytd": 45.3,
-        "all_time": 25.0
+  "id": "pf_abc123",
+  "name": "Growth Portfolio",
+  "description": "Long-term cryptocurrency growth strategy",
+  "risk_tolerance": "high",
+  "target_return": 25.0,
+  "total_value": 50000.0,
+  "created_at": "2025-01-01T00:00:00Z",
+  "last_updated": "2025-12-30T10:00:00Z",
+  "assets": [
+    {
+      "id": "asset_001",
+      "symbol": "BTC",
+      "name": "Bitcoin",
+      "amount": 0.5,
+      "current_price": 45000.0,
+      "total_value": 22500.0,
+      "allocation": 45.0,
+      "target_allocation": 40.0,
+      "change_24h": 2.5
+    },
+    {
+      "id": "asset_002",
+      "symbol": "ETH",
+      "name": "Ethereum",
+      "amount": 5.0,
+      "current_price": 3000.0,
+      "total_value": 15000.0,
+      "allocation": 30.0,
+      "target_allocation": 30.0,
+      "change_24h": 1.8
+    },
+    {
+      "id": "asset_003",
+      "symbol": "SOL",
+      "name": "Solana",
+      "amount": 100.0,
+      "current_price": 100.0,
+      "total_value": 10000.0,
+      "allocation": 20.0,
+      "target_allocation": 20.0,
+      "change_24h": -0.5
+    },
+    {
+      "id": "asset_004",
+      "symbol": "ADA",
+      "name": "Cardano",
+      "amount": 5000.0,
+      "current_price": 0.5,
+      "total_value": 2500.0,
+      "allocation": 5.0,
+      "target_allocation": 10.0,
+      "change_24h": 0.2
     }
+  ],
+  "performance": {
+    "24h": 2.1,
+    "7d": 5.2,
+    "30d": 12.8,
+    "ytd": 45.3,
+    "all_time": 25.0
+  }
 }
 ```
 

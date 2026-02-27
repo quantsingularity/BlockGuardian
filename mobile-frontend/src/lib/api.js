@@ -3,7 +3,8 @@
  */
 
 // Base API URL - configured based on environment
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
+const API_BASE_URL =
+  process.env.EXPO_PUBLIC_API_BASE_URL || "http://localhost:5000/api";
 
 /**
  * Handles API response and error checking
@@ -12,26 +13,26 @@ const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:5
  * @returns {Promise} - Resolved with response data or rejected with error
  */
 const handleResponse = async (response) => {
-    const contentType = response.headers.get('content-type');
-    const isJson = contentType && contentType.includes('application/json');
+  const contentType = response.headers.get("content-type");
+  const isJson = contentType && contentType.includes("application/json");
 
-    // Parse response based on content type
-    const data = isJson ? await response.json() : await response.text();
+  // Parse response based on content type
+  const data = isJson ? await response.json() : await response.text();
 
-    // Check if response is successful
-    if (!response.ok) {
-        // Format error message
-        const error = {
-            status: response.status,
-            statusText: response.statusText,
-            message: isJson && data.message ? data.message : 'An error occurred',
-            data: data,
-        };
+  // Check if response is successful
+  if (!response.ok) {
+    // Format error message
+    const error = {
+      status: response.status,
+      statusText: response.statusText,
+      message: isJson && data.message ? data.message : "An error occurred",
+      data: data,
+    };
 
-        throw error;
-    }
+    throw error;
+  }
 
-    return data;
+  return data;
 };
 
 /**
@@ -43,25 +44,25 @@ const handleResponse = async (response) => {
  * @returns {Object} - Fetch request options
  */
 const createRequestOptions = (method, data, token) => {
-    const options = {
-        method,
-        headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-        },
-    };
+  const options = {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+  };
 
-    // Add authorization header if token is provided
-    if (token) {
-        options.headers['Authorization'] = `Bearer ${token}`;
-    }
+  // Add authorization header if token is provided
+  if (token) {
+    options.headers["Authorization"] = `Bearer ${token}`;
+  }
 
-    // Add request body for non-GET requests
-    if (data && method !== 'GET') {
-        options.body = JSON.stringify(data);
-    }
+  // Add request body for non-GET requests
+  if (data && method !== "GET") {
+    options.body = JSON.stringify(data);
+  }
 
-    return options;
+  return options;
 };
 
 /**
@@ -73,22 +74,24 @@ const createRequestOptions = (method, data, token) => {
  * @returns {Promise} - Resolved with response data
  */
 export const get = async (endpoint, params = {}, token = null) => {
-    try {
-        // Build query string from params
-        const queryString =
-            Object.keys(params).length > 0 ? `?${new URLSearchParams(params).toString()}` : '';
+  try {
+    // Build query string from params
+    const queryString =
+      Object.keys(params).length > 0
+        ? `?${new URLSearchParams(params).toString()}`
+        : "";
 
-        // Make request
-        const response = await fetch(
-            `${API_BASE_URL}${endpoint}${queryString}`,
-            createRequestOptions('GET', null, token),
-        );
+    // Make request
+    const response = await fetch(
+      `${API_BASE_URL}${endpoint}${queryString}`,
+      createRequestOptions("GET", null, token),
+    );
 
-        return handleResponse(response);
-    } catch (error) {
-        console.error(`GET ${endpoint} error:`, error);
-        throw error;
-    }
+    return handleResponse(response);
+  } catch (error) {
+    console.error(`GET ${endpoint} error:`, error);
+    throw error;
+  }
 };
 
 /**
@@ -100,17 +103,17 @@ export const get = async (endpoint, params = {}, token = null) => {
  * @returns {Promise} - Resolved with response data
  */
 export const post = async (endpoint, data = {}, token = null) => {
-    try {
-        const response = await fetch(
-            `${API_BASE_URL}${endpoint}`,
-            createRequestOptions('POST', data, token),
-        );
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}${endpoint}`,
+      createRequestOptions("POST", data, token),
+    );
 
-        return handleResponse(response);
-    } catch (error) {
-        console.error(`POST ${endpoint} error:`, error);
-        throw error;
-    }
+    return handleResponse(response);
+  } catch (error) {
+    console.error(`POST ${endpoint} error:`, error);
+    throw error;
+  }
 };
 
 /**
@@ -122,17 +125,17 @@ export const post = async (endpoint, data = {}, token = null) => {
  * @returns {Promise} - Resolved with response data
  */
 export const put = async (endpoint, data = {}, token = null) => {
-    try {
-        const response = await fetch(
-            `${API_BASE_URL}${endpoint}`,
-            createRequestOptions('PUT', data, token),
-        );
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}${endpoint}`,
+      createRequestOptions("PUT", data, token),
+    );
 
-        return handleResponse(response);
-    } catch (error) {
-        console.error(`PUT ${endpoint} error:`, error);
-        throw error;
-    }
+    return handleResponse(response);
+  } catch (error) {
+    console.error(`PUT ${endpoint} error:`, error);
+    throw error;
+  }
 };
 
 /**
@@ -143,17 +146,17 @@ export const put = async (endpoint, data = {}, token = null) => {
  * @returns {Promise} - Resolved with response data
  */
 export const del = async (endpoint, token = null) => {
-    try {
-        const response = await fetch(
-            `${API_BASE_URL}${endpoint}`,
-            createRequestOptions('DELETE', null, token),
-        );
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}${endpoint}`,
+      createRequestOptions("DELETE", null, token),
+    );
 
-        return handleResponse(response);
-    } catch (error) {
-        console.error(`DELETE ${endpoint} error:`, error);
-        throw error;
-    }
+    return handleResponse(response);
+  } catch (error) {
+    console.error(`DELETE ${endpoint} error:`, error);
+    throw error;
+  }
 };
 
 /**
@@ -165,23 +168,23 @@ export const del = async (endpoint, token = null) => {
  * @returns {Promise} - Resolved with response data
  */
 export const patch = async (endpoint, data = {}, token = null) => {
-    try {
-        const response = await fetch(
-            `${API_BASE_URL}${endpoint}`,
-            createRequestOptions('PATCH', data, token),
-        );
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}${endpoint}`,
+      createRequestOptions("PATCH", data, token),
+    );
 
-        return handleResponse(response);
-    } catch (error) {
-        console.error(`PATCH ${endpoint} error:`, error);
-        throw error;
-    }
+    return handleResponse(response);
+  } catch (error) {
+    console.error(`PATCH ${endpoint} error:`, error);
+    throw error;
+  }
 };
 
 export default {
-    get,
-    post,
-    put,
-    del,
-    patch,
+  get,
+  post,
+  put,
+  del,
+  patch,
 };

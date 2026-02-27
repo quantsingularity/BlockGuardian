@@ -134,78 +134,78 @@ Before installing BlockGuardian, ensure you have the following prerequisites:
 
 1. **Clone the Repository**
 
-    ```bash
-    git clone https://github.com/quantsingularity/BlockGuardian.git
-    cd BlockGuardian/code/backend
-    ```
+   ```bash
+   git clone https://github.com/quantsingularity/BlockGuardian.git
+   cd BlockGuardian/code/backend
+   ```
 
 2. **Create Virtual Environment**
 
-    ```bash
-    python -m venv venv
-    source venv/bin/activate  # On Windows: venv\Scripts\activate
-    ```
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
 
 3. **Install Dependencies**
 
-    ```bash
-    pip install -r requirements.txt
-    ```
+   ```bash
+   pip install -r requirements.txt
+   ```
 
 4. **Environment Configuration**
 
-    ```bash
-    cp .env.example .env
-    # Edit .env file with your configuration
-    ```
+   ```bash
+   cp .env.example .env
+   # Edit .env file with your configuration
+   ```
 
 5. **Database Setup**
 
-    ```bash
-    # Create database
-    createdb blockguardian
+   ```bash
+   # Create database
+   createdb blockguardian
 
-    # Run migrations
-    python manage.py db upgrade
+   # Run migrations
+   python manage.py db upgrade
 
-    # Seed initial data
-    python manage.py seed
-    ```
+   # Seed initial data
+   python manage.py seed
+   ```
 
 6. **Start Backend Server**
-    ```bash
-    python run.py
-    ```
+   ```bash
+   python run.py
+   ```
 
 ### Frontend Setup
 
 1. **Navigate to Frontend Directory**
 
-    ```bash
-    cd ../frontend
-    ```
+   ```bash
+   cd ../frontend
+   ```
 
 2. **Install Dependencies**
 
-    ```bash
-    npm install
-    # or
-    yarn install
-    ```
+   ```bash
+   npm install
+   # or
+   yarn install
+   ```
 
 3. **Environment Configuration**
 
-    ```bash
-    cp .env.local.example .env.local
-    # Edit .env.local with your configuration
-    ```
+   ```bash
+   cp .env.local.example .env.local
+   # Edit .env.local with your configuration
+   ```
 
 4. **Start Development Server**
-    ```bash
-    npm run dev
-    # or
-    yarn dev
-    ```
+   ```bash
+   npm run dev
+   # or
+   yarn dev
+   ```
 
 For containerized deployment:
 

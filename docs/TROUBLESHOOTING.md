@@ -692,24 +692,24 @@ If your issue isn't listed here:
 
 1. **Check logs:**
 
-    ```bash
-    # Backend logs
-    tail -f code/backend/logs/blockguardian.log
+   ```bash
+   # Backend logs
+   tail -f code/backend/logs/blockguardian.log
 
-    # Docker logs
-    docker-compose logs -f
-    ```
+   # Docker logs
+   docker-compose logs -f
+   ```
 
 2. **Search GitHub Issues:**
    https://github.com/quantsingularity/BlockGuardian/issues
 
 3. **Create a new issue:**
    Use the bug report template with:
-    - Clear description
-    - Steps to reproduce
-    - Expected vs actual behavior
-    - Environment details
-    - Relevant logs
+   - Clear description
+   - Steps to reproduce
+   - Expected vs actual behavior
+   - Environment details
+   - Relevant logs
 
 4. **Join Discussions:**
    https://github.com/quantsingularity/BlockGuardian/discussions

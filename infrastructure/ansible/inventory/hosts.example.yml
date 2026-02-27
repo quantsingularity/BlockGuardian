@@ -4,43 +4,43 @@
 # Usage: ansible-playbook -i inventory/hosts.yml playbooks/main.yml
 
 all:
-    children:
-        webservers:
-            hosts:
-                web1:
-                    ansible_host: 10.0.1.10 # Replace with actual IP
-                web2:
-                    ansible_host: 10.0.1.11 # Replace with actual IP
-        databases:
-            hosts:
-                db1:
-                    ansible_host: 10.0.2.10 # Replace with actual IP
-        loadbalancers:
-            hosts:
-                lb1:
-                    ansible_host: 10.0.3.10 # Replace with actual IP
-        monitoring:
-            hosts:
-                monitor1:
-                    ansible_host: 10.0.4.10 # Replace with actual IP
-    vars:
-        # SSH Configuration
-        ansible_user: ec2-user # Or ubuntu, admin, etc.
-        ansible_ssh_private_key_file: ~/.ssh/blockguardian-key.pem # Path to your SSH key
-        ansible_ssh_common_args: '-o StrictHostKeyChecking=yes -o UserKnownHostsFile=/dev/null'
+  children:
+    webservers:
+      hosts:
+        web1:
+          ansible_host: 10.0.1.10 # Replace with actual IP
+        web2:
+          ansible_host: 10.0.1.11 # Replace with actual IP
+    databases:
+      hosts:
+        db1:
+          ansible_host: 10.0.2.10 # Replace with actual IP
+    loadbalancers:
+      hosts:
+        lb1:
+          ansible_host: 10.0.3.10 # Replace with actual IP
+    monitoring:
+      hosts:
+        monitor1:
+          ansible_host: 10.0.4.10 # Replace with actual IP
+  vars:
+    # SSH Configuration
+    ansible_user: ec2-user # Or ubuntu, admin, etc.
+    ansible_ssh_private_key_file: ~/.ssh/blockguardian-key.pem # Path to your SSH key
+    ansible_ssh_common_args: "-o StrictHostKeyChecking=yes -o UserKnownHostsFile=/dev/null"
 
-        # Python interpreter (adjust for your OS)
-        ansible_python_interpreter: /usr/bin/python3
+    # Python interpreter (adjust for your OS)
+    ansible_python_interpreter: /usr/bin/python3
 
-        # Become settings
-        ansible_become: true
-        ansible_become_method: sudo
-        ansible_become_user: root
+    # Become settings
+    ansible_become: true
+    ansible_become_method: sudo
+    ansible_become_user: root
 
-        # Environment
-        environment: production
-        app_name: blockguardian
+    # Environment
+    environment: production
+    app_name: blockguardian
 
-        # Notification settings (optional)
-        send_notifications: false
-        security_team_email: security@example.com
+    # Notification settings (optional)
+    send_notifications: false
+    security_team_email: security@example.com

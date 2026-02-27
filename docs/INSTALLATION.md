@@ -281,14 +281,14 @@ docker-compose ps
 
 ```json
 {
-    "status": "healthy",
-    "timestamp": "2025-12-30T10:00:00.000Z",
-    "version": "1.0.0",
-    "environment": "development",
-    "services": {
-        "database": "healthy",
-        "redis": "healthy"
-    }
+  "status": "healthy",
+  "timestamp": "2025-12-30T10:00:00.000Z",
+  "version": "1.0.0",
+  "environment": "development",
+  "services": {
+    "database": "healthy",
+    "redis": "healthy"
+  }
 }
 ```
 
@@ -305,17 +305,17 @@ blockguardian_web_frontend    Up                  0.0.0.0:3000->3000/tcp
 After installation, configure your environment:
 
 1. **Backend Configuration**: Edit `code/backend/.env`
-    - Set database credentials
-    - Configure JWT secrets
-    - Set external API keys
+   - Set database credentials
+   - Configure JWT secrets
+   - Set external API keys
 
 2. **Frontend Configuration**: Edit `web-frontend/.env.local`
-    - Set backend API URL
-    - Configure blockchain provider URLs
+   - Set backend API URL
+   - Configure blockchain provider URLs
 
 3. **Blockchain Configuration**: Edit `code/blockchain/.env`
-    - Set Ethereum node URLs (Infura, Alchemy)
-    - Configure deployer private keys (testnet only)
+   - Set Ethereum node URLs (Infura, Alchemy)
+   - Configure deployer private keys (testnet only)
 
 See [Configuration Guide](CONFIGURATION.md) for detailed options.
 

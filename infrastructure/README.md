@@ -326,10 +326,10 @@ kubectl create secret generic blockguardian-secrets \
 ```yaml
 # kubernetes/environments/prod/kustomization.yaml
 secretGenerator:
-    - name: blockguardian-secrets
-      literals:
-          - database-url=postgresql://user:pass@host:5432/db
-          - jwt-secret=actual-jwt-secret
+  - name: blockguardian-secrets
+    literals:
+      - database-url=postgresql://user:pass@host:5432/db
+      - jwt-secret=actual-jwt-secret
 ```
 
 **Option 3: External Secrets Operator (recommended for production)**
@@ -510,25 +510,25 @@ cd ..
 ### Secrets Management Best Practices
 
 1. **NEVER commit secrets to Git**
-    - Use `.gitignore` to exclude `*.tfvars`, `*.vault`, `*-secrets.yaml`
-    - Verify: `git status` should not show secret files
+   - Use `.gitignore` to exclude `*.tfvars`, `*.vault`, `*-secrets.yaml`
+   - Verify: `git status` should not show secret files
 
 2. **Use environment variables**
 
-    ```bash
-    export TF_VAR_db_password="secure-password"
-    export ANSIBLE_VAULT_PASSWORD="vault-password"
-    ```
+   ```bash
+   export TF_VAR_db_password="secure-password"
+   export ANSIBLE_VAULT_PASSWORD="vault-password"
+   ```
 
 3. **Use secret management services**
-    - AWS Secrets Manager
-    - HashiCorp Vault
-    - Kubernetes External Secrets Operator
+   - AWS Secrets Manager
+   - HashiCorp Vault
+   - Kubernetes External Secrets Operator
 
 4. **Encrypt secrets at rest**
-    - Terraform: Use AWS KMS for sensitive variables
-    - Ansible: Use `ansible-vault`
-    - Kubernetes: Use Sealed Secrets or External Secrets
+   - Terraform: Use AWS KMS for sensitive variables
+   - Ansible: Use `ansible-vault`
+   - Kubernetes: Use Sealed Secrets or External Secrets
 
 ### Ansible Vault Example
 

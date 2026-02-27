@@ -1,183 +1,184 @@
 name: Infrastructure CI/CD
 
 on:
-    push:
-        branches: [main, master, develop]
-        paths:
-            - 'infrastructure/**'
-    pull_request:
-        branches: [main, master, develop]
-        paths:
-            - 'infrastructure/**'
+  push:
+    branches: [main, master, develop]
+    paths:
+      - "infrastructure/**"
+  pull_request:
+    branches: [main, master, develop]
+    paths:
+      - "infrastructure/**"
 
 env:
-    TF_VERSION: '1.5.0'
-    KUBECTL_VERSION: '1.27.0'
-    HELM_VERSION: '3.12.0'
-    ANSIBLE_VERSION: '2.15.0'
+  TF_VERSION: "1.5.0"
+  KUBECTL_VERSION: "1.27.0"
+  HELM_VERSION: "3.12.0"
+  ANSIBLE_VERSION: "2.15.0"
 
 jobs:
-    terraform-validate:
-        name: Terraform Validation
-        runs-on: ubuntu-latest
-        defaults:
-            run:
-                working-directory: infrastructure/terraform
+  terraform-validate:
+    name: Terraform Validation
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infrastructure/terraform
 
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v3
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-            - name: Setup Terraform
-              uses: hashicorp/setup-terraform@v2
-              with:
-                  terraform_version: ${{ env.TF_VERSION }}
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
 
-            - name: Terraform Format Check
-              run: terraform fmt -check -recursive
-              continue-on-error: false
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+        continue-on-error: false
 
-            - name: Terraform Init (local backend)
-              run: terraform init -backend=false
+      - name: Terraform Init (local backend)
+        run: terraform init -backend=false
 
-            - name: Terraform Validate
-              run: terraform validate
+      - name: Terraform Validate
+        run: terraform validate
 
-            - name: Setup TFLint
-              uses: terraform-linters/setup-tflint@v3
-              with:
-                  tflint_version: latest
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v3
+        with:
+          tflint_version: latest
 
-            - name: Run TFLint
-              run: |
-                  tflint --init
-                  tflint --format compact
+      - name: Run TFLint
+        run: |
+          tflint --init
+          tflint --format compact
 
-            - name: Terraform Security Scan with tfsec
-              uses: aquasecurity/tfsec-action@v1.0.0
-              with:
-                  working_directory: infrastructure/terraform
-                  soft_fail: false
+      - name: Terraform Security Scan with tfsec
+        uses: aquasecurity/tfsec-action@v1.0.0
+        with:
+          working_directory: infrastructure/terraform
+          soft_fail: false
 
-    kubernetes-validate:
-        name: Kubernetes Manifests Validation
-        runs-on: ubuntu-latest
+  kubernetes-validate:
+    name: Kubernetes Manifests Validation
+    runs-on: ubuntu-latest
 
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v3
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-            - name: Setup kubectl
-              uses: azure/setup-kubectl@v3
-              with:
-                  version: ${{ env.KUBECTL_VERSION }}
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: ${{ env.KUBECTL_VERSION }}
 
-            - name: Install kubeval
-              run: |
-                  wget https://github.com/instrumenta/kubeval/releases/latest/download/kubeval-linux-amd64.tar.gz
-                  tar xf kubeval-linux-amd64.tar.gz
-                  sudo mv kubeval /usr/local/bin
+      - name: Install kubeval
+        run: |
+          wget https://github.com/instrumenta/kubeval/releases/latest/download/kubeval-linux-amd64.tar.gz
+          tar xf kubeval-linux-amd64.tar.gz
+          sudo mv kubeval /usr/local/bin
 
-            - name: Install kustomize
-              run: |
-                  curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
-                  sudo mv kustomize /usr/local/bin/
+      - name: Install kustomize
+        run: |
+          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+          sudo mv kustomize /usr/local/bin/
 
-            - name: Validate Kubernetes YAML syntax
-              run: |
-                  find infrastructure/kubernetes -name "*.yaml" -type f -exec kubectl apply --dry-run=client -f {} \; || true
+      - name: Validate Kubernetes YAML syntax
+        run: |
+          find infrastructure/kubernetes -name "*.yaml" -type f -exec kubectl apply --dry-run=client -f {} \; || true
 
-            - name: Build Kustomize overlays
-              run: |
-                  kustomize build infrastructure/kubernetes/environments/dev > /dev/null
-                  kustomize build infrastructure/kubernetes/environments/staging > /dev/null
-                  kustomize build infrastructure/kubernetes/environments/prod > /dev/null
+      - name: Build Kustomize overlays
+        run: |
+          kustomize build infrastructure/kubernetes/environments/dev > /dev/null
+          kustomize build infrastructure/kubernetes/environments/staging > /dev/null
+          kustomize build infrastructure/kubernetes/environments/prod > /dev/null
 
-            - name: Run kubeval on base manifests
-              run: |
-                  find infrastructure/kubernetes/base -name "*-fixed.yaml" -type f -exec kubeval {} \; || echo "kubeval completed with warnings"
+      - name: Run kubeval on base manifests
+        run: |
+          find infrastructure/kubernetes/base -name "*-fixed.yaml" -type f -exec kubeval {} \; || echo "kubeval completed with warnings"
 
-            - name: YAML Lint
-              uses: ibiqlik/action-yamllint@v3
-              with:
-                  file_or_dir: infrastructure/kubernetes
-                  config_file: infrastructure/.yamllint
-                  strict: false
+      - name: YAML Lint
+        uses: ibiqlik/action-yamllint@v3
+        with:
+          file_or_dir: infrastructure/kubernetes
+          config_file: infrastructure/.yamllint
+          strict: false
 
-    ansible-validate:
-        name: Ansible Playbooks Validation
-        runs-on: ubuntu-latest
+  ansible-validate:
+    name: Ansible Playbooks Validation
+    runs-on: ubuntu-latest
 
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v3
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-            - name: Setup Python
-              uses: actions/setup-python@v4
-              with:
-                  python-version: '3.10'
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
 
-            - name: Install Ansible and ansible-lint
-              run: |
-                  python -m pip install --upgrade pip
-                  pip install ansible==${{ env.ANSIBLE_VERSION }} ansible-lint
+      - name: Install Ansible and ansible-lint
+        run: |
+          python -m pip install --upgrade pip
+          pip install ansible==${{ env.ANSIBLE_VERSION }} ansible-lint
 
-            - name: Ansible Syntax Check
-              run: |
-                  cd infrastructure/ansible
-                  ansible-playbook playbooks/main.yml --syntax-check -i inventory/hosts.example.yml
+      - name: Ansible Syntax Check
+        run: |
+          cd infrastructure/ansible
+          ansible-playbook playbooks/main.yml --syntax-check -i inventory/hosts.example.yml
 
-            - name: Ansible Lint
-              run: |
-                  cd infrastructure/ansible
-                  ansible-lint playbooks/main.yml || echo "ansible-lint completed with warnings"
+      - name: Ansible Lint
+        run: |
+          cd infrastructure/ansible
+          ansible-lint playbooks/main.yml || echo "ansible-lint completed with warnings"
 
-            - name: YAML Lint for Ansible
-              run: |
-                  pip install yamllint
-                  yamllint -c infrastructure/.yamllint infrastructure/ansible || echo "yamllint completed with warnings"
+      - name: YAML Lint for Ansible
+        run: |
+          pip install yamllint
+          yamllint -c infrastructure/.yamllint infrastructure/ansible || echo "yamllint completed with warnings"
 
-    security-scan:
-        name: Security Scanning
-        runs-on: ubuntu-latest
+  security-scan:
+    name: Security Scanning
+    runs-on: ubuntu-latest
 
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v3
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-            - name: Run Trivy vulnerability scanner
-              uses: aquasecurity/trivy-action@master
-              with:
-                  scan-type: 'config'
-                  scan-ref: 'infrastructure/'
-                  format: 'sarif'
-                  output: 'trivy-results.sarif'
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "config"
+          scan-ref: "infrastructure/"
+          format: "sarif"
+          output: "trivy-results.sarif"
 
-            - name: Upload Trivy results to GitHub Security
-              uses: github/codeql-action/upload-sarif@v2
-              if: always()
-              with:
-                  sarif_file: 'trivy-results.sarif'
-
-    validation-summary:
-        name: Validation Summary
-        runs-on: ubuntu-latest
-        needs: [terraform-validate, kubernetes-validate, ansible-validate, security-scan]
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v2
         if: always()
+        with:
+          sarif_file: "trivy-results.sarif"
 
-        steps:
-            - name: Check validation results
-              run: |
-                  echo "Terraform Validation: ${{ needs.terraform-validate.result }}"
-                  echo "Kubernetes Validation: ${{ needs.kubernetes-validate.result }}"
-                  echo "Ansible Validation: ${{ needs.ansible-validate.result }}"
-                  echo "Security Scan: ${{ needs.security-scan.result }}"
+  validation-summary:
+    name: Validation Summary
+    runs-on: ubuntu-latest
+    needs:
+      [terraform-validate, kubernetes-validate, ansible-validate, security-scan]
+    if: always()
 
-                  if [ "${{ needs.terraform-validate.result }}" != "success" ] || \
-                     [ "${{ needs.kubernetes-validate.result }}" != "success" ] || \
-                     [ "${{ needs.ansible-validate.result }}" != "success" ]; then
-                    echo "❌ Infrastructure validation failed"
-                    exit 1
-                  else
-                    echo "✅ All infrastructure validations passed"
-                  fi
+    steps:
+      - name: Check validation results
+        run: |
+          echo "Terraform Validation: ${{ needs.terraform-validate.result }}"
+          echo "Kubernetes Validation: ${{ needs.kubernetes-validate.result }}"
+          echo "Ansible Validation: ${{ needs.ansible-validate.result }}"
+          echo "Security Scan: ${{ needs.security-scan.result }}"
+
+          if [ "${{ needs.terraform-validate.result }}" != "success" ] || \
+             [ "${{ needs.kubernetes-validate.result }}" != "success" ] || \
+             [ "${{ needs.ansible-validate.result }}" != "success" ]; then
+            echo "❌ Infrastructure validation failed"
+            exit 1
+          else
+            echo "✅ All infrastructure validations passed"
+          fi

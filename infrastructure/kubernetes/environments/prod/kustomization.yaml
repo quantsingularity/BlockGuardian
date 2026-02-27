@@ -4,31 +4,31 @@ kind: Kustomization
 namespace: production
 
 bases:
-    - ../../base
+  - ../../base
 
 namePrefix: prod-
 
 commonLabels:
-    environment: production
+  environment: production
 
 images:
-    - name: blockguardian/backend
-      newTag: v1.0.0 # Use specific version tags in production
-    - name: blockguardian/frontend
-      newTag: v1.0.0
+  - name: blockguardian/backend
+    newTag: v1.0.0 # Use specific version tags in production
+  - name: blockguardian/frontend
+    newTag: v1.0.0
 
 replicas:
-    - name: blockguardian-backend
-      count: 3
-    - name: blockguardian-frontend
-      count: 3
+  - name: blockguardian-backend
+    count: 3
+  - name: blockguardian-frontend
+    count: 3
 
 configMapGenerator:
-    - name: blockguardian-config
-      behavior: merge
-      literals:
-          - NODE_ENV=production
-          - LOG_LEVEL=warn
+  - name: blockguardian-config
+    behavior: merge
+    literals:
+      - NODE_ENV=production
+      - LOG_LEVEL=warn
 
 # IMPORTANT: Use external secret management (AWS Secrets Manager, Vault, Sealed Secrets)
 # Never commit production secrets to Git
@@ -48,27 +48,27 @@ configMapGenerator:
 #         key: prod/blockguardian/database-url
 
 patches:
-    - target:
-          kind: Ingress
-          name: blockguardian-ingress
-      patch: |-
-          - op: replace
-            path: /spec/rules/0/host
-            value: blockguardian.com
-          - op: replace
-            path: /spec/tls/0/hosts/0
-            value: blockguardian.com
-    - target:
-          kind: Deployment
-          name: blockguardian-backend
-      patch: |-
-          - op: add
-            path: /spec/template/spec/affinity/nodeAffinity
-            value:
-              requiredDuringSchedulingIgnoredDuringExecution:
-                nodeSelectorTerms:
-                  - matchExpressions:
-                      - key: node.kubernetes.io/instance-type
-                        operator: NotIn
-                        values:
-                          - spot
+  - target:
+      kind: Ingress
+      name: blockguardian-ingress
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: blockguardian.com
+      - op: replace
+        path: /spec/tls/0/hosts/0
+        value: blockguardian.com
+  - target:
+      kind: Deployment
+      name: blockguardian-backend
+    patch: |-
+      - op: add
+        path: /spec/template/spec/affinity/nodeAffinity
+        value:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: node.kubernetes.io/instance-type
+                    operator: NotIn
+                    values:
+                      - spot

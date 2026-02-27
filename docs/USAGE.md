@@ -293,45 +293,47 @@ print(summary)
 
 ```javascript
 // web-frontend/services/blockchain.js
-import { ethers } from 'ethers';
-import PortfolioManagerABI from './abis/PortfolioManager.json';
+import { ethers } from "ethers";
+import PortfolioManagerABI from "./abis/PortfolioManager.json";
 
 // Setup provider
-const provider = new ethers.providers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL);
+const provider = new ethers.providers.JsonRpcProvider(
+  process.env.NEXT_PUBLIC_RPC_URL,
+);
 
 // Connect to contract
 const portfolioContract = new ethers.Contract(
-    process.env.NEXT_PUBLIC_PORTFOLIO_CONTRACT_ADDRESS,
-    PortfolioManagerABI,
-    provider,
+  process.env.NEXT_PUBLIC_PORTFOLIO_CONTRACT_ADDRESS,
+  PortfolioManagerABI,
+  provider,
 );
 
 // Create portfolio
 async function createPortfolio(name, description, signer) {
-    const contractWithSigner = portfolioContract.connect(signer);
-    const tx = await contractWithSigner.createPortfolio(name, description);
-    const receipt = await tx.wait();
-    console.log('Portfolio created:', receipt);
-    return receipt;
+  const contractWithSigner = portfolioContract.connect(signer);
+  const tx = await contractWithSigner.createPortfolio(name, description);
+  const receipt = await tx.wait();
+  console.log("Portfolio created:", receipt);
+  return receipt;
 }
 
 // Get user portfolios
 async function getUserPortfolios(userAddress) {
-    const portfolioIds = await portfolioContract.getUserPortfolios(userAddress);
-    const portfolios = [];
+  const portfolioIds = await portfolioContract.getUserPortfolios(userAddress);
+  const portfolios = [];
 
-    for (const id of portfolioIds) {
-        const portfolio = await portfolioContract.portfolios(id);
-        portfolios.push({
-            id: id.toString(),
-            name: portfolio.name,
-            description: portfolio.description,
-            owner: portfolio.owner,
-            isActive: portfolio.isActive,
-        });
-    }
+  for (const id of portfolioIds) {
+    const portfolio = await portfolioContract.portfolios(id);
+    portfolios.push({
+      id: id.toString(),
+      name: portfolio.name,
+      description: portfolio.description,
+      owner: portfolio.owner,
+      isActive: portfolio.isActive,
+    });
+  }
 
-    return portfolios;
+  return portfolios;
 }
 ```
 
@@ -339,46 +341,46 @@ async function getUserPortfolios(userAddress) {
 
 ```javascript
 // web-frontend/components/PortfolioList.jsx
-import { useState, useEffect } from 'react';
-import { useWallet } from '../hooks/useWallet';
-import { getUserPortfolios } from '../services/blockchain';
+import { useState, useEffect } from "react";
+import { useWallet } from "../hooks/useWallet";
+import { getUserPortfolios } from "../services/blockchain";
 
 export default function PortfolioList() {
-    const { address, isConnected } = useWallet();
-    const [portfolios, setPortfolios] = useState([]);
-    const [loading, setLoading] = useState(true);
+  const { address, isConnected } = useWallet();
+  const [portfolios, setPortfolios] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        async function loadPortfolios() {
-            if (isConnected && address) {
-                try {
-                    const data = await getUserPortfolios(address);
-                    setPortfolios(data);
-                } catch (error) {
-                    console.error('Failed to load portfolios:', error);
-                } finally {
-                    setLoading(false);
-                }
-            }
+  useEffect(() => {
+    async function loadPortfolios() {
+      if (isConnected && address) {
+        try {
+          const data = await getUserPortfolios(address);
+          setPortfolios(data);
+        } catch (error) {
+          console.error("Failed to load portfolios:", error);
+        } finally {
+          setLoading(false);
         }
+      }
+    }
 
-        loadPortfolios();
-    }, [address, isConnected]);
+    loadPortfolios();
+  }, [address, isConnected]);
 
-    if (loading) return <div>Loading portfolios...</div>;
+  if (loading) return <div>Loading portfolios...</div>;
 
-    return (
-        <div className="portfolio-list">
-            <h2>My Portfolios</h2>
-            {portfolios.map((portfolio) => (
-                <div key={portfolio.id} className="portfolio-card">
-                    <h3>{portfolio.name}</h3>
-                    <p>{portfolio.description}</p>
-                    <span>Status: {portfolio.isActive ? 'Active' : 'Inactive'}</span>
-                </div>
-            ))}
+  return (
+    <div className="portfolio-list">
+      <h2>My Portfolios</h2>
+      {portfolios.map((portfolio) => (
+        <div key={portfolio.id} className="portfolio-card">
+          <h3>{portfolio.name}</h3>
+          <p>{portfolio.description}</p>
+          <span>Status: {portfolio.isActive ? "Active" : "Inactive"}</span>
         </div>
-    );
+      ))}
+    </div>
+  );
 }
 ```
 
@@ -555,25 +557,25 @@ print(portfolio)
 const portfolio = new ethers.Contract(address, abi, provider);
 
 // Subscribe to portfolio creation events
-portfolio.on('PortfolioCreated', (portfolioId, owner, name) => {
-    console.log(`New portfolio created: ${name} (ID: ${portfolioId})`);
+portfolio.on("PortfolioCreated", (portfolioId, owner, name) => {
+  console.log(`New portfolio created: ${name} (ID: ${portfolioId})`);
 
-    // Sync with backend
-    fetch('http://localhost:5000/api/sync/portfolio', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            portfolioId: portfolioId.toString(),
-            owner,
-            name,
-        }),
-    });
+  // Sync with backend
+  fetch("http://localhost:5000/api/sync/portfolio", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      portfolioId: portfolioId.toString(),
+      owner,
+      name,
+    }),
+  });
 });
 
 // Subscribe to transaction events
-portfolio.on('TransactionRecorded', (portfolioId, tokenAddress, amount) => {
-    console.log(`Transaction recorded for portfolio ${portfolioId}`);
-    // Update analytics, trigger notifications, etc.
+portfolio.on("TransactionRecorded", (portfolioId, tokenAddress, amount) => {
+  console.log(`Transaction recorded for portfolio ${portfolioId}`);
+  // Update analytics, trigger notifications, etc.
 });
 ```
 

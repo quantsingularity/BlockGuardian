@@ -74,12 +74,12 @@ curl -X POST http://localhost:5000/api/auth/register \
 
 ```json
 {
-    "user_id": "usr_123abc",
-    "email": "user@example.com",
-    "first_name": "John",
-    "last_name": "Doe",
-    "created_at": "2025-12-30T10:00:00Z",
-    "status": "active"
+  "user_id": "usr_123abc",
+  "email": "user@example.com",
+  "first_name": "John",
+  "last_name": "Doe",
+  "created_at": "2025-12-30T10:00:00Z",
+  "status": "active"
 }
 ```
 
@@ -112,16 +112,16 @@ curl -X POST http://localhost:5000/api/auth/login \
 
 ```json
 {
-    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "token_type": "bearer",
-    "expires_in": 86400,
-    "refresh_token": "rt_abc123...",
-    "user": {
-        "user_id": "usr_123abc",
-        "email": "user@example.com",
-        "first_name": "John",
-        "last_name": "Doe"
-    }
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "bearer",
+  "expires_in": 86400,
+  "refresh_token": "rt_abc123...",
+  "user": {
+    "user_id": "usr_123abc",
+    "email": "user@example.com",
+    "first_name": "John",
+    "last_name": "Doe"
+  }
 }
 ```
 
@@ -149,9 +149,9 @@ curl -X POST http://localhost:5000/api/auth/refresh \
 
 ```json
 {
-    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "token_type": "bearer",
-    "expires_in": 86400
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "bearer",
+  "expires_in": 86400
 }
 ```
 
@@ -178,7 +178,7 @@ curl -X POST http://localhost:5000/api/auth/logout \
 
 ```json
 {
-    "message": "Successfully logged out"
+  "message": "Successfully logged out"
 }
 ```
 
@@ -194,9 +194,9 @@ Enable multi-factor authentication for user account.
 
 ```json
 {
-    "secret": "JBSWY3DPEHPK3PXP",
-    "qr_code_url": "data:image/png;base64,iVBORw0KG...",
-    "backup_codes": ["12345678", "87654321", "11223344"]
+  "secret": "JBSWY3DPEHPK3PXP",
+  "qr_code_url": "data:image/png;base64,iVBORw0KG...",
+  "backup_codes": ["12345678", "87654321", "11223344"]
 }
 ```
 
@@ -218,8 +218,8 @@ Verify and activate MFA with code.
 
 ```json
 {
-    "message": "MFA enabled successfully",
-    "mfa_enabled": true
+  "message": "MFA enabled successfully",
+  "mfa_enabled": true
 }
 ```
 
@@ -244,15 +244,15 @@ curl http://localhost:5000/api/users/me \
 
 ```json
 {
-    "user_id": "usr_123abc",
-    "email": "user@example.com",
-    "first_name": "John",
-    "last_name": "Doe",
-    "phone": "+1234567890",
-    "kyc_verified": true,
-    "mfa_enabled": true,
-    "created_at": "2025-01-01T00:00:00Z",
-    "last_login": "2025-12-30T10:00:00Z"
+  "user_id": "usr_123abc",
+  "email": "user@example.com",
+  "first_name": "John",
+  "last_name": "Doe",
+  "phone": "+1234567890",
+  "kyc_verified": true,
+  "mfa_enabled": true,
+  "created_at": "2025-01-01T00:00:00Z",
+  "last_login": "2025-12-30T10:00:00Z"
 }
 ```
 
@@ -285,11 +285,11 @@ curl -X PATCH http://localhost:5000/api/users/me \
 
 ```json
 {
-    "user_id": "usr_123abc",
-    "email": "user@example.com",
-    "first_name": "Jane",
-    "last_name": "Doe",
-    "updated_at": "2025-12-30T10:05:00Z"
+  "user_id": "usr_123abc",
+  "email": "user@example.com",
+  "first_name": "Jane",
+  "last_name": "Doe",
+  "updated_at": "2025-12-30T10:05:00Z"
 }
 ```
 
@@ -323,26 +323,26 @@ curl "http://localhost:5000/api/portfolios?page=1&per_page=10" \
 
 ```json
 {
-    "portfolios": [
-        {
-            "id": "pf_123",
-            "name": "Crypto Growth Portfolio",
-            "description": "Aggressive growth strategy",
-            "total_value": 50000.0,
-            "risk_tolerance": "high",
-            "created_at": "2025-01-01T00:00:00Z",
-            "last_updated": "2025-12-30T10:00:00Z",
-            "asset_count": 5,
-            "performance_7d": 5.2,
-            "performance_30d": 12.8
-        }
-    ],
-    "pagination": {
-        "page": 1,
-        "per_page": 10,
-        "total": 3,
-        "pages": 1
+  "portfolios": [
+    {
+      "id": "pf_123",
+      "name": "Crypto Growth Portfolio",
+      "description": "Aggressive growth strategy",
+      "total_value": 50000.0,
+      "risk_tolerance": "high",
+      "created_at": "2025-01-01T00:00:00Z",
+      "last_updated": "2025-12-30T10:00:00Z",
+      "asset_count": 5,
+      "performance_7d": 5.2,
+      "performance_30d": 12.8
     }
+  ],
+  "pagination": {
+    "page": 1,
+    "per_page": 10,
+    "total": 3,
+    "pages": 1
+  }
 }
 ```
 
@@ -381,14 +381,14 @@ curl -X POST http://localhost:5000/api/portfolios \
 
 ```json
 {
-    "id": "pf_123",
-    "name": "Crypto Growth Portfolio",
-    "description": "Aggressive growth strategy",
-    "risk_tolerance": "high",
-    "target_return": 20.0,
-    "total_value": 0.0,
-    "created_at": "2025-12-30T10:00:00Z",
-    "owner_id": "usr_123abc"
+  "id": "pf_123",
+  "name": "Crypto Growth Portfolio",
+  "description": "Aggressive growth strategy",
+  "risk_tolerance": "high",
+  "target_return": 20.0,
+  "total_value": 0.0,
+  "created_at": "2025-12-30T10:00:00Z",
+  "owner_id": "usr_123abc"
 }
 ```
 
@@ -417,45 +417,45 @@ curl http://localhost:5000/api/portfolios/pf_123 \
 
 ```json
 {
-    "id": "pf_123",
-    "name": "Crypto Growth Portfolio",
-    "description": "Aggressive growth strategy",
-    "risk_tolerance": "high",
-    "target_return": 20.0,
-    "total_value": 50000.0,
-    "created_at": "2025-01-01T00:00:00Z",
-    "last_updated": "2025-12-30T10:00:00Z",
-    "assets": [
-        {
-            "id": "asset_001",
-            "symbol": "BTC",
-            "name": "Bitcoin",
-            "amount": 0.5,
-            "current_price": 45000.0,
-            "total_value": 22500.0,
-            "allocation": 45.0,
-            "target_allocation": 40.0,
-            "change_24h": 2.5
-        },
-        {
-            "id": "asset_002",
-            "symbol": "ETH",
-            "name": "Ethereum",
-            "amount": 5.0,
-            "current_price": 3000.0,
-            "total_value": 15000.0,
-            "allocation": 30.0,
-            "target_allocation": 30.0,
-            "change_24h": 1.8
-        }
-    ],
-    "performance": {
-        "24h": 2.1,
-        "7d": 5.2,
-        "30d": 12.8,
-        "ytd": 45.3,
-        "all_time": 98.7
+  "id": "pf_123",
+  "name": "Crypto Growth Portfolio",
+  "description": "Aggressive growth strategy",
+  "risk_tolerance": "high",
+  "target_return": 20.0,
+  "total_value": 50000.0,
+  "created_at": "2025-01-01T00:00:00Z",
+  "last_updated": "2025-12-30T10:00:00Z",
+  "assets": [
+    {
+      "id": "asset_001",
+      "symbol": "BTC",
+      "name": "Bitcoin",
+      "amount": 0.5,
+      "current_price": 45000.0,
+      "total_value": 22500.0,
+      "allocation": 45.0,
+      "target_allocation": 40.0,
+      "change_24h": 2.5
+    },
+    {
+      "id": "asset_002",
+      "symbol": "ETH",
+      "name": "Ethereum",
+      "amount": 5.0,
+      "current_price": 3000.0,
+      "total_value": 15000.0,
+      "allocation": 30.0,
+      "target_allocation": 30.0,
+      "change_24h": 1.8
     }
+  ],
+  "performance": {
+    "24h": 2.1,
+    "7d": 5.2,
+    "30d": 12.8,
+    "ytd": 45.3,
+    "all_time": 98.7
+  }
 }
 ```
 
@@ -480,10 +480,10 @@ Update portfolio information.
 
 ```json
 {
-    "id": "pf_123",
-    "name": "Updated Portfolio Name",
-    "description": "Updated strategy",
-    "updated_at": "2025-12-30T10:05:00Z"
+  "id": "pf_123",
+  "name": "Updated Portfolio Name",
+  "description": "Updated strategy",
+  "updated_at": "2025-12-30T10:05:00Z"
 }
 ```
 
@@ -532,14 +532,14 @@ curl -X POST http://localhost:5000/api/portfolios/pf_123/assets \
 
 ```json
 {
-    "id": "asset_001",
-    "portfolio_id": "pf_123",
-    "symbol": "BTC",
-    "amount": 0.5,
-    "current_price": 45000.0,
-    "total_value": 22500.0,
-    "target_allocation": 40.0,
-    "added_at": "2025-12-30T10:00:00Z"
+  "id": "asset_001",
+  "portfolio_id": "pf_123",
+  "symbol": "BTC",
+  "amount": 0.5,
+  "current_price": 45000.0,
+  "total_value": 22500.0,
+  "target_allocation": 40.0,
+  "added_at": "2025-12-30T10:00:00Z"
 }
 ```
 
@@ -568,15 +568,15 @@ Record a portfolio transaction.
 
 ```json
 {
-    "id": "tx_abc123",
-    "portfolio_id": "pf_123",
-    "type": "buy",
-    "symbol": "BTC",
-    "amount": 0.1,
-    "price": 45000.0,
-    "total": 4500.0,
-    "fee": 50.0,
-    "timestamp": "2025-12-30T10:00:00Z"
+  "id": "tx_abc123",
+  "portfolio_id": "pf_123",
+  "type": "buy",
+  "symbol": "BTC",
+  "amount": 0.1,
+  "price": 45000.0,
+  "total": 4500.0,
+  "fee": 50.0,
+  "timestamp": "2025-12-30T10:00:00Z"
 }
 ```
 
@@ -603,24 +603,24 @@ Retrieve portfolio transaction history.
 
 ```json
 {
-    "transactions": [
-        {
-            "id": "tx_abc123",
-            "type": "buy",
-            "symbol": "BTC",
-            "amount": 0.1,
-            "price": 45000.0,
-            "total": 4500.0,
-            "fee": 50.0,
-            "timestamp": "2025-12-30T10:00:00Z"
-        }
-    ],
-    "pagination": {
-        "page": 1,
-        "per_page": 20,
-        "total": 150,
-        "pages": 8
+  "transactions": [
+    {
+      "id": "tx_abc123",
+      "type": "buy",
+      "symbol": "BTC",
+      "amount": 0.1,
+      "price": 45000.0,
+      "total": 4500.0,
+      "fee": 50.0,
+      "timestamp": "2025-12-30T10:00:00Z"
     }
+  ],
+  "pagination": {
+    "page": 1,
+    "per_page": 20,
+    "total": 150,
+    "pages": 8
+  }
 }
 ```
 
@@ -649,10 +649,10 @@ Submit Know Your Customer verification documents.
 
 ```json
 {
-    "submission_id": "kyc_sub_123",
-    "status": "pending_review",
-    "submitted_at": "2025-12-30T10:00:00Z",
-    "estimated_review_time": "24-48 hours"
+  "submission_id": "kyc_sub_123",
+  "status": "pending_review",
+  "submitted_at": "2025-12-30T10:00:00Z",
+  "estimated_review_time": "24-48 hours"
 }
 ```
 
@@ -668,13 +668,13 @@ Check KYC verification status.
 
 ```json
 {
-    "status": "verified",
-    "verified_at": "2025-12-28T15:30:00Z",
-    "tier": "tier_2",
-    "limits": {
-        "daily_withdrawal": 50000.0,
-        "monthly_withdrawal": 500000.0
-    }
+  "status": "verified",
+  "verified_at": "2025-12-28T15:30:00Z",
+  "tier": "tier_2",
+  "limits": {
+    "daily_withdrawal": 50000.0,
+    "monthly_withdrawal": 500000.0
+  }
 }
 ```
 
@@ -692,15 +692,15 @@ Check API health status.
 
 ```json
 {
-    "status": "healthy",
-    "timestamp": "2025-12-30T10:00:00Z",
-    "version": "1.0.0",
-    "environment": "production",
-    "services": {
-        "database": "healthy",
-        "redis": "healthy",
-        "blockchain": "healthy"
-    }
+  "status": "healthy",
+  "timestamp": "2025-12-30T10:00:00Z",
+  "version": "1.0.0",
+  "environment": "production",
+  "services": {
+    "database": "healthy",
+    "redis": "healthy",
+    "blockchain": "healthy"
+  }
 }
 ```
 
@@ -716,26 +716,26 @@ Get API information and available endpoints.
 
 ```json
 {
-    "name": "BlockGuardian Backend API",
-    "version": "1.0.0",
-    "description": "Enterprise-grade blockchain security platform",
-    "environment": "production",
-    "features": [
-        "User Authentication & Authorization",
-        "Multi-Factor Authentication",
-        "Portfolio Management",
-        "Asset Trading",
-        "KYC/AML Compliance",
-        "Audit Logging",
-        "Rate Limiting",
-        "Data Encryption"
-    ],
-    "endpoints": {
-        "auth": "/api/auth",
-        "portfolios": "/api/portfolios",
-        "health": "/health",
-        "docs": "/api/docs"
-    }
+  "name": "BlockGuardian Backend API",
+  "version": "1.0.0",
+  "description": "Enterprise-grade blockchain security platform",
+  "environment": "production",
+  "features": [
+    "User Authentication & Authorization",
+    "Multi-Factor Authentication",
+    "Portfolio Management",
+    "Asset Trading",
+    "KYC/AML Compliance",
+    "Audit Logging",
+    "Rate Limiting",
+    "Data Encryption"
+  ],
+  "endpoints": {
+    "auth": "/api/auth",
+    "portfolios": "/api/portfolios",
+    "health": "/health",
+    "docs": "/api/docs"
+  }
 }
 ```
 
@@ -747,14 +747,14 @@ All errors follow a consistent format:
 
 ```json
 {
-    "error": "Error Type",
-    "message": "Human-readable error message",
-    "status_code": 400,
-    "details": {
-        "field": "Specific field error"
-    },
-    "timestamp": "2025-12-30T10:00:00Z",
-    "request_id": "req_abc123"
+  "error": "Error Type",
+  "message": "Human-readable error message",
+  "status_code": 400,
+  "details": {
+    "field": "Specific field error"
+  },
+  "timestamp": "2025-12-30T10:00:00Z",
+  "request_id": "req_abc123"
 }
 ```
 
@@ -781,9 +781,9 @@ All errors follow a consistent format:
 
 ```json
 {
-    "error": "Unauthorized",
-    "message": "Authentication is required to access this resource",
-    "status_code": 401
+  "error": "Unauthorized",
+  "message": "Authentication is required to access this resource",
+  "status_code": 401
 }
 ```
 
@@ -791,13 +791,13 @@ All errors follow a consistent format:
 
 ```json
 {
-    "error": "Bad Request",
-    "message": "Validation failed",
-    "status_code": 400,
-    "details": {
-        "email": "Invalid email format",
-        "password": "Password must be at least 8 characters"
-    }
+  "error": "Bad Request",
+  "message": "Validation failed",
+  "status_code": 400,
+  "details": {
+    "email": "Invalid email format",
+    "password": "Password must be at least 8 characters"
+  }
 }
 ```
 
@@ -805,10 +805,10 @@ All errors follow a consistent format:
 
 ```json
 {
-    "error": "Rate Limit Exceeded",
-    "message": "Too many requests. Please try again later.",
-    "status_code": 429,
-    "retry_after": 60
+  "error": "Rate Limit Exceeded",
+  "message": "Too many requests. Please try again later.",
+  "status_code": 429,
+  "retry_after": 60
 }
 ```
 

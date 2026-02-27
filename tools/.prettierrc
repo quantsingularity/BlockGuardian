@@ -1,6 +1,7 @@
 {
     "plugins": ["prettier-plugin-solidity"],
     "printWidth": 100,
-    "tabWidth": 4,
-    "singleQuote": true
+    "tabWidth": 2,
+    "singleQuote": true,
+    "endOfLine": "lf"
 }

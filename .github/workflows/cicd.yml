@@ -149,11 +149,11 @@ jobs:
 
       # 5) Solidity files (entire repo)
       - name: Run Prettier Checks (Solidity)
-        working-directory: .
+        working-directory: tools
         run: |
           echo "=== Running Prettier (all .sol files) ==="
-          if find . -name "*.sol" -not -path "*/node_modules/*" | grep -q .; then
-            npx --prefix tools prettier --config tools/.prettierrc --check "**/*.sol" --ignore-path .prettierignore || {
+          if find .. -name "*.sol" -not -path "*/node_modules/*" | grep -q .; then
+            npx --no-install prettier --check "../**/*.sol" || {
               echo "Prettier formatting issues detected in Solidity files."
               exit 1
             }

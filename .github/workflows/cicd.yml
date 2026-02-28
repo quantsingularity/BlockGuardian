@@ -153,7 +153,7 @@ jobs:
         run: |
           echo "=== Running Prettier (all .sol files) ==="
           if find .. -name "*.sol" -not -path "*/node_modules/*" | grep -q .; then
-            npx --no-install prettier --check "../**/*.sol" || {
+            npx --no-install prettier --config .prettierrc --check "../**/*.sol" || {
               echo "Prettier formatting issues detected in Solidity files."
               exit 1
             }

@@ -529,7 +529,7 @@ class ComplianceViolation(Base, AuditMixin, TimestampMixin):
 class ComplianceManager:
     """Main compliance management system"""
 
-    def __init__(self) -> Any:
+    def __init__(self) -> None:
         self.violation_rules: List[Dict[str, Any]] = []
         self.monitoring_thresholds = {
             "large_transaction": 10000,

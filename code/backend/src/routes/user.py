@@ -4,6 +4,7 @@ Implements user profile, settings, and account management
 """
 
 from typing import Any
+
 from flask import Blueprint, g, jsonify, request
 from src.models.base import db_manager
 from src.models.user import User

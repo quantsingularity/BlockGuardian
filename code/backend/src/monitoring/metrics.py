@@ -10,6 +10,7 @@ from collections import defaultdict, deque
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Any, Callable, Dict, List, Optional
+
 import psutil
 from flask import g
 from sqlalchemy import text

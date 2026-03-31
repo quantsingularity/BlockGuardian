@@ -8,7 +8,10 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from enum import Enum
 from typing import Any, Dict, Optional
+
 from sqlalchemy import (
+    JSON,
+    UUID,
     Boolean,
     CheckConstraint,
     Column,
@@ -20,9 +23,9 @@ from sqlalchemy import (
     String,
     Text,
 )
-from sqlalchemy import JSON, UUID
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
+
 from .base import BaseModel
 
 

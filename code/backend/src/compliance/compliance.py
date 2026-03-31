@@ -12,9 +12,10 @@ from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from enum import Enum
 from typing import Any, Dict, List, Optional
+
 from ..models.base import db_manager
 from ..models.transaction import SuspiciousActivity, Transaction
-from ..models.user import User, UserStatus, KYCStatus, AMLRiskLevel
+from ..models.user import AMLRiskLevel, KYCStatus, User, UserStatus
 
 logger = logging.getLogger(__name__)
 

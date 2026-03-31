@@ -5,6 +5,7 @@ Implements enterprise-grade database patterns with audit trails and encryption
 
 from datetime import datetime
 from typing import Any, Dict, List, Optional
+
 from flask import g, has_request_context
 from sqlalchemy import Boolean, Column, DateTime, Integer, Text, create_engine
 from sqlalchemy.event import listens_for

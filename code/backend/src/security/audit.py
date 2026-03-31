@@ -7,8 +7,10 @@ import logging
 from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
-from sqlalchemy import Column, DateTime, Enum as SQLEnum, Integer, String, Text, Index
-from sqlalchemy import JSON
+
+from sqlalchemy import JSON, Column, DateTime
+from sqlalchemy import Enum as SQLEnum
+from sqlalchemy import Index, Integer, String, Text
 from sqlalchemy.ext.declarative import declarative_base
 
 logger = logging.getLogger(__name__)

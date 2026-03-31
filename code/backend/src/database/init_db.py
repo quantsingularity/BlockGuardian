@@ -4,21 +4,21 @@ Sets up database schema, creates initial data, and configures indexes
 """
 
 import logging
-from typing import Any
 import os
 import sys
 from datetime import datetime, timedelta
 from decimal import Decimal
+from typing import Any
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 from src.config import get_config
+from src.logging_config import get_logger
 from src.models.ai_models import AIModel, ModelStatus, ModelType
 from src.models.base import Base, db_manager
 from src.models.portfolio import Asset, AssetType, Portfolio, PortfolioType, RiskLevel
-from src.models.user import AMLRiskLevel, KYCStatus, User, UserStatus, UserRole, db
+from src.models.user import AMLRiskLevel, KYCStatus, User, UserRole, UserStatus, db
 from src.security.auth import auth_manager
 from src.security.encryption import encryption_manager
-from src.logging_config import get_logger
 
 logger = get_logger(__name__)
 

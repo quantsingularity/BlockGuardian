@@ -7,6 +7,7 @@ import json
 from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Any
+
 from flask import Blueprint, g, jsonify, request
 from src.models.base import db_manager, paginate_query
 from src.models.portfolio import (

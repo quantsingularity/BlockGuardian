@@ -14,6 +14,7 @@ from enum import Enum
 from functools import wraps
 from io import BytesIO
 from typing import Any, Dict, List, Optional, Tuple
+
 import pyotp
 import qrcode
 import redis
@@ -28,6 +29,7 @@ from flask_jwt_extended import (
     verify_jwt_in_request,
 )
 from werkzeug.security import check_password_hash, generate_password_hash
+
 from ..models.base import db_manager
 from ..models.user import User, UserSession
 

@@ -3,21 +3,22 @@ User model for the BlockGuardian application.
 Includes authentication, authorization, and compliance fields.
 """
 
+import base64
 import hashlib
 import json
 import os
 import secrets
 from datetime import datetime, timedelta, timezone
 from enum import Enum
+from io import BytesIO
 from typing import Any, Dict, List, Optional, Tuple
 
 import pyotp
 import qrcode
-from io import BytesIO
-import base64
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import Boolean, Column, DateTime, Enum as SQLEnum, Integer, String, Text
-from sqlalchemy import JSON
+from sqlalchemy import JSON, Boolean, Column, DateTime
+from sqlalchemy import Enum as SQLEnum
+from sqlalchemy import Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from .base import db_manager

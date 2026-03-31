@@ -7,14 +7,15 @@ from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Any
 from unittest.mock import Mock, patch
+
 import pytest
 from flask import Flask
 from flask_testing import TestCase
 from src.compliance.compliance import (
+    ComplianceManager,
     ComplianceRule,
     ComplianceStatus,
     DocumentType,
-    ComplianceManager,
     RegulatoryRequirement,
     RiskLevel,
 )

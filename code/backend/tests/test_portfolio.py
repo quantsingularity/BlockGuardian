@@ -6,8 +6,9 @@ Tests portfolio creation, asset management, and trading functionality
 import json
 import os
 import sys
-from typing import Any
 from decimal import Decimal
+from typing import Any
+
 import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))

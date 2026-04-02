@@ -12,12 +12,12 @@ from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
+    Enum,
     Float,
     ForeignKey,
     Integer,
     String,
     Text,
-    Enum,
 )
 from sqlalchemy.orm import relationship
 from src.models.base import AuditMixin, Base, TimestampMixin

@@ -8,7 +8,7 @@ import hashlib
 import json
 import logging
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, Optional, Union
 
 from cryptography.fernet import Fernet, MultiFernet
@@ -55,7 +55,7 @@ class EncryptionManager:
             data_str = str(data)
         metadata = {
             "field_type": field_type,
-            "encrypted_at": datetime.utcnow().isoformat(),
+            "encrypted_at": datetime.now(timezone.utc).isoformat(),
             "encryption_version": "1.0",
         }
         payload = {"metadata": metadata, "data": data_str}
@@ -188,7 +188,7 @@ class EncryptionManager:
         api_key_data = {
             "user_id": user_id,
             "permissions": permissions or [],
-            "created_at": datetime.utcnow().isoformat(),
+            "created_at": datetime.now(timezone.utc).isoformat(),
             "key_type": "api",
         }
         return self.encrypt_field(api_key_data, "api_key")

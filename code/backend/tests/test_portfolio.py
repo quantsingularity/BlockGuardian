@@ -140,9 +140,9 @@ class TestPortfolioCreation:
     def test_create_portfolio_missing_fields(
         self, client: Any, authenticated_user: Any
     ) -> Any:
-        """Test portfolio creation with missing required fields"""
+        """Test portfolio creation with missing required fields (no name)"""
         headers = {"Authorization": f"Bearer {authenticated_user['token']}"}
-        incomplete_data = {"name": "Test Portfolio"}
+        incomplete_data = {"description": "No name provided"}
         response = client.post(
             "/api/portfolios",
             data=json.dumps(incomplete_data),
@@ -344,14 +344,17 @@ class TestPortfolioHoldings:
         portfolio_data = json.loads(response.data)
         portfolio_id = portfolio_data["portfolio"]["id"]
         with app.app_context():
-            db.session.query(Portfolio).get(portfolio_id)
+            db.session.get(Portfolio, portfolio_id)
             asset = db.session.query(Asset).filter(Asset.symbol == "AAPL").first()
             holding = PortfolioHolding(
                 portfolio_id=portfolio_id,
                 asset_id=asset.id,
                 quantity=Decimal("10"),
                 average_cost=Decimal("145.00"),
+                cost_basis=Decimal("1450.00"),
+                current_price=Decimal("150.00"),
                 current_value=Decimal("1500.00"),
+                unrealized_pnl=Decimal("50.00"),
             )
             db.session.add(holding)
             db.session.commit()
@@ -398,9 +401,11 @@ class TestTransactions:
     ) -> Any:
         """Test creating a buy transaction"""
         headers = {"Authorization": f"Bearer {authenticated_user['token']}"}
+        funded_data = dict(sample_portfolio_data)
+        funded_data["initial_cash"] = 100000
         response = client.post(
             "/api/portfolios",
-            data=json.dumps(sample_portfolio_data),
+            data=json.dumps(funded_data),
             content_type="application/json",
             headers=headers,
         )

@@ -23,7 +23,7 @@ def get_current_user() -> Any:
     try:
         session = db_manager.get_session()
         try:
-            user = session.query(User).get(g.current_user_id)
+            user = db.session.get(User, g.current_user_id)
             if not user:
                 return jsonify({"error": "User not found"}), 404
 
@@ -44,7 +44,7 @@ def update_current_user() -> Any:
 
         session = db_manager.get_session()
         try:
-            user = session.query(User).get(g.current_user_id)
+            user = db.session.get(User, g.current_user_id)
             if not user:
                 return jsonify({"error": "User not found"}), 404
 
@@ -103,7 +103,7 @@ def get_user_settings() -> None:
     try:
         session = db_manager.get_session()
         try:
-            user = session.query(User).get(g.current_user_id)
+            user = db.session.get(User, g.current_user_id)
             if not user:
                 return jsonify({"error": "User not found"}), 404
 
@@ -131,7 +131,7 @@ def update_user_settings() -> None:
 
         session = db_manager.get_session()
         try:
-            user = session.query(User).get(g.current_user_id)
+            user = db.session.get(User, g.current_user_id)
             if not user:
                 return jsonify({"error": "User not found"}), 404
 
@@ -166,7 +166,7 @@ def get_user_stats() -> Any:
         try:
             from src.models.portfolio import Portfolio
 
-            user = session.query(User).get(g.current_user_id)
+            user = db.session.get(User, g.current_user_id)
             if not user:
                 return jsonify({"error": "User not found"}), 404
 

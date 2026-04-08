@@ -171,8 +171,12 @@ class User(db_manager.Base):
         """Check if the user has an approved and non-expired KYC status."""
         if self.kyc_status != KYCStatus.APPROVED:
             return False
-        if self.kyc_expires_at and self.kyc_expires_at < datetime.now(timezone.utc):
-            return False
+        if self.kyc_expires_at:
+            expires_at = self.kyc_expires_at
+            if expires_at.tzinfo is None:
+                expires_at = expires_at.replace(tzinfo=timezone.utc)
+            if expires_at < datetime.now(timezone.utc):
+                return False
         return True
 
     def get_full_name(self) -> str:
@@ -181,15 +185,24 @@ class User(db_manager.Base):
 
     def is_locked(self) -> bool:
         """Check if the user account is locked"""
-        if self.locked_until and self.locked_until > datetime.now(timezone.utc):
-            return True
-        return False
+        if self.locked_until is None:
+            return False
+        locked_until = self.locked_until
+        if locked_until.tzinfo is None:
+            locked_until = locked_until.replace(tzinfo=timezone.utc)
+        return locked_until > datetime.now(timezone.utc)
 
     def increment_login_attempts(self) -> None:
         """Increment failed login attempts and lock account if necessary"""
         self.login_attempts += 1
         if self.login_attempts >= 5:
             self.locked_until = datetime.now(timezone.utc) + timedelta(minutes=30)
+
+    def lock_account(self, duration_minutes: int = 30) -> None:
+        """Manually lock the user account"""
+        self.locked_until = datetime.now(timezone.utc) + timedelta(
+            minutes=duration_minutes
+        )
 
     def successful_login(self) -> None:
         """Reset login attempts and update last login time"""
@@ -294,6 +307,31 @@ class User(db_manager.Base):
 
         return False
 
+    def update_kyc_status(self, verification_result: dict) -> None:
+        """Update KYC status from verification result"""
+        self.kyc_status = (
+            KYCStatus(
+                verification_result.get(
+                    "status",
+                    (
+                        self.kyc_status.value
+                        if hasattr(self.kyc_status, "value")
+                        else self.kyc_status
+                    ),
+                )
+            )
+            if verification_result.get("status") in [s.value for s in KYCStatus]
+            else self.kyc_status
+        )
+        self.aml_score = verification_result.get("risk_score", self.aml_score)
+        risk_score = self.aml_score or 0
+        if risk_score >= 70:
+            self.aml_risk_level = AMLRiskLevel.HIGH
+        elif risk_score >= 30:
+            self.aml_risk_level = AMLRiskLevel.MEDIUM
+        else:
+            self.aml_risk_level = AMLRiskLevel.LOW
+
     def can_trade(self) -> Tuple[bool, str]:
         """Check if user can execute trades"""
         if self.status != UserStatus.ACTIVE:
@@ -388,7 +426,12 @@ class UserSession(db_manager.Base):
 
     def is_expired(self) -> bool:
         """Check if session is expired"""
-        return self.expires_at < datetime.now(timezone.utc)
+        expires_at = self.expires_at
+        if expires_at is None:
+            return True
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+        return expires_at < datetime.now(timezone.utc)
 
     def extend_session(self, hours: int = 8) -> None:
         """Extend session expiration"""

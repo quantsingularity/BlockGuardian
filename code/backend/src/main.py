@@ -6,7 +6,7 @@ Enterprise-grade backend with comprehensive security, compliance, and scalabilit
 import logging
 import os
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 import redis
@@ -34,9 +34,8 @@ def create_app(config_name: Any = None) -> Any:
         config_name = os.getenv("FLASK_ENV", "development")
     config = get_config(config_name)
     app.config.from_object(config)
-    app.config["SQLALCHEMY_DATABASE_URI"] = (
-        f"sqlite:///{os.path.join(os.path.dirname(__file__), 'database', 'app.db')}"
-    )
+    if not app.config.get("SQLALCHEMY_DATABASE_URI"):
+        app.config["SQLALCHEMY_DATABASE_URI"] = config.database.uri
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     setup_logging(app)
     initialize_extensions(app)
@@ -65,7 +64,7 @@ def create_app(config_name: Any = None) -> Any:
             redis_status = f"unhealthy: {str(e)}"
         status = {
             "status": "healthy" if db_status == "healthy" else "unhealthy",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "version": "1.0.0",
             "environment": config_name,
             "services": {"database": db_status, "redis": redis_status},
@@ -162,7 +161,9 @@ def initialize_extensions(app: Any) -> None:
         supports_credentials=True if cors_origins != ["*"] else False,
     )
     db.init_app(app)
-    db_manager.init_app(app)
+    # Initialize db_manager using Flask-SQLAlchemy's engine so both share one connection
+    with app.app_context():
+        db_manager.init_app_with_db(app, db)
     auth_manager.init_app(app)
     try:
         rate_limiter.init_app(app)
@@ -174,6 +175,19 @@ def initialize_extensions(app: Any) -> None:
         app.logger.warning(f"Audit logger initialization failed: {str(e)}")
     with app.app_context():
         try:
+            # Ensure AuditLog model is registered before creating tables
+            from src.security.audit import get_audit_log_model
+
+            get_audit_log_model()
+            # Import compliance transaction models to register their tables
+            try:
+                from src.models.base import Base
+
+                Base.metadata.create_all(db.engine)
+            except Exception:
+                pass
+            # Create all tables - db_manager.init_app_with_db already created Base tables,
+            # but we also need Flask-SQLAlchemy models (like AuditLog) created
             db.create_all()
             app.logger.info("Database tables created successfully")
         except Exception as e:
@@ -317,7 +331,7 @@ def register_middleware(app: Any) -> None:
         if request.endpoint in ["health_check", "serve", "static"]:
             return
         app.logger.debug(f"Request: {request.method} {request.url}")
-        g.request_start_time = datetime.utcnow()
+        g.request_start_time = datetime.now(timezone.utc)
 
     @app.after_request
     def after_request(response):

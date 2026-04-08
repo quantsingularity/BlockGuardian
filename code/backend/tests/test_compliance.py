@@ -19,7 +19,12 @@ from src.compliance.compliance import (
     RegulatoryRequirement,
     RiskLevel,
 )
-from src.models.transaction import SuspiciousActivity, Transaction
+from src.models.portfolio import Transaction
+
+try:
+    from src.models.transaction import SuspiciousActivity
+except ImportError:
+    SuspiciousActivity = None
 from src.models.user import User
 
 
@@ -638,8 +643,10 @@ class TestComplianceManager(TestCase):
         self.compliance_manager._generate_sar(self.test_transaction, monitoring_result)
         self.mock_session.add.assert_called_once()
         self.mock_session.commit.assert_called_once()
+        from src.models.transaction import SuspiciousActivity
+
         sar_call = self.mock_session.add.call_args[0][0]
-        self.assertIsInstance(sar_call, Mock)
+        self.assertIsInstance(sar_call, SuspiciousActivity)
 
     @patch("src.models.base.db_manager.get_session")
     def test_generate_compliance_report_kyc_summary(self, mock_get_session: Any) -> Any:
@@ -715,6 +722,13 @@ class TestComplianceManager(TestCase):
 
 class TestComplianceDataClasses(TestCase):
     """Test compliance data classes"""
+
+    def create_app(self):
+        from flask import Flask
+
+        app = Flask(__name__)
+        app.config["TESTING"] = True
+        return app
 
     def test_compliance_rule_creation(self) -> Any:
         """Test ComplianceRule creation"""

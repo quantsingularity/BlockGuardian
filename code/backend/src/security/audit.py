@@ -8,19 +8,7 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from sqlalchemy import JSON, Column, DateTime
-from sqlalchemy import Enum as SQLEnum
-from sqlalchemy import Index, Integer, String, Text
-from sqlalchemy.orm import DeclarativeBase
-
 logger = logging.getLogger(__name__)
-
-
-# Lazy import to avoid circular dependency
-def get_db_manager():
-    from ..models.base import db_manager
-
-    return db_manager
 
 
 class AuditEventType(Enum):
@@ -58,37 +46,56 @@ class AuditEventType(Enum):
     SECURITY_ALERT = "security_alert"
 
 
-# Create a temporary base for AuditLog
-class AuditLogBase(DeclarativeBase):
-    pass
+# AuditLog model is defined lazily after Flask-SQLAlchemy db is initialized
+_AuditLog = None
 
 
-class AuditLog(AuditLogBase):
-    """SQLAlchemy model for the Audit Log"""
+def get_audit_log_model():
+    """Get or create the AuditLog SQLAlchemy model, bound to Flask-SQLAlchemy db."""
+    global _AuditLog
+    if _AuditLog is not None:
+        return _AuditLog
 
-    __tablename__ = "audit_logs"
-    id = Column(Integer, primary_key=True, index=True)
-    timestamp = Column(
-        DateTime(timezone=True), default=datetime.now(timezone.utc), nullable=False
-    )
-    event_type: Column[AuditEventType] = Column(
-        SQLEnum(AuditEventType), nullable=False, index=True
-    )
-    user_id = Column(Integer, index=True)
-    username = Column(String(255))
-    ip_address = Column(String(45))
-    resource_type = Column(String(255), index=True)
-    resource_id = Column(String(255), index=True)
-    details = Column(JSON)
-    message = Column(Text, nullable=False)
-    success = Column(Integer, default=1)
-    __table_args__ = (
-        Index("idx_audit_user_time", "user_id", "timestamp"),
-        Index("idx_audit_type_time", "event_type", "timestamp"),
-    )
+    try:
+        from sqlalchemy import JSON, Column, DateTime
+        from sqlalchemy import Enum as SQLEnum
+        from sqlalchemy import Index, Integer, String, Text
+        from src.models.user import db
 
-    def __repr__(self) -> Any:
-        return f"<AuditLog(id={self.id}, event_type='{self.event_type.value}', user_id={self.user_id})>"
+        class AuditLog(db.Model):
+            """SQLAlchemy model for the Audit Log"""
+
+            __tablename__ = "audit_logs"
+            __table_args__ = (
+                Index("idx_audit_user_time", "user_id", "timestamp"),
+                Index("idx_audit_type_time", "event_type", "timestamp"),
+                {"extend_existing": True},
+            )
+
+            id = Column(Integer, primary_key=True, index=True)
+            timestamp = Column(
+                DateTime(timezone=True),
+                default=lambda: datetime.now(timezone.utc),
+                nullable=False,
+            )
+            event_type = Column(SQLEnum(AuditEventType), nullable=False, index=True)
+            user_id = Column(Integer, index=True)
+            username = Column(String(255))
+            ip_address = Column(String(45))
+            resource_type = Column(String(255), index=True)
+            resource_id = Column(String(255), index=True)
+            details = Column(JSON)
+            message = Column(Text, nullable=False)
+            success = Column(Integer, default=1)
+
+            def __repr__(self) -> str:
+                return f"<AuditLog(id={self.id}, event_type='{self.event_type.value}', user_id={self.user_id})>"
+
+        _AuditLog = AuditLog
+        return _AuditLog
+    except Exception as e:
+        logger.warning(f"Could not build AuditLog model: {e}")
+        return None
 
 
 class AuditLogger:
@@ -105,16 +112,15 @@ class AuditLogger:
     def init_app(self, app: Any) -> None:
         """Initialize with Flask app"""
         self.app = app
-        self._ensure_table_exists()
 
-    def _ensure_table_exists(self) -> Any:
-        """Creates the AuditLog table if it does not exist."""
+    def _get_db(self):
+        """Get Flask-SQLAlchemy db session"""
         try:
-            db_manager = get_db_manager()
-            if db_manager.engine:
-                AuditLogBase.metadata.create_all(db_manager.engine)
-        except Exception as e:
-            self.logger.error(f"Failed to ensure AuditLog table exists: {e}")
+            from src.models.user import db
+
+            return db
+        except Exception:
+            return None
 
     def log_event(
         self,
@@ -127,52 +133,46 @@ class AuditLogger:
         details: Optional[Dict[str, Any]] = None,
         message: str = "",
         success: bool = True,
-    ) -> Optional[AuditLog]:
-        """
-        Logs a critical event to the audit log database.
-
-        Args:
-            event_type: The type of event that occurred.
-            user_id: The ID of the user who initiated the event.
-            username: The username of the user.
-            ip_address: The IP address from which the event originated.
-            resource_type: The type of resource affected (e.g., 'User', 'Transaction').
-            resource_id: The ID of the resource affected.
-            details: A dictionary of structured data about the event.
-            message: A human-readable summary of the event.
-            success: Boolean indicating if the operation was successful.
-
-        Returns:
-            The created AuditLog object or None on failure.
-        """
+    ) -> Optional[Any]:
+        """Logs a critical event to the audit log database."""
         if not message:
             message = f"Event type: {event_type.value}"
-        log_entry = AuditLog(
-            event_type=event_type,
-            user_id=user_id,
-            username=username,
-            ip_address=ip_address,
-            resource_type=resource_type,
-            resource_id=resource_id,
-            details=details,
-            message=message,
-            success=1 if success else 0,
-        )
-        db_manager = get_db_manager()
-        session = db_manager.get_session()
+
+        AuditLog = get_audit_log_model()
+        if AuditLog is None:
+            self.logger.info(f"Audit (no model): {event_type.value} user={user_id}")
+            return None
+
+        db = self._get_db()
+        if db is None:
+            self.logger.info(f"Audit (no db): {event_type.value} user={user_id}")
+            return None
+
         try:
-            session.add(log_entry)
-            session.commit()
+            log_entry = AuditLog(
+                event_type=event_type,
+                user_id=user_id,
+                username=username,
+                ip_address=ip_address,
+                resource_type=resource_type,
+                resource_id=resource_id,
+                details=details,
+                message=message,
+                success=1 if success else 0,
+            )
+            db.session.add(log_entry)
+            db.session.commit()
             self.logger.info(
                 f"Audit logged: {event_type.value} for user {user_id or 'N/A'}"
             )
             return log_entry
         except Exception as e:
-            session.rollback()
+            try:
+                db.session.rollback()
+            except Exception:
+                pass
             self.logger.error(f"Failed to write audit log entry: {e}")
             return None
-        finally:
-            session.close()
 
     def get_logs(
         self,
@@ -182,25 +182,14 @@ class AuditLogger:
         end_date: Optional[datetime] = None,
         limit: int = 100,
         offset: int = 0,
-    ) -> List[AuditLog]:
-        """
-        Retrieves audit logs based on filters.
-
-        Args:
-            event_type: Filter by event type.
-            user_id: Filter by user ID.
-            start_date: Filter by start date.
-            end_date: Filter by end date.
-            limit: Maximum number of logs to return.
-            offset: Offset for pagination.
-
-        Returns:
-            A list of AuditLog objects.
-        """
-        db_manager = get_db_manager()
-        session = db_manager.get_session()
+    ) -> List[Any]:
+        """Retrieves audit logs based on filters."""
+        AuditLog = get_audit_log_model()
+        db = self._get_db()
+        if AuditLog is None or db is None:
+            return []
         try:
-            query = session.query(AuditLog)
+            query = db.session.query(AuditLog)
             if event_type:
                 query = query.filter(AuditLog.event_type == event_type)
             if user_id:
@@ -209,42 +198,33 @@ class AuditLogger:
                 query = query.filter(AuditLog.timestamp >= start_date)
             if end_date:
                 query = query.filter(AuditLog.timestamp <= end_date)
-            logs = (
+            return (
                 query.order_by(AuditLog.timestamp.desc())
                 .limit(limit)
                 .offset(offset)
                 .all()
             )
-            return logs
         except Exception as e:
             self.logger.error(f"Failed to retrieve audit logs: {e}")
             return []
-        finally:
-            session.close()
 
-    def search_logs(self, search_term: str, limit: int = 100) -> List[AuditLog]:
-        """
-        Searches audit logs for a given term in the message or details.
-        (Note: Full-text search capabilities depend on the underlying database,
-        this implementation uses simple LIKE for portability).
-        """
-        db_manager = get_db_manager()
-        session = db_manager.get_session()
+    def search_logs(self, search_term: str, limit: int = 100) -> List[Any]:
+        """Searches audit logs for a given term in the message."""
+        AuditLog = get_audit_log_model()
+        db = self._get_db()
+        if AuditLog is None or db is None:
+            return []
         try:
-            search_pattern = f"%{search_term}%"
-            logs = (
-                session.query(AuditLog)
-                .filter(AuditLog.message.ilike(search_pattern))
+            return (
+                db.session.query(AuditLog)
+                .filter(AuditLog.message.ilike(f"%{search_term}%"))
                 .order_by(AuditLog.timestamp.desc())
                 .limit(limit)
                 .all()
             )
-            return logs
         except Exception as e:
             self.logger.error(f"Failed to search audit logs: {e}")
             return []
-        finally:
-            session.close()
 
     def log_authentication_event(
         self,
@@ -252,14 +232,18 @@ class AuditLogger:
         user_id: Optional[int] = None,
         success: bool = True,
         details: Optional[Dict[str, Any]] = None,
-    ) -> Optional[AuditLog]:
+    ) -> Optional[Any]:
         """Log authentication event"""
-        from flask import request as flask_request
+        try:
+            from flask import request as flask_request
 
+            ip = flask_request.remote_addr
+        except Exception:
+            ip = None
         return self.log_event(
             event_type=event_type,
             user_id=user_id,
-            ip_address=flask_request.remote_addr if flask_request else None,
+            ip_address=ip,
             details=details,
             message=f"Authentication event: {event_type.value}",
             success=success,
@@ -270,14 +254,18 @@ class AuditLogger:
         alert_type: str,
         user_id: Optional[int] = None,
         details: Optional[Dict[str, Any]] = None,
-    ) -> Optional[AuditLog]:
+    ) -> Optional[Any]:
         """Log security alert"""
-        from flask import request as flask_request
+        try:
+            from flask import request as flask_request
 
+            ip = flask_request.remote_addr
+        except Exception:
+            ip = None
         return self.log_event(
             event_type=AuditEventType.SECURITY_ALERT,
             user_id=user_id,
-            ip_address=flask_request.remote_addr if flask_request else None,
+            ip_address=ip,
             resource_type="security",
             details={"alert_type": alert_type, **(details or {})},
             message=f"Security alert: {alert_type}",
@@ -290,14 +278,18 @@ class AuditLogger:
         resource: str,
         user_id: Optional[int] = None,
         details: Optional[Dict[str, Any]] = None,
-    ) -> Optional[AuditLog]:
+    ) -> Optional[Any]:
         """Log data access event"""
-        from flask import request as flask_request
+        try:
+            from flask import request as flask_request
 
+            ip = flask_request.remote_addr
+        except Exception:
+            ip = None
         return self.log_event(
             event_type=AuditEventType.DATA_ACCESS,
             user_id=user_id,
-            ip_address=flask_request.remote_addr if flask_request else None,
+            ip_address=ip,
             resource_type=resource,
             details={"action": action, **(details or {})},
             message=f"Data access: {action} on {resource}",
@@ -309,14 +301,18 @@ class AuditLogger:
         event_type: AuditEventType,
         user_id: Optional[int] = None,
         details: Optional[Dict[str, Any]] = None,
-    ) -> Optional[AuditLog]:
+    ) -> Optional[Any]:
         """Log financial event"""
-        from flask import request as flask_request
+        try:
+            from flask import request as flask_request
 
+            ip = flask_request.remote_addr
+        except Exception:
+            ip = None
         return self.log_event(
             event_type=event_type,
             user_id=user_id,
-            ip_address=flask_request.remote_addr if flask_request else None,
+            ip_address=ip,
             resource_type="financial",
             details=details,
             message=f"Financial event: {event_type.value}",

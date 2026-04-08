@@ -40,6 +40,7 @@ class RateLimiter:
     def __init__(self, app: Optional[Any] = None) -> None:
         self.app = app
         self.redis_client = None
+        self._memory_store: Dict[str, Any] = {}
         self.default_limits = {
             "requests_per_minute": 60,
             "requests_per_hour": 1000,
@@ -47,6 +48,47 @@ class RateLimiter:
         }
         if app is not None:
             self.init_app(app)
+
+    def _get_memory_store(self) -> Dict[str, Any]:
+        """Get the per-app memory store for rate limiting."""
+        try:
+            from flask import current_app
+
+            if not hasattr(current_app, "_rate_limit_store"):
+                current_app._rate_limit_store = {}
+            return current_app._rate_limit_store
+        except RuntimeError:
+            return self._memory_store
+
+    def _memory_check(
+        self, key: str, limit: int, window: int
+    ) -> Tuple[bool, Dict[str, Any]]:
+        """In-memory rate limiting fallback when Redis is unavailable."""
+        current_time = time.time()
+        window_key = f"{key}:{int(current_time // window)}"
+        store = self._get_memory_store()
+        # Clean up old keys
+        cutoff = current_time - window * 2
+        stale = [k for k, v in list(store.items()) if v.get("ts", 0) < cutoff]
+        for k in stale:
+            del store[k]
+        entry = store.get(window_key, {"count": 0, "ts": current_time})
+        entry["count"] += 1
+        entry["ts"] = current_time
+        store[window_key] = entry
+        count = entry["count"]
+        reset_time = (int(current_time // window) + 1) * window
+        is_allowed = count <= limit
+        remaining = max(0, limit - count)
+        return (
+            is_allowed,
+            {
+                "remaining": remaining,
+                "reset_time": reset_time,
+                "current_count": count,
+                "limit": limit,
+            },
+        )
 
     def init_app(self, app: Any) -> None:
         """Initialize rate limiter with Flask app"""
@@ -93,15 +135,7 @@ class RateLimiter:
             Tuple of (is_allowed, rate_limit_info)
         """
         if not self.redis_client:
-            self.app.logger.warning("Rate limiting disabled - Redis not available")
-            return (
-                True,
-                {
-                    "remaining": limit,
-                    "reset_time": time.time() + window,
-                    "limit": limit,
-                },
-            )
+            return self._memory_check(key, limit, window)
         current_time = time.time()
         if algorithm == RateLimitType.SLIDING_WINDOW:
             return self._sliding_window_check(key, limit, window, current_time)

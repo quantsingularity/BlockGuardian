@@ -3,25 +3,28 @@ Base database models and utilities for BlockGuardian Backend
 Implements enterprise-grade database patterns with audit trails and encryption
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from flask import g, has_request_context
 from sqlalchemy import Boolean, Column, DateTime, Integer, Text, create_engine
 from sqlalchemy.event import listens_for
 from sqlalchemy.orm import declarative_base, scoped_session, sessionmaker
-from src.config import current_config
 from src.security.audit import audit_logger
 from src.security.encryption import encryption_manager
+
+
+def _utcnow():
+    return datetime.now(timezone.utc)
 
 
 class BaseModel:
     """Base mixin with common fields and functionality for all ORM models"""
 
     id = Column(Integer, primary_key=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=_utcnow, nullable=False)
     updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+        DateTime(timezone=True), default=_utcnow, onupdate=_utcnow, nullable=False
     )
     created_by = Column(Integer, nullable=True)
     updated_by = Column(Integer, nullable=True)
@@ -56,14 +59,14 @@ class BaseModel:
                 if hasattr(self, "_encrypted_fields") and key in self._encrypted_fields:
                     value = encryption_manager.encrypt_field(value)
                 setattr(self, key, value)
-        self.updated_at = datetime.utcnow()  # type: ignore[assignment]
+        self.updated_at = _utcnow()  # type: ignore[assignment]
         if has_request_context() and hasattr(g, "current_user_id"):
             self.updated_by = g.current_user_id
 
     def soft_delete(self) -> None:
         """Soft delete the record"""
         self.is_active = False  # type: ignore[assignment]
-        self.updated_at = datetime.utcnow()  # type: ignore[assignment]
+        self.updated_at = _utcnow()  # type: ignore[assignment]
         if has_request_context() and hasattr(g, "current_user_id"):
             self.updated_by = g.current_user_id
 
@@ -80,19 +83,24 @@ class DatabaseManager:
         self.session_factory: Optional[Any] = None
         self.Session: Optional[Any] = None
         self.Base = Base  # Set Base immediately
+        self._flask_db: Optional[Any] = None
         if app is not None:
             self.init_app(app)
 
     def init_app(self, app: Any) -> None:
         """Initialize database manager with Flask app"""
         self.app = app
-        db_config = current_config.database
-        is_sqlite = db_config.uri.startswith("sqlite")
-        engine_kwargs = {
-            "echo": db_config.echo,
-            "echo_pool": db_config.echo_pool,
-        }
+        db_uri = app.config.get("SQLALCHEMY_DATABASE_URI")
+        if not db_uri:
+            from src.config import current_config as cfg
+
+            db_uri = cfg.database.uri
+        is_sqlite = db_uri.startswith("sqlite")
+        engine_kwargs: Dict[str, Any] = {}
         if not is_sqlite:
+            from src.config import current_config as cfg
+
+            db_config = cfg.database
             engine_kwargs.update(
                 {
                     "pool_size": db_config.pool_size,
@@ -101,23 +109,47 @@ class DatabaseManager:
                     "pool_recycle": db_config.pool_recycle,
                 }
             )
-        self.engine = create_engine(db_config.uri, **engine_kwargs)
+        self.engine = create_engine(db_uri, **engine_kwargs)
         self.session_factory = sessionmaker(bind=self.engine)
         self.Session = scoped_session(self.session_factory)
         Base.metadata.create_all(self.engine)
-        # Audit listeners disabled for now - would need mapper-level events
-        # self._setup_audit_listeners()
         app.logger.info("Database manager initialized")
 
+    def init_app_with_db(self, app: Any, flask_db: Any) -> None:
+        """Initialize using Flask-SQLAlchemy's engine so both share one connection pool."""
+        self.app = app
+        self._flask_db = flask_db
+        # Use the same engine that Flask-SQLAlchemy is using
+        self.engine = flask_db.engine
+        self.session_factory = sessionmaker(bind=self.engine)
+        self.Session = scoped_session(self.session_factory)
+        # Register all SQLAlchemy Base models into Flask-SQLAlchemy metadata
+        # by binding Base.metadata to the same engine
+        Base.metadata.bind = self.engine  # type: ignore[attr-defined]
+        # Create all tables from Base.metadata on Flask-SQLAlchemy's engine
+        Base.metadata.create_all(self.engine)
+        app.logger.info("Database manager initialized (shared engine)")
+
+    def set_flask_db(self, flask_db: Any) -> None:
+        """Register the Flask-SQLAlchemy db instance so get_session returns db.session"""
+        self._flask_db = flask_db
+
     def get_session(self) -> Any:
-        """Get database session"""
+        """Get database session - returns Flask-SQLAlchemy session when available"""
+        if self._flask_db is not None:
+            return self._flask_db.session
         if self.Session is None:
             raise RuntimeError("Database not initialized")
         return self.Session()
 
     def close_session(self) -> None:
         """Close database session"""
-        if self.Session is not None:
+        if self._flask_db is not None:
+            try:
+                self._flask_db.session.remove()
+            except Exception:
+                pass
+        elif self.Session is not None:
             self.Session.remove()
 
     def _setup_audit_listeners(self) -> None:
@@ -190,7 +222,7 @@ class AuditMixin:
         if user_id is None and has_request_context() and hasattr(g, "current_user_id"):
             user_id = g.current_user_id
         audit_entry = {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": _utcnow().isoformat(),
             "action": action,
             "user_id": user_id,
             "details": details or {},
@@ -255,11 +287,11 @@ class EncryptedMixin:
 class TimestampMixin:
     """Mixin for models with detailed timestamp tracking"""
 
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=_utcnow, nullable=False)
     updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+        DateTime(timezone=True), default=_utcnow, onupdate=_utcnow, nullable=False
     )
-    deleted_at = Column(DateTime, nullable=True)
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
 
     @property
     def is_deleted(self) -> bool:
@@ -268,7 +300,7 @@ class TimestampMixin:
 
     def soft_delete(self) -> None:
         """Soft delete the record"""
-        self.deleted_at = datetime.utcnow()  # type: ignore[assignment]
+        self.deleted_at = _utcnow()  # type: ignore[assignment]
         self.is_active = False  # type: ignore[assignment]
 
 

@@ -240,6 +240,7 @@ class AuthManage:
     ) -> int:
         """Calculate login risk score (0-100)"""
         risk_score = 0
+        now = datetime.now(timezone.utc)
         if user.user_metadata and "login_history" in user.user_metadata:
             login_history = user.user_metadata["login_history"]
             recent_ips = [entry.get("ip_address") for entry in login_history[-5:]]
@@ -252,16 +253,23 @@ class AuthManage:
                 last_login = datetime.fromisoformat(
                     login_history[-1]["timestamp"].replace("Z", "+00:00")
                 )
-                time_since_last = datetime.now(timezone.utc) - last_login
+                if last_login.tzinfo is None:
+                    last_login = last_login.replace(tzinfo=timezone.utc)
+                time_since_last = now - last_login
                 if time_since_last > timedelta(days=30):
                     risk_score += 25
-        account_age = datetime.now(timezone.utc) - user.created_at
-        if account_age < timedelta(days=7):
-            risk_score += 15
+        created_at = user.created_at
+        if created_at is not None:
+            if created_at.tzinfo is None:
+                created_at = created_at.replace(tzinfo=timezone.utc)
+            account_age = now - created_at
+            if account_age < timedelta(days=7):
+                risk_score += 15
         if user.password_changed_at:
-            time_since_password_change = (
-                datetime.now(timezone.utc) - user.password_changed_at
-            )
+            changed_at = user.password_changed_at
+            if changed_at.tzinfo is None:
+                changed_at = changed_at.replace(tzinfo=timezone.utc)
+            time_since_password_change = now - changed_at
             if time_since_password_change < timedelta(hours=24):
                 risk_score += 10
         return min(risk_score, 100)
@@ -538,6 +546,7 @@ class AuthManage:
                 Permission.READ_PORTFOLIO.value,
                 Permission.CREATE_PORTFOLIO.value,
                 Permission.UPDATE_PORTFOLIO.value,
+                Permission.DELETE_PORTFOLIO.value,
                 Permission.EXECUTE_TRADE.value,
                 Permission.READ_MARKET_DATA.value,
             ],

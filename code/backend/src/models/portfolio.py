@@ -5,7 +5,7 @@ Implements comprehensive portfolio management, asset tracking, and transaction p
 
 import enum
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Any, Dict, List
 
@@ -210,7 +210,7 @@ class Portfolio(Base, AuditMixin):
             invested_amount=self.invested_amount,
             unrealized_pnl=self.unrealized_pnl,
             realized_pnl=self.realized_pnl,
-            snapshot_date=datetime.utcnow(),
+            snapshot_date=datetime.now(timezone.utc),
         )
         allocation = self.get_asset_allocation()
         snapshot.asset_allocation = json.dumps(allocation)
@@ -259,11 +259,11 @@ class Asset(Base):
         self.current_price = new_price  # type: ignore[assignment]
         if volume:
             self.volume = volume  # type: ignore[assignment]
-        self.last_updated = datetime.utcnow()  # type: ignore[assignment]
+        self.last_updated = datetime.now(timezone.utc)  # type: ignore[assignment]
 
     def get_price_history(self, days: int = 30) -> List[Dict[str, Any]]:
         """Get price history for specified number of days"""
-        start_date = datetime.utcnow() - timedelta(days=days)
+        start_date = datetime.now(timezone.utc) - timedelta(days=days)
         prices = (
             self.price_history.filter(AssetPrice.timestamp >= start_date)
             .order_by(AssetPrice.timestamp.desc())
@@ -297,13 +297,22 @@ class PortfolioHolding(Base, AuditMixin):
     def __repr__(self) -> Any:
         return f"<Holding {self.asset.symbol} in {self.portfolio.name}>"
 
-    def update_valuation(self) -> None:
+    def update_valuation(self, current_price: "Decimal | None" = None) -> None:
         """Update current valuation based on asset price"""
-        if self.asset.current_price:
-            self.current_price = self.asset.current_price  # type: ignore[assignment]
+        price = current_price
+        if (
+            price is None
+            and self.asset is not None
+            and self.asset.current_price is not None
+        ):
+            price = self.asset.current_price
+        if price is None and self.current_price is not None:
+            price = self.current_price
+        if price is not None:
+            self.current_price = price  # type: ignore[assignment]
             self.current_value = self.quantity * self.current_price  # type: ignore[assignment]
             self.unrealized_pnl = self.current_value - self.cost_basis  # type: ignore[assignment]
-            if self.cost_basis > 0:
+            if self.cost_basis and self.cost_basis > 0:
                 self.unrealized_pnl_percent = float(  # type: ignore[assignment]
                     self.unrealized_pnl / self.cost_basis * 100
                 )
@@ -316,7 +325,7 @@ class PortfolioHolding(Base, AuditMixin):
         self.average_cost = new_total_cost / new_total_quantity  # type: ignore[assignment]
         self.quantity = new_total_quantity  # type: ignore[assignment]
         self.cost_basis = new_total_cost  # type: ignore[assignment]
-        self.last_transaction_date = datetime.utcnow()  # type: ignore[assignment]
+        self.last_transaction_date = datetime.now(timezone.utc)  # type: ignore[assignment]
         self.update_valuation()
         self.add_audit_entry(
             "shares_added",
@@ -335,7 +344,7 @@ class PortfolioHolding(Base, AuditMixin):
         realized_pnl = (price - cost_per_share) * quantity
         self.quantity -= quantity
         self.cost_basis -= cost_per_share * quantity
-        self.last_transaction_date = datetime.utcnow()  # type: ignore[assignment]
+        self.last_transaction_date = datetime.now(timezone.utc)  # type: ignore[assignment]
         if self.quantity == 0:
             self.is_active = False  # type: ignore[assignment]
         self.update_valuation()
@@ -396,11 +405,15 @@ class Transaction(Base, AuditMixin, EncryptedMixin):
 
     def execute(self) -> Any:
         """Execute the transaction"""
+        if self.status is None:
+            self.status = TransactionStatus.PENDING  # type: ignore[assignment]
         if self.status != TransactionStatus.PENDING:
             raise ValueError("Transaction is not in pending status")
         self.status = TransactionStatus.PROCESSING  # type: ignore[assignment]
-        self.executed_at = datetime.utcnow()  # type: ignore[assignment]
-        self.net_amount = self.amount - (self.fee or 0)  # type: ignore[assignment]
+        self.executed_at = datetime.now(timezone.utc)  # type: ignore[assignment]
+        # Only set net_amount if not already set by caller
+        if self.net_amount is None:
+            self.net_amount = self.amount - (self.fee or 0)  # type: ignore[assignment]
         self.add_audit_entry(
             "transaction_executed",
             {
@@ -415,7 +428,7 @@ class Transaction(Base, AuditMixin, EncryptedMixin):
         if self.status != TransactionStatus.PROCESSING:
             raise ValueError("Transaction is not in processing status")
         self.status = TransactionStatus.COMPLETED  # type: ignore[assignment]
-        self.settled_at = datetime.utcnow()  # type: ignore[assignment]
+        self.settled_at = datetime.now(timezone.utc)  # type: ignore[assignment]
         if confirmation_number:
             self.confirmation_number = confirmation_number  # type: ignore[assignment]
         self.add_audit_entry(
@@ -429,6 +442,8 @@ class Transaction(Base, AuditMixin, EncryptedMixin):
 
     def cancel(self, reason: str = None) -> Any:
         """Cancel the transaction"""
+        if self.status is None:
+            self.status = TransactionStatus.PENDING  # type: ignore[assignment]
         if self.status in [TransactionStatus.COMPLETED, TransactionStatus.FAILED]:
             raise ValueError("Cannot cancel completed or failed transaction")
         self.status = TransactionStatus.CANCELLED  # type: ignore[assignment]

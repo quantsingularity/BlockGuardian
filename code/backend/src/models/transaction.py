@@ -26,7 +26,7 @@ from sqlalchemy import (
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 
-from .base import BaseModel
+from .base import Base
 
 
 class TransactionType(Enum):
@@ -66,10 +66,10 @@ class RiskLevel(Enum):
     CRITICAL = "critical"
 
 
-class Transaction(BaseModel):
+class ComplianceTransaction(Base):
     """Transaction model with comprehensive financial features"""
 
-    __tablename__ = "transactions"  # type: ignore[assignment]
+    __tablename__ = "compliance_transactions"  # type: ignore[assignment]
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     transaction_id = Column(String(50), unique=True, nullable=False, index=True)
     external_id = Column(String(100), index=True)
@@ -117,8 +117,8 @@ class Transaction(BaseModel):
     created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"))
     approved_by = Column(UUID(as_uuid=True), ForeignKey("users.id"))
     cancelled_by = Column(UUID(as_uuid=True), ForeignKey("users.id"))
-    user = relationship("User", foreign_keys=[user_id], back_populates="transactions")
-    portfolio = relationship("Portfolio", back_populates="transactions")
+    # user = relationship("User", foreign_keys=[user_id])  # Disabled to avoid conflicts
+    # portfolio = relationship("Portfolio")  # disabled - conflicts with portfolio.py
     created_by_user = relationship("User", foreign_keys=[created_by])
     approved_by_user = relationship("User", foreign_keys=[approved_by])
     cancelled_by_user = relationship("User", foreign_keys=[cancelled_by])
@@ -267,13 +267,16 @@ class Transaction(BaseModel):
         }
 
 
-class TransactionAudit(BaseModel):
+class TransactionAudit(Base):
     """Transaction audit log for compliance tracking"""
 
     __tablename__ = "transaction_audits"  # type: ignore[assignment]
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     transaction_id = Column(
-        UUID(as_uuid=True), ForeignKey("transactions.id"), nullable=False, index=True
+        UUID(as_uuid=True),
+        ForeignKey("compliance_transactions.id"),
+        nullable=True,
+        index=True,
     )
     action = Column(String(50), nullable=False)
     field_changed = Column(String(100))
@@ -285,7 +288,7 @@ class TransactionAudit(BaseModel):
     session_id = Column(String(100))
     reason = Column(Text)
     transaction_metadata = Column(JSON)
-    transaction = relationship("Transaction")
+    transaction = relationship("ComplianceTransaction", foreign_keys=[transaction_id])
     user = relationship("User")
 
     def to_dict(self, include_sensitive: bool = False) -> Dict[str, Any]:
@@ -307,13 +310,16 @@ class TransactionAudit(BaseModel):
         }
 
 
-class SuspiciousActivity(BaseModel):
+class SuspiciousActivity(Base):
     """Suspicious activity reporting for AML compliance"""
 
     __tablename__ = "suspicious_activities"  # type: ignore[assignment]
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     transaction_id = Column(
-        UUID(as_uuid=True), ForeignKey("transactions.id"), nullable=False, index=True
+        UUID(as_uuid=True),
+        ForeignKey("compliance_transactions.id"),
+        nullable=True,
+        index=True,
     )
     user_id = Column(
         UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True
@@ -329,7 +335,7 @@ class SuspiciousActivity(BaseModel):
     investigation_notes = Column(Text)
     resolution = Column(Text)
     transaction_metadata = Column(JSON)
-    transaction = relationship("Transaction")
+    transaction = relationship("ComplianceTransaction", foreign_keys=[transaction_id])
     user = relationship("User", foreign_keys=[user_id])
     investigator = relationship("User", foreign_keys=[investigated_by])
 
@@ -367,3 +373,7 @@ class SuspiciousActivity(BaseModel):
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
+
+
+# Backward-compatible alias
+Transaction = ComplianceTransaction

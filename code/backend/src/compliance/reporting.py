@@ -6,7 +6,7 @@ Implements comprehensive compliance monitoring, reporting, and regulatory requir
 import csv
 import enum
 import io
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
@@ -91,7 +91,7 @@ class ComplianceReport(Base, AuditMixin, TimestampMixin):
     def generate(self) -> Any:
         """Generate the compliance report"""
         self.status = ReportStatus.GENERATING
-        self.generated_at = datetime.utcnow()
+        self.generated_at = datetime.now(timezone.utc)
         try:
             if self.report_type == ReportType.SUSPICIOUS_ACTIVITY:
                 self.report_data = self._generate_suspicious_activity_report()
@@ -287,7 +287,8 @@ class ComplianceReport(Base, AuditMixin, TimestampMixin):
                             r
                             for r in records
                             if r["kyc_expires_at"]
-                            and r["kyc_expires_at"] < datetime.utcnow().isoformat()
+                            and r["kyc_expires_at"]
+                            < datetime.now(timezone.utc).isoformat()
                         ]
                     ),
                 },
@@ -488,7 +489,7 @@ class ComplianceViolation(Base, AuditMixin, TimestampMixin):
     def resolve(self, resolution_notes: str, resolved_by: int = None) -> Any:
         """Resolve the violation"""
         self.status = "resolved"
-        self.resolution_date = datetime.utcnow()
+        self.resolution_date = datetime.now(timezone.utc)
         self.resolution_notes = resolution_notes
         self.add_audit_entry(
             "violation_resolved",
@@ -502,7 +503,7 @@ class ComplianceViolation(Base, AuditMixin, TimestampMixin):
     def mark_false_positive(self, reason: str, marked_by: int = None) -> Any:
         """Mark violation as false positive"""
         self.status = "false_positive"
-        self.resolution_date = datetime.utcnow()
+        self.resolution_date = datetime.now(timezone.utc)
         self.resolution_notes = f"False positive: {reason}"
         self.add_audit_entry(
             "violation_false_positive",
@@ -516,7 +517,7 @@ class ComplianceViolation(Base, AuditMixin, TimestampMixin):
     def report_to_regulator(self, reported_by: int = None) -> Any:
         """Report violation to regulatory authority"""
         self.reported_to_regulator = True
-        self.reported_at = datetime.utcnow()
+        self.reported_at = datetime.now(timezone.utc)
         self.add_audit_entry(
             "violation_reported_to_regulator",
             {
@@ -564,7 +565,9 @@ class ComplianceManager:
         self, transaction: Transaction
     ) -> ComplianceViolation:
         """Create large transaction violation"""
-        violation_id = f"LTR_{transaction.id}_{int(datetime.utcnow().timestamp())}"
+        violation_id = (
+            f"LTR_{transaction.id}_{int(datetime.now(timezone.utc).timestamp())}"
+        )
         violation = ComplianceViolation(
             violation_id=violation_id,
             violation_type=ComplianceViolationType.LARGE_CASH_TRANSACTION,
@@ -581,7 +584,7 @@ class ComplianceManager:
             detected_by="system",
             detection_method="rule_engine",
             detection_confidence=1.0,
-            reporting_deadline=datetime.utcnow() + timedelta(days=15),
+            reporting_deadline=datetime.now(timezone.utc) + timedelta(days=15),
         )
         return violation
 
@@ -593,7 +596,7 @@ class ComplianceManager:
         try:
             threshold = self.monitoring_thresholds["large_transaction"]
             lookback_hours = 24
-            cutoff_time = datetime.utcnow() - timedelta(hours=lookback_hours)
+            cutoff_time = datetime.now(timezone.utc) - timedelta(hours=lookback_hours)
             recent_transactions = (
                 session.query(Transaction)
                 .filter(
@@ -608,7 +611,7 @@ class ComplianceManager:
             if len(recent_transactions) >= 3:
                 total_amount = sum((float(t.amount) for t in recent_transactions))
                 if total_amount >= threshold * 1.5:
-                    violation_id = f"STR_{transaction.user_id}_{int(datetime.utcnow().timestamp())}"
+                    violation_id = f"STR_{transaction.user_id}_{int(datetime.now(timezone.utc).timestamp())}"
                     violation = ComplianceViolation(
                         violation_id=violation_id,
                         violation_type=ComplianceViolationType.STRUCTURING,
@@ -626,7 +629,8 @@ class ComplianceManager:
                         detected_by="system",
                         detection_method="rule_engine",
                         detection_confidence=0.8,
-                        reporting_deadline=datetime.utcnow() + timedelta(days=30),
+                        reporting_deadline=datetime.now(timezone.utc)
+                        + timedelta(days=30),
                     )
                     return violation
             return None
@@ -639,7 +643,7 @@ class ComplianceManager:
         """Check for unusual transaction velocity"""
         session = db_manager.get_session()
         try:
-            cutoff_time = datetime.utcnow() - timedelta(hours=1)
+            cutoff_time = datetime.now(timezone.utc) - timedelta(hours=1)
             recent_count = (
                 session.query(Transaction)
                 .filter(
@@ -652,9 +656,7 @@ class ComplianceManager:
                 .count()
             )
             if recent_count > self.monitoring_thresholds["suspicious_velocity"]:
-                violation_id = (
-                    f"VEL_{transaction.user_id}_{int(datetime.utcnow().timestamp())}"
-                )
+                violation_id = f"VEL_{transaction.user_id}_{int(datetime.now(timezone.utc).timestamp())}"
                 violation = ComplianceViolation(
                     violation_id=violation_id,
                     violation_type=ComplianceViolationType.UNUSUAL_ACTIVITY,
@@ -685,7 +687,7 @@ class ComplianceManager:
         generated_by: int,
     ) -> ComplianceReport:
         """Generate a compliance report"""
-        report_id = f"{report_type.value}_{int(datetime.utcnow().timestamp())}"
+        report_id = f"{report_type.value}_{int(datetime.now(timezone.utc).timestamp())}"
         report = ComplianceReport(
             report_id=report_id,
             report_type=report_type,
@@ -706,7 +708,7 @@ class ComplianceManager:
                 session.query(ComplianceViolation)
                 .filter(
                     ComplianceViolation.created_at
-                    >= datetime.utcnow() - timedelta(days=30)
+                    >= datetime.now(timezone.utc) - timedelta(days=30)
                 )
                 .all()
             )
@@ -725,7 +727,8 @@ class ComplianceManager:
             large_transactions_count = (
                 session.query(Transaction)
                 .filter(
-                    Transaction.created_at >= datetime.utcnow() - timedelta(days=30),
+                    Transaction.created_at
+                    >= datetime.now(timezone.utc) - timedelta(days=30),
                     Transaction.amount
                     >= self.monitoring_thresholds["large_transaction"],
                 )

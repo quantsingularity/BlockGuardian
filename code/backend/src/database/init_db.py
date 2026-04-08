@@ -6,7 +6,7 @@ Sets up database schema, creates initial data, and configures indexes
 import logging
 import os
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Any
 
@@ -148,8 +148,8 @@ def create_admin_user() -> Any:
                 country="US",
             )
             admin_user.set_password("AdminPassword123!")
-            admin_user.kyc_approved_at = datetime.utcnow()
-            admin_user.kyc_expires_at = datetime.utcnow() + timedelta(days=365)
+            admin_user.kyc_approved_at = datetime.now(timezone.utc)
+            admin_user.kyc_expires_at = datetime.now(timezone.utc) + timedelta(days=365)
             session.add(admin_user)
             session.commit()
             logging.info("Admin user created successfully")
@@ -301,7 +301,7 @@ def create_sample_ai_models() -> Any:
                     "time_of_day",
                 ],
                 "target_column": "is_fraud",
-                "deployed_at": datetime.utcnow(),
+                "deployed_at": datetime.now(timezone.utc),
             },
             {
                 "name": "Risk Assessment Model v1.0",
@@ -329,7 +329,7 @@ def create_sample_ai_models() -> Any:
                     "employment_status",
                 ],
                 "target_column": "risk_level",
-                "deployed_at": datetime.utcnow(),
+                "deployed_at": datetime.now(timezone.utc),
             },
             {
                 "name": "Market Prediction Model v1.0",
@@ -405,8 +405,8 @@ def create_demo_user() -> Any:
                 state="NY",
             )
             demo_user.set_password("DemoPassword123!")
-            demo_user.kyc_approved_at = datetime.utcnow()
-            demo_user.kyc_expires_at = datetime.utcnow() + timedelta(days=365)
+            demo_user.kyc_approved_at = datetime.now(timezone.utc)
+            demo_user.kyc_expires_at = datetime.now(timezone.utc) + timedelta(days=365)
             session.add(demo_user)
             session.commit()
             demo_portfolio = Portfolio(

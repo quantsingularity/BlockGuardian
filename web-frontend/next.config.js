@@ -2,11 +2,13 @@
 const nextConfig = {
   reactStrictMode: true,
   eslint: {
-    // Only lint during development, not during production build
     ignoreDuringBuilds: false,
   },
   images: {
     unoptimized: true,
+  },
+  compiler: {
+    removeConsole: process.env.NODE_ENV === "production",
   },
 };
 

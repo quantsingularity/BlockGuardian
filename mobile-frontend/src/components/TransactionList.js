@@ -1,124 +1,173 @@
 import { Ionicons } from "@expo/vector-icons";
-import { styled } from "nativewind";
-import { FlatList, Text, TouchableOpacity, View } from "react-native";
+import {
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
-const StyledView = styled(View);
-const StyledText = styled(Text);
-const StyledTouchableOpacity = styled(TouchableOpacity);
+const formatDate = (timestamp) => {
+  if (!timestamp) return "";
+  const date = new Date(timestamp);
+  return (
+    date.toLocaleDateString() +
+    " " +
+    date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+  );
+};
 
-/**
- * TransactionList component for displaying blockchain transactions
- *
- * @param {Object} props - Component props
- * @param {Array} props.transactions - Array of transaction objects
- * @param {Function} props.onTransactionPress - Handler for transaction press
- * @param {boolean} props.loading - Whether transactions are loading
- * @param {string} props.className - Additional tailwind classes
- */
+const truncateHash = (hash) => {
+  if (!hash || hash.length <= 16) return hash || "";
+  return `${hash.substring(0, 8)}...${hash.substring(hash.length - 8)}`;
+};
+
+const TransactionItem = ({ item, onPress }) => {
+  const isReceived = item.type === "received";
+
+  return (
+    <TouchableOpacity
+      style={styles.item}
+      onPress={() => onPress?.(item)}
+      activeOpacity={0.75}
+      testID={`tx-item-${item.hash}`}
+    >
+      <View style={styles.itemHeader}>
+        <View
+          style={[
+            styles.typeIcon,
+            { backgroundColor: isReceived ? "#022c22" : "#1c0a0a" },
+          ]}
+        >
+          <Ionicons
+            name={isReceived ? "arrow-down-outline" : "arrow-up-outline"}
+            size={18}
+            color={isReceived ? "#10b981" : "#ef4444"}
+          />
+        </View>
+        <View style={styles.itemMeta}>
+          <Text style={styles.itemType}>
+            {isReceived ? "Received" : "Sent"}
+          </Text>
+          <Text style={styles.itemDate}>{formatDate(item.timestamp)}</Text>
+        </View>
+        <View style={styles.amountWrap}>
+          <Text
+            style={[
+              styles.amount,
+              { color: isReceived ? "#10b981" : "#ef4444" },
+            ]}
+          >
+            {isReceived ? "+" : "-"}
+            {item.amount}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.hashRow}>
+        <Ionicons name="receipt-outline" size={12} color="#475569" />
+        <Text style={styles.hash}>{truncateHash(item.hash)}</Text>
+        {item.status && (
+          <View
+            style={[
+              styles.statusPill,
+              {
+                backgroundColor:
+                  item.status === "confirmed" ? "#022c22" : "#1c1400",
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.statusText,
+                { color: item.status === "confirmed" ? "#10b981" : "#f59e0b" },
+              ]}
+            >
+              {item.status}
+            </Text>
+          </View>
+        )}
+      </View>
+    </TouchableOpacity>
+  );
+};
+
+const EmptyState = () => (
+  <View style={styles.empty}>
+    <Ionicons name="document-outline" size={48} color="#334155" />
+    <Text style={styles.emptyTitle}>No Transactions</Text>
+    <Text style={styles.emptySub}>
+      Your transaction history will appear here
+    </Text>
+  </View>
+);
+
 const TransactionList = ({
   transactions = [],
   onTransactionPress,
   loading = false,
-  className = "",
+  style,
+  testID,
 }) => {
-  // Function to format transaction amount with appropriate color
-  const formatAmount = (amount, type) => {
-    const isPositive = type === "received";
-    return (
-      <StyledView className="flex-row items-center">
-        <Ionicons
-          name={isPositive ? "arrow-down-outline" : "arrow-up-outline"}
-          size={16}
-          color={isPositive ? "#10b981" : "#ef4444"}
-        />
-        <StyledText
-          className={`ml-1 font-medium ${isPositive ? "text-green-500" : "text-red-500"}`}
-        >
-          {isPositive ? "+" : "-"}
-          {amount}
-        </StyledText>
-      </StyledView>
-    );
-  };
-
-  // Function to format timestamp
-  const formatDate = (timestamp) => {
-    const date = new Date(timestamp);
-    return (
-      date.toLocaleDateString() +
-      " " +
-      date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-    );
-  };
-
-  // Function to truncate hash
-  const truncateHash = (hash) => {
-    return `${hash.substring(0, 8)}...${hash.substring(hash.length - 8)}`;
-  };
-
-  // Render each transaction item
-  const renderItem = ({ item }) => (
-    <StyledTouchableOpacity
-      className="bg-gray-800 p-4 rounded-lg mb-3 border border-gray-700"
-      onPress={() => onTransactionPress?.(item)}
-      activeOpacity={0.7}
-    >
-      <StyledView className="flex-row justify-between items-center mb-2">
-        <StyledView className="flex-row items-center">
-          <StyledView
-            className={`w-10 h-10 rounded-full items-center justify-center ${item.type === "received" ? "bg-green-900/30" : "bg-red-900/30"}`}
-          >
-            <Ionicons
-              name={
-                item.type === "received"
-                  ? "arrow-down-outline"
-                  : "arrow-up-outline"
-              }
-              size={20}
-              color={item.type === "received" ? "#10b981" : "#ef4444"}
-            />
-          </StyledView>
-          <StyledView className="ml-3">
-            <StyledText className="text-white font-medium">
-              {item.type === "received" ? "Received" : "Sent"}
-            </StyledText>
-            <StyledText className="text-gray-400 text-xs">
-              {formatDate(item.timestamp)}
-            </StyledText>
-          </StyledView>
-        </StyledView>
-        {formatAmount(item.amount, item.type)}
-      </StyledView>
-
-      <StyledView className="bg-gray-700/50 p-2 rounded">
-        <StyledText className="text-gray-300 text-xs">
-          Tx: {truncateHash(item.hash)}
-        </StyledText>
-      </StyledView>
-    </StyledTouchableOpacity>
-  );
-
-  // Empty state when no transactions
-  const EmptyState = () => (
-    <StyledView className="items-center justify-center py-8">
-      <Ionicons name="document-outline" size={48} color="#6b7280" />
-      <StyledText className="text-gray-400 mt-2 text-center">
-        No transactions found
-      </StyledText>
-    </StyledView>
-  );
-
   return (
-    <StyledView className={`${className}`}>
+    <View style={[styles.root, style]} testID={testID}>
       <FlatList
         data={transactions}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.hash}
-        ListEmptyComponent={EmptyState}
+        renderItem={({ item }) => (
+          <TransactionItem item={item} onPress={onTransactionPress} />
+        )}
+        keyExtractor={(item) => item.hash || String(Math.random())}
+        ListEmptyComponent={loading ? null : <EmptyState />}
         showsVerticalScrollIndicator={false}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
       />
-    </StyledView>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  root: {},
+  item: {
+    backgroundColor: "#1e293b",
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: "#334155",
+  },
+  itemHeader: { flexDirection: "row", alignItems: "center", marginBottom: 10 },
+  typeIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+  itemMeta: { flex: 1 },
+  itemType: {
+    color: "#f1f5f9",
+    fontWeight: "600",
+    fontSize: 14,
+    marginBottom: 2,
+  },
+  itemDate: { color: "#64748b", fontSize: 12 },
+  amountWrap: { alignItems: "flex-end" },
+  amount: { fontSize: 15, fontWeight: "700" },
+  hashRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#0f172a60",
+    borderRadius: 8,
+    padding: 8,
+  },
+  hash: { flex: 1, color: "#64748b", fontSize: 12, fontFamily: "monospace" },
+  statusPill: { borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
+  statusText: { fontSize: 10, fontWeight: "700", textTransform: "capitalize" },
+  empty: { alignItems: "center", paddingVertical: 48, gap: 8 },
+  emptyTitle: { color: "#475569", fontSize: 16, fontWeight: "600" },
+  emptySub: { color: "#334155", fontSize: 13, textAlign: "center" },
+  separator: { height: 10 },
+});
 
 export default TransactionList;

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { useState } from "react";
 import {
   Area,
@@ -13,266 +14,240 @@ import {
 } from "recharts";
 import Layout from "../components/Layout";
 
+const COLORS = ["#6366f1", "#8b5cf6", "#06b6d4", "#10b981", "#f59e0b"];
+
+const portfolioValueData = [
+  { month: "Jan", value: 1000000 },
+  { month: "Feb", value: 1050000 },
+  { month: "Mar", value: 1120000 },
+  { month: "Apr", value: 1080000 },
+  { month: "May", value: 1150000 },
+  { month: "Jun", value: 1220000 },
+  { month: "Jul", value: 1245000 },
+];
+
+const assetAllocationData = [
+  { name: "Stocks", value: 45 },
+  { name: "Bonds", value: 25 },
+  { name: "Crypto", value: 15 },
+  { name: "Cash", value: 10 },
+  { name: "Commodities", value: 5 },
+];
+
+const recentActivities = [
+  {
+    type: "Purchase",
+    asset: "AAPL",
+    amount: "$25,000",
+    date: "Today, 10:30 AM",
+    status: "Completed",
+    positive: true,
+  },
+  {
+    type: "Sale",
+    asset: "TSLA",
+    amount: "$18,500",
+    date: "Yesterday, 3:45 PM",
+    status: "Completed",
+    positive: true,
+  },
+  {
+    type: "Deposit",
+    asset: "USD",
+    amount: "$50,000",
+    date: "Apr 7, 2025",
+    status: "Completed",
+    positive: true,
+  },
+  {
+    type: "Rebalance",
+    asset: "Portfolio",
+    amount: "—",
+    date: "Apr 5, 2025",
+    status: "Completed",
+    positive: null,
+  },
+  {
+    type: "Dividend",
+    asset: "VTI",
+    amount: "$1,250",
+    date: "Apr 3, 2025",
+    status: "Completed",
+    positive: true,
+  },
+];
+
+const notifications = [
+  {
+    title: "Portfolio Rebalance Recommended",
+    description:
+      "Our AI suggests rebalancing to reduce technology exposure by 5%.",
+    time: "2 hours ago",
+    priority: "high",
+  },
+  {
+    title: "New AI Insight Available",
+    description: "A new market analysis report is available for your review.",
+    time: "5 hours ago",
+    priority: "medium",
+  },
+  {
+    title: "Dividend Payment Received",
+    description: "You received a dividend payment of $1,250 from VTI.",
+    time: "2 days ago",
+    priority: "low",
+  },
+  {
+    title: "Smart Contract Executed",
+    description: "Your automated trading smart contract executed successfully.",
+    time: "3 days ago",
+    priority: "medium",
+  },
+];
+
+const upcomingEvents = [
+  {
+    title: "Quarterly Portfolio Review",
+    date: "Apr 15, 2025",
+    time: "10:00 AM",
+  },
+  {
+    title: "Earnings Report: AAPL",
+    date: "Apr 18, 2025",
+    time: "After Market Close",
+  },
+  {
+    title: "Fed Interest Rate Decision",
+    date: "Apr 22, 2025",
+    time: "2:00 PM",
+  },
+];
+
+const TABS = ["overview", "portfolio", "activity", "notifications", "settings"];
+
+const priorityColors = {
+  high: "bg-red-500",
+  medium: "bg-amber-500",
+  low: "bg-emerald-500",
+};
+
+const priorityBadge = {
+  high: "badge-red",
+  medium: "badge-yellow",
+  low: "badge-green",
+};
+
 export default function Dashboard({ darkMode, toggleDarkMode }) {
-  // Mock data for portfolio value over time
-  const portfolioValueData = [
-    { month: "Jan", value: 1000000 },
-    { month: "Feb", value: 1050000 },
-    { month: "Mar", value: 1120000 },
-    { month: "Apr", value: 1080000 },
-    { month: "May", value: 1150000 },
-    { month: "Jun", value: 1220000 },
-    { month: "Jul", value: 1245000 },
-  ];
-
-  // Mock data for asset allocation
-  const assetAllocationData = [
-    { name: "Stocks", value: 45 },
-    { name: "Bonds", value: 25 },
-    { name: "Crypto", value: 15 },
-    { name: "Cash", value: 10 },
-    { name: "Commodities", value: 5 },
-  ];
-
-  // Colors for charts
-  const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8"];
-
-  // Mock data for recent activities
-  const recentActivities = [
-    {
-      type: "Purchase",
-      asset: "AAPL",
-      amount: "$25,000",
-      date: "Today, 10:30 AM",
-      status: "Completed",
-    },
-    {
-      type: "Sale",
-      asset: "TSLA",
-      amount: "$18,500",
-      date: "Yesterday, 3:45 PM",
-      status: "Completed",
-    },
-    {
-      type: "Deposit",
-      asset: "USD",
-      amount: "$50,000",
-      date: "Apr 7, 2025",
-      status: "Completed",
-    },
-    {
-      type: "Rebalance",
-      asset: "Portfolio",
-      amount: "-",
-      date: "Apr 5, 2025",
-      status: "Completed",
-    },
-    {
-      type: "Dividend",
-      asset: "VTI",
-      amount: "$1,250",
-      date: "Apr 3, 2025",
-      status: "Completed",
-    },
-  ];
-
-  // Mock data for notifications
-  const notifications = [
-    {
-      title: "Portfolio Rebalance Recommended",
-      description:
-        "Our AI suggests rebalancing your portfolio to reduce technology exposure by 5%.",
-      time: "2 hours ago",
-      priority: "high",
-    },
-    {
-      title: "New AI Insight Available",
-      description: "A new market analysis report is available for your review.",
-      time: "5 hours ago",
-      priority: "medium",
-    },
-    {
-      title: "Dividend Payment Received",
-      description: "You received a dividend payment of $1,250 from VTI.",
-      time: "2 days ago",
-      priority: "low",
-    },
-    {
-      title: "Smart Contract Executed",
-      description:
-        "Your automated trading smart contract executed successfully.",
-      time: "3 days ago",
-      priority: "medium",
-    },
-  ];
-
-  // Mock data for upcoming events
-  const upcomingEvents = [
-    {
-      title: "Quarterly Portfolio Review",
-      date: "Apr 15, 2025",
-      time: "10:00 AM",
-    },
-    {
-      title: "Earnings Report: AAPL",
-      date: "Apr 18, 2025",
-      time: "After Market Close",
-    },
-    {
-      title: "Fed Interest Rate Decision",
-      date: "Apr 22, 2025",
-      time: "2:00 PM",
-    },
-  ];
-
-  // Tabs for dashboard sections
   const [activeTab, setActiveTab] = useState("overview");
 
   return (
-    <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
-      <div className="max-w-7xl mx-auto">
+    <Layout
+      darkMode={darkMode}
+      toggleDarkMode={toggleDarkMode}
+      title="Dashboard"
+    >
+      <div className="max-w-7xl mx-auto animate-fade-in">
+        {/* Page header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-            User Dashboard
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
+            Dashboard
           </h1>
-          <p className="text-gray-600 dark:text-gray-300">
-            Welcome back! Here's an overview of your portfolio and recent
+          <p className="text-gray-500 dark:text-gray-400">
+            Welcome back! Here&apos;s an overview of your portfolio and recent
             activities.
           </p>
         </div>
 
-        {/* Dashboard Tabs */}
-        <div className="mb-8">
-          <div className="border-b border-gray-200 dark:border-gray-700">
-            <nav className="-mb-px flex space-x-8">
+        {/* Tabs */}
+        <div className="mb-8 border-b border-gray-200 dark:border-gray-800">
+          <nav className="-mb-px flex gap-1 overflow-x-auto scrollbar-thin">
+            {TABS.map((tab) => (
               <button
-                onClick={() => setActiveTab("overview")}
-                className={`${
-                  activeTab === "overview"
-                    ? "border-indigo-500 text-indigo-600 dark:text-indigo-400"
-                    : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600"
-                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`tab-button capitalize ${
+                  activeTab === tab
+                    ? "tab-button-active"
+                    : "tab-button-inactive"
+                }`}
               >
-                Overview
+                {tab}
               </button>
-              <button
-                onClick={() => setActiveTab("portfolio")}
-                className={`${
-                  activeTab === "portfolio"
-                    ? "border-indigo-500 text-indigo-600 dark:text-indigo-400"
-                    : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600"
-                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-              >
-                Portfolio
-              </button>
-              <button
-                onClick={() => setActiveTab("activity")}
-                className={`${
-                  activeTab === "activity"
-                    ? "border-indigo-500 text-indigo-600 dark:text-indigo-400"
-                    : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600"
-                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-              >
-                Activity
-              </button>
-              <button
-                onClick={() => setActiveTab("notifications")}
-                className={`${
-                  activeTab === "notifications"
-                    ? "border-indigo-500 text-indigo-600 dark:text-indigo-400"
-                    : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600"
-                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-              >
-                Notifications
-              </button>
-              <button
-                onClick={() => setActiveTab("settings")}
-                className={`${
-                  activeTab === "settings"
-                    ? "border-indigo-500 text-indigo-600 dark:text-indigo-400"
-                    : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600"
-                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-              >
-                Settings
-              </button>
-            </nav>
-          </div>
+            ))}
+          </nav>
         </div>
 
-        {/* Overview Tab Content */}
+        {/* Overview Tab */}
         {activeTab === "overview" && (
-          <div>
-            {/* Portfolio Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Total Portfolio Value
-                </p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  $1,245,000
-                </p>
-                <p className="text-green-500 text-sm">
-                  +2.1%{" "}
-                  <span className="text-gray-500 dark:text-gray-400">
-                    today
-                  </span>
-                </p>
-              </div>
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Monthly Return
-                </p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  +5.8%
-                </p>
-                <p className="text-green-500 text-sm">
-                  +1.2%{" "}
-                  <span className="text-gray-500 dark:text-gray-400">
-                    vs benchmark
-                  </span>
-                </p>
-              </div>
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  YTD Return
-                </p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  +18.3%
-                </p>
-                <p className="text-green-500 text-sm">
-                  +3.5%{" "}
-                  <span className="text-gray-500 dark:text-gray-400">
-                    vs benchmark
-                  </span>
-                </p>
-              </div>
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Available Cash
-                </p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  $124,500
-                </p>
-                <p className="text-gray-500 dark:text-gray-400 text-sm">
-                  10% of portfolio
-                </p>
-              </div>
+          <div className="animate-slide-up">
+            {/* KPI Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+              {[
+                {
+                  label: "Total Portfolio Value",
+                  value: "$1,245,000",
+                  change: "+2.1%",
+                  sub: "today",
+                  positive: true,
+                },
+                {
+                  label: "Monthly Return",
+                  value: "+5.8%",
+                  change: "+1.2%",
+                  sub: "vs benchmark",
+                  positive: true,
+                },
+                {
+                  label: "YTD Return",
+                  value: "+18.3%",
+                  change: "+3.5%",
+                  sub: "vs benchmark",
+                  positive: true,
+                },
+                {
+                  label: "Available Cash",
+                  value: "$124,500",
+                  change: "10%",
+                  sub: "of portfolio",
+                  positive: null,
+                },
+              ].map(({ label, value, change, sub, positive }) => (
+                <div key={label} className="stat-card">
+                  <p className="stat-label">{label}</p>
+                  <p className="stat-value">{value}</p>
+                  <p
+                    className={
+                      positive === true
+                        ? "stat-change-positive"
+                        : positive === false
+                          ? "stat-change-negative"
+                          : "text-sm text-gray-500 dark:text-gray-400"
+                    }
+                  >
+                    {change}{" "}
+                    <span className="text-gray-400 dark:text-gray-500 font-normal">
+                      {sub}
+                    </span>
+                  </p>
+                </div>
+              ))}
             </div>
 
             {/* Portfolio Value Chart */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8">
-              <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
-                Portfolio Value
-              </h2>
+            <div className="card p-6 mb-6">
+              <div className="flex items-center justify-between mb-5">
+                <h2 className="section-title">Portfolio Value</h2>
+                <span className="badge badge-green">Live</span>
+              </div>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart
                     data={portfolioValueData}
-                    margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                    margin={{ top: 5, right: 10, left: 0, bottom: 0 }}
                   >
                     <defs>
                       <linearGradient
-                        id="colorValue"
+                        id="dashGradient"
                         x1="0"
                         y1="0"
                         x2="0"
@@ -280,55 +255,76 @@ export default function Dashboard({ darkMode, toggleDarkMode }) {
                       >
                         <stop
                           offset="5%"
-                          stopColor="#8884d8"
-                          stopOpacity={0.8}
+                          stopColor="#6366f1"
+                          stopOpacity={0.25}
                         />
                         <stop
                           offset="95%"
-                          stopColor="#8884d8"
+                          stopColor="#6366f1"
                           stopOpacity={0}
                         />
                       </linearGradient>
                     </defs>
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis
+                      dataKey="month"
+                      tick={{ fontSize: 12 }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      tickFormatter={(v) => `$${(v / 1000000).toFixed(1)}M`}
+                      tick={{ fontSize: 11 }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke="#e5e7eb"
+                      className="dark:stroke-gray-700"
+                    />
                     <Tooltip
-                      formatter={(value) => `$${value.toLocaleString()}`}
+                      formatter={(value) => [
+                        `$${value.toLocaleString()}`,
+                        "Value",
+                      ]}
+                      contentStyle={{
+                        borderRadius: "0.75rem",
+                        border: "none",
+                        boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)",
+                      }}
                     />
                     <Area
                       type="monotone"
                       dataKey="value"
-                      stroke="#8884d8"
+                      stroke="#6366f1"
+                      strokeWidth={2.5}
                       fillOpacity={1}
-                      fill="url(#colorValue)"
+                      fill="url(#dashGradient)"
                     />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
             </div>
 
-            {/* Asset Allocation and Recent Activity */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-                <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
-                  Asset Allocation
-                </h2>
-                <div className="h-64">
+            {/* Asset Allocation + Recent Activity */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div className="card p-6">
+                <h2 className="section-title mb-5">Asset Allocation</h2>
+                <div className="h-56">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
                         data={assetAllocationData}
                         cx="50%"
                         cy="50%"
-                        labelLine={false}
-                        outerRadius={80}
-                        fill="#8884d8"
+                        innerRadius={55}
+                        outerRadius={85}
+                        paddingAngle={3}
                         dataKey="value"
-                        nameKey="name"
                         label={({ name, percent }) =>
                           `${name} ${(percent * 100).toFixed(0)}%`
                         }
+                        labelLine={false}
                       >
                         {assetAllocationData.map((_entry, index) => (
                           <Cell
@@ -337,254 +333,322 @@ export default function Dashboard({ darkMode, toggleDarkMode }) {
                           />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(value) => `${value}%`} />
+                      <Tooltip
+                        formatter={(value) => [`${value}%`, "Allocation"]}
+                      />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-                <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
-                  Recent Activity
-                </h2>
-                <div className="space-y-4 max-h-64 overflow-y-auto">
+              <div className="card p-6">
+                <h2 className="section-title mb-4">Recent Activity</h2>
+                <div className="space-y-3 max-h-56 overflow-y-auto scrollbar-thin">
                   {recentActivities.map((activity, index) => (
                     <div
                       key={index}
-                      className="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 pb-2 last:border-0"
+                      className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-800 last:border-0"
                     >
                       <div>
-                        <p className="font-medium text-gray-900 dark:text-white">
-                          {activity.type}: {activity.asset}
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          {activity.type}:{" "}
+                          <span className="text-indigo-600 dark:text-indigo-400">
+                            {activity.asset}
+                          </span>
                         </p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                           {activity.date}
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="font-medium text-gray-900 dark:text-white">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">
                           {activity.amount}
                         </p>
-                        <p className="text-sm text-green-500">
+                        <span className="badge-green text-xs">
                           {activity.status}
-                        </p>
+                        </span>
                       </div>
                     </div>
                   ))}
                 </div>
-                <div className="mt-4 text-center">
-                  <button className="text-indigo-600 dark:text-indigo-400 font-medium hover:underline">
-                    View All Activity
-                  </button>
-                </div>
+                <button className="mt-4 text-sm text-indigo-600 dark:text-indigo-400 hover:underline font-medium">
+                  View All Activity
+                </button>
               </div>
             </div>
 
-            {/* Notifications and Upcoming Events */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-                <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
-                  Notifications
-                </h2>
-                <div className="space-y-4 max-h-64 overflow-y-auto">
-                  {notifications.map((notification, index) => (
+            {/* Notifications + Upcoming Events */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div className="card p-6">
+                <h2 className="section-title mb-4">Notifications</h2>
+                <div className="space-y-3 max-h-64 overflow-y-auto scrollbar-thin">
+                  {notifications.map((n, index) => (
                     <div
                       key={index}
-                      className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700"
+                      className="flex gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50"
                     >
-                      <div className="flex items-start">
-                        <div
-                          className={`flex-shrink-0 rounded-full w-2 h-2 mt-2 mr-3 ${
-                            notification.priority === "high"
-                              ? "bg-red-500"
-                              : notification.priority === "medium"
-                                ? "bg-yellow-500"
-                                : "bg-green-500"
-                          }`}
-                        ></div>
-                        <div>
-                          <p className="font-medium text-gray-900 dark:text-white">
-                            {notification.title}
+                      <div
+                        className={`flex-shrink-0 mt-1.5 w-2 h-2 rounded-full ${priorityColors[n.priority]}`}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2 mb-0.5">
+                          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                            {n.title}
                           </p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            {notification.description}
-                          </p>
-                          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                            {notification.time}
-                          </p>
+                          <span
+                            className={`badge ${priorityBadge[n.priority]} flex-shrink-0`}
+                          >
+                            {n.priority}
+                          </span>
                         </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {n.description}
+                        </p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                          {n.time}
+                        </p>
                       </div>
                     </div>
                   ))}
                 </div>
-                <div className="mt-4 text-center">
-                  <button className="text-indigo-600 dark:text-indigo-400 font-medium hover:underline">
-                    View All Notifications
-                  </button>
-                </div>
+                <button className="mt-4 text-sm text-indigo-600 dark:text-indigo-400 hover:underline font-medium">
+                  View All
+                </button>
               </div>
 
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-                <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
-                  Upcoming Events
-                </h2>
-                <div className="space-y-4">
+              <div className="card p-6">
+                <h2 className="section-title mb-4">Upcoming Events</h2>
+                <div className="space-y-3">
                   {upcomingEvents.map((event, index) => (
                     <div
                       key={index}
-                      className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700"
+                      className="flex gap-4 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50"
                     >
-                      <p className="font-medium text-gray-900 dark:text-white">
-                        {event.title}
-                      </p>
-                      <div className="flex text-sm text-gray-500 dark:text-gray-400 mt-1">
-                        <p>{event.date}</p>
-                        <span className="mx-2">•</span>
-                        <p>{event.time}</p>
+                      <div className="flex-shrink-0 w-10 h-10 bg-indigo-100 dark:bg-indigo-900/40 rounded-xl flex items-center justify-center">
+                        <svg
+                          className="w-5 h-5 text-indigo-600 dark:text-indigo-400"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={1.5}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"
+                          />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          {event.title}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                          {event.date} &middot; {event.time}
+                        </p>
                       </div>
                     </div>
                   ))}
                 </div>
-                <div className="mt-4 text-center">
-                  <button className="text-indigo-600 dark:text-indigo-400 font-medium hover:underline">
-                    View Calendar
-                  </button>
-                </div>
+                <button className="mt-4 text-sm text-indigo-600 dark:text-indigo-400 hover:underline font-medium">
+                  View Calendar
+                </button>
               </div>
             </div>
 
             {/* Quick Actions */}
-            <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-xl shadow-lg p-6 mb-8">
-              <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
-                Quick Actions
-              </h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <button className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-md transition-shadow duration-300 text-center">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-6 w-6 mx-auto mb-2 text-indigo-600 dark:text-indigo-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
+            <div className="card p-6">
+              <h2 className="section-title mb-5">Quick Actions</h2>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                {[
+                  { label: "Deposit", icon: "M12 4.5v15m7.5-7.5h-15" },
+                  {
+                    label: "Transfer",
+                    icon: "M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5",
+                  },
+                  {
+                    label: "Trade",
+                    icon: "M3 7.5L7.5 3m0 0L12 7.5M7.5 3v13.5m13.5 0L16.5 21m0 0L12 16.5m4.5 4.5V7.5",
+                  },
+                  {
+                    label: "Reports",
+                    icon: "M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z",
+                  },
+                ].map(({ label, icon }) => (
+                  <button
+                    key={label}
+                    className="group card-hover p-4 flex flex-col items-center gap-2.5 text-center"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                    />
-                  </svg>
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    Deposit Funds
-                  </span>
-                </button>
-                <button className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-md transition-shadow duration-300 text-center">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-6 w-6 mx-auto mb-2 text-indigo-600 dark:text-indigo-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
-                    />
-                  </svg>
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    Transfer
-                  </span>
-                </button>
-                <button className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-md transition-shadow duration-300 text-center">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-6 w-6 mx-auto mb-2 text-indigo-600 dark:text-indigo-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"
-                    />
-                  </svg>
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    Trade
-                  </span>
-                </button>
-                <button className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-md transition-shadow duration-300 text-center">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-6 w-6 mx-auto mb-2 text-indigo-600 dark:text-indigo-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                    />
-                  </svg>
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    Reports
-                  </span>
-                </button>
+                    <div className="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl flex items-center justify-center text-indigo-600 dark:text-indigo-400 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/40 transition-colors duration-200">
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={1.5}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d={icon}
+                        />
+                      </svg>
+                    </div>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                      {label}
+                    </span>
+                  </button>
+                ))}
               </div>
             </div>
           </div>
         )}
 
-        {/* Portfolio Tab Content */}
+        {/* Portfolio Tab */}
         {activeTab === "portfolio" && (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8">
-            <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
-              Portfolio Details
-            </h2>
-            <p className="text-gray-600 dark:text-gray-300 mb-4">
-              Detailed portfolio information will be displayed here.
+          <div className="card p-8 animate-slide-up">
+            <h2 className="section-title mb-3">Portfolio Details</h2>
+            <p className="text-gray-500 dark:text-gray-400">
+              Visit the{" "}
+              <Link
+                href="/portfolio"
+                className="text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
+              >
+                Portfolio page
+              </Link>{" "}
+              for full details including performance history, asset breakdown,
+              risk metrics, and AI recommendations.
             </p>
           </div>
         )}
 
-        {/* Activity Tab Content */}
+        {/* Activity Tab */}
         {activeTab === "activity" && (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8">
-            <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
-              Activity History
-            </h2>
-            <p className="text-gray-600 dark:text-gray-300 mb-4">
-              Detailed activity history will be displayed here.
-            </p>
+          <div className="card p-6 animate-slide-up">
+            <h2 className="section-title mb-5">Activity History</h2>
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead>
+                  <tr className="border-b border-gray-200 dark:border-gray-800">
+                    <th className="table-header">Type</th>
+                    <th className="table-header">Asset</th>
+                    <th className="table-header">Amount</th>
+                    <th className="table-header">Date</th>
+                    <th className="table-header">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentActivities.map((a, i) => (
+                    <tr
+                      key={i}
+                      className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                    >
+                      <td className="table-cell font-medium">{a.type}</td>
+                      <td className="table-cell text-indigo-600 dark:text-indigo-400 font-mono">
+                        {a.asset}
+                      </td>
+                      <td className="table-cell font-semibold">{a.amount}</td>
+                      <td className="table-cell text-gray-400 dark:text-gray-500">
+                        {a.date}
+                      </td>
+                      <td className="table-cell">
+                        <span className="badge-green">{a.status}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
-        {/* Notifications Tab Content */}
+        {/* Notifications Tab */}
         {activeTab === "notifications" && (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8">
-            <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
-              All Notifications
-            </h2>
-            <p className="text-gray-600 dark:text-gray-300 mb-4">
-              All notifications will be displayed here.
-            </p>
+          <div className="card p-6 animate-slide-up">
+            <h2 className="section-title mb-5">All Notifications</h2>
+            <div className="space-y-3">
+              {notifications.map((n, i) => (
+                <div
+                  key={i}
+                  className="flex gap-4 p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200 cursor-pointer"
+                >
+                  <div
+                    className={`flex-shrink-0 mt-1 w-2.5 h-2.5 rounded-full ${priorityColors[n.priority]}`}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <p className="font-medium text-gray-900 dark:text-white">
+                        {n.title}
+                      </p>
+                      <span
+                        className={`badge ${priorityBadge[n.priority]} capitalize`}
+                      >
+                        {n.priority}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      {n.description}
+                    </p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5">
+                      {n.time}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
-        {/* Settings Tab Content */}
+        {/* Settings Tab */}
         {activeTab === "settings" && (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8">
-            <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
-              Account Settings
-            </h2>
-            <p className="text-gray-600 dark:text-gray-300 mb-4">
-              Account settings will be displayed here.
-            </p>
+          <div className="card p-6 animate-slide-up">
+            <h2 className="section-title mb-6">Account Settings</h2>
+            <div className="space-y-5 max-w-lg">
+              {[
+                {
+                  label: "Email Notifications",
+                  desc: "Receive alerts for portfolio changes and recommendations",
+                  defaultOn: true,
+                },
+                {
+                  label: "Two-Factor Authentication",
+                  desc: "Add an extra layer of security to your account",
+                  defaultOn: false,
+                },
+                {
+                  label: "AI Recommendations",
+                  desc: "Get personalized AI-powered portfolio suggestions",
+                  defaultOn: true,
+                },
+                {
+                  label: "Dark Mode",
+                  desc: "Use dark theme across the platform",
+                  defaultOn: false,
+                },
+              ].map(({ label, desc, defaultOn }) => (
+                <div
+                  key={label}
+                  className="flex items-start justify-between gap-4 py-4 border-b border-gray-100 dark:border-gray-800 last:border-0"
+                >
+                  <div>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">
+                      {label}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      {desc}
+                    </p>
+                  </div>
+                  <button
+                    className={`relative flex-shrink-0 w-11 h-6 rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 ${defaultOn ? "bg-indigo-600" : "bg-gray-200 dark:bg-gray-700"}`}
+                    aria-label={`Toggle ${label}`}
+                  >
+                    <span
+                      className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-300 ${defaultOn ? "translate-x-5" : "translate-x-0"}`}
+                    />
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>

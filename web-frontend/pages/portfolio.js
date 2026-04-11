@@ -4,6 +4,7 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
   Legend,
   Pie,
   PieChart,
@@ -13,11 +14,6 @@ import {
   YAxis,
 } from "recharts";
 import Layout from "../components/Layout";
-
-// Define Cell component if not available directly from recharts
-const Cell = (props) => {
-  return props.children;
-};
 
 export default function Portfolio({ darkMode, toggleDarkMode }) {
   // Mock data for portfolio performance
@@ -428,9 +424,9 @@ export default function Portfolio({ darkMode, toggleDarkMode }) {
                     Investment Opportunity
                   </h3>
                   <p className="text-gray-600 dark:text-gray-300 mb-2">
-                    Based on your risk profile, we've identified 3 potential
-                    investments that align with your goals and may increase
-                    returns.
+                    Based on your risk profile, we&apos;ve identified 3
+                    potential investments that align with your goals and may
+                    increase returns.
                   </p>
                   <button className="text-green-600 dark:text-green-400 font-medium hover:underline">
                     View Opportunities

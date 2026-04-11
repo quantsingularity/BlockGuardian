@@ -1,36 +1,56 @@
-import { styled } from "nativewind";
-import { ActivityIndicator, Modal, Text, View } from "react-native";
+import { ActivityIndicator, Modal, StyleSheet, Text, View } from "react-native";
 
-const StyledView = styled(View);
-const StyledText = styled(Text);
-
-/**
- * Loading overlay component to display during async operations
- *
- * @param {Object} props - Component props
- * @param {boolean} props.visible - Whether the loading overlay is visible
- * @param {string} props.message - Optional message to display
- * @param {string} props.className - Additional tailwind classes
- */
 const LoadingOverlay = ({
   visible = false,
   message = "Loading...",
-  className = "",
+  subMessage,
 }) => {
   return (
-    <Modal transparent={true} animationType="fade" visible={visible}>
-      <StyledView
-        className={`flex-1 justify-center items-center bg-black/70 ${className}`}
-      >
-        <StyledView className="bg-gray-800 p-6 rounded-xl items-center border border-gray-700">
-          <ActivityIndicator size="large" color="#4f46e5" />
-          <StyledText className="text-white font-medium mt-3">
-            {message}
-          </StyledText>
-        </StyledView>
-      </StyledView>
+    <Modal
+      transparent
+      animationType="fade"
+      visible={visible}
+      statusBarTranslucent
+    >
+      <View style={styles.backdrop}>
+        <View style={styles.card}>
+          <ActivityIndicator size="large" color="#6366f1" />
+          <Text style={styles.message}>{message}</Text>
+          {subMessage && <Text style={styles.subMessage}>{subMessage}</Text>}
+        </View>
+      </View>
     </Modal>
   );
 };
+
+const styles = StyleSheet.create({
+  backdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.75)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  card: {
+    backgroundColor: "#1e293b",
+    borderRadius: 20,
+    padding: 32,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#334155",
+    minWidth: 200,
+    gap: 16,
+  },
+  message: {
+    color: "#f1f5f9",
+    fontSize: 16,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  subMessage: {
+    color: "#64748b",
+    fontSize: 13,
+    textAlign: "center",
+  },
+});
 
 export default LoadingOverlay;

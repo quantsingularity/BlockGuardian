@@ -1,19 +1,15 @@
 const nextJest = require("next/jest");
 
-const createJestConfig = nextJest({
-  dir: "./",
-});
+const createJestConfig = nextJest({ dir: "./" });
 
+/** @type {import('jest').Config} */
 const customJestConfig = {
-  setupFilesAfterEnv: ["<rootDir>/setupTests.js"],
-  testEnvironment: "jsdom",
+  testEnvironment: "jest-environment-jsdom",
+  setupFilesAfterEnv: ["./setupTests.js"],
   moduleNameMapper: {
-    "^@/components/(.*)$": "<rootDir>/components/$1",
-    "^@/pages/(.*)$": "<rootDir>/pages/$1",
-    "^@/services/(.*)$": "<rootDir>/services/$1",
-    "^@/utils/(.*)$": "<rootDir>/utils/$1",
+    "^@/(.*)$": "<rootDir>/$1",
     "\\.(css|less|scss|sass)$": "identity-obj-proxy",
-    "\\.(gif|ttf|eot|svg|png|jpg|jpeg)$": "<rootDir>/__mocks__/fileMock.js",
+    "\\.(jpg|jpeg|png|gif|webp|svg|ico)$": "<rootDir>/__mocks__/fileMock.js",
   },
   collectCoverageFrom: [
     "components/**/*.{js,jsx}",
@@ -21,9 +17,7 @@ const customJestConfig = {
     "services/**/*.{js,jsx}",
     "utils/**/*.{js,jsx}",
     "!pages/_app.js",
-    "!pages/_document.js",
-    "!**/*.test.{js,jsx}",
-    "!**/__tests__/**",
+    "!**/*.d.ts",
   ],
   coverageThreshold: {
     global: {
@@ -33,8 +27,6 @@ const customJestConfig = {
       statements: 50,
     },
   },
-  testMatch: ["**/__tests__/**/*.[jt]s?(x)", "**/?(*.)+(spec|test).[jt]s?(x)"],
-  testPathIgnorePatterns: ["/node_modules/", "/.next/", "/e2e/"],
 };
 
 module.exports = createJestConfig(customJestConfig);

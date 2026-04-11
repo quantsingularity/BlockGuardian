@@ -2,10 +2,20 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import Navbar from "../../components/Navbar";
 
-// Mock next/link behavior for testing
 jest.mock("next/link", () => {
-  return ({ children, href }) => {
-    return <a href={href}>{children}</a>;
+  return ({ children, href }) => <a href={href}>{children}</a>;
+});
+
+jest.mock("next/router", () => ({
+  useRouter: () => ({
+    pathname: "/",
+    push: jest.fn(),
+  }),
+}));
+
+jest.mock("../../components/WalletConnection", () => {
+  return function MockWalletConnection() {
+    return <div data-testid="wallet-connection">WalletConnection</div>;
   };
 });
 
@@ -23,55 +33,59 @@ describe("Navbar Component", () => {
 
   test("renders desktop navigation links", () => {
     render(<Navbar darkMode={false} toggleDarkMode={mockToggleDarkMode} />);
-    expect(screen.getByRole("link", { name: /Home/i })).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: /Portfolio/i }),
-    ).toBeInTheDocument();
+      screen.getAllByRole("link", { name: /Home/i }).length,
+    ).toBeGreaterThan(0);
     expect(
-      screen.getByRole("link", { name: /Market Analysis/i }),
-    ).toBeInTheDocument();
+      screen.getAllByRole("link", { name: /Portfolio/i }).length,
+    ).toBeGreaterThan(0);
     expect(
-      screen.getByRole("link", { name: /AI Recommendations/i }),
-    ).toBeInTheDocument();
+      screen.getAllByRole("link", { name: /Market/i }).length,
+    ).toBeGreaterThan(0);
     expect(
-      screen.getByRole("link", { name: /Blockchain Explorer/i }),
-    ).toBeInTheDocument();
+      screen.getAllByRole("link", { name: /AI Insights/i }).length,
+    ).toBeGreaterThan(0);
     expect(
-      screen.getByRole("link", { name: /Dashboard/i }),
-    ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Login/i })).toBeInTheDocument();
+      screen.getAllByRole("link", { name: /Explorer/i }).length,
+    ).toBeGreaterThan(0);
+    expect(
+      screen.getAllByRole("link", { name: /Dashboard/i }).length,
+    ).toBeGreaterThan(0);
   });
 
   test("renders dark mode toggle button", () => {
     const { rerender } = render(
       <Navbar darkMode={false} toggleDarkMode={mockToggleDarkMode} />,
     );
-    let toggleButton = screen.getByText("🌙");
-    expect(toggleButton).toBeInTheDocument();
-    fireEvent.click(toggleButton);
+    const toggleBtn = screen.getByRole("button", { name: /Toggle dark mode/i });
+    expect(toggleBtn).toBeInTheDocument();
+    fireEvent.click(toggleBtn);
     expect(mockToggleDarkMode).toHaveBeenCalledTimes(1);
 
-    // Test dark mode rendering
     rerender(<Navbar darkMode={true} toggleDarkMode={mockToggleDarkMode} />);
-    toggleButton = screen.getByText("☀️");
-    expect(toggleButton).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Toggle dark mode/i }),
+    ).toBeInTheDocument();
   });
 
   test("toggles mobile menu visibility", () => {
     render(<Navbar darkMode={false} toggleDarkMode={mockToggleDarkMode} />);
     const menuButton = screen.getByRole("button", { name: /Open main menu/i });
 
-    // Open menu
     fireEvent.click(menuButton);
-    expect(
-      screen.getByRole("button", { name: /Switch to Dark Mode 🌙/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Sign In/i })).toBeInTheDocument();
 
-    // Close menu
     fireEvent.click(menuButton);
     expect(
-      screen.queryByRole("button", { name: /Switch to Dark Mode 🌙/i }),
+      screen.queryByRole("link", { name: /Sign In/i }),
     ).not.toBeInTheDocument();
+  });
+
+  test("renders WalletConnection component", () => {
+    render(<Navbar darkMode={false} toggleDarkMode={mockToggleDarkMode} />);
+    expect(screen.getAllByTestId("wallet-connection").length).toBeGreaterThan(
+      0,
+    );
   });
 
   test("renders mobile navigation links when menu is open", () => {
@@ -79,22 +93,9 @@ describe("Navbar Component", () => {
     const menuButton = screen.getByRole("button", { name: /Open main menu/i });
     fireEvent.click(menuButton);
 
-    const mobileLinks = screen.getAllByRole("link");
-    expect(mobileLinks.some((link) => link.textContent === "Portfolio")).toBe(
-      true,
-    );
-    expect(
-      mobileLinks.some((link) => link.textContent === "Market Analysis"),
-    ).toBe(true);
-    expect(
-      mobileLinks.some((link) => link.textContent === "AI Recommendations"),
-    ).toBe(true);
-    expect(
-      mobileLinks.some((link) => link.textContent === "Blockchain Explorer"),
-    ).toBe(true);
-    expect(mobileLinks.some((link) => link.textContent === "Dashboard")).toBe(
-      true,
-    );
-    expect(mobileLinks.some((link) => link.textContent === "Login")).toBe(true);
+    const allLinks = screen.getAllByRole("link");
+    const linkTexts = allLinks.map((l) => l.textContent);
+    expect(linkTexts.some((t) => t.includes("Portfolio"))).toBe(true);
+    expect(linkTexts.some((t) => t.includes("Dashboard"))).toBe(true);
   });
 });

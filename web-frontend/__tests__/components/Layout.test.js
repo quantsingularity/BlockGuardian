@@ -2,22 +2,16 @@ import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import Layout from "../../components/Layout";
 
-// Mock Navbar component
 jest.mock("../../components/Navbar", () => {
   return function MockNavbar() {
     return <div data-testid="navbar">Navbar</div>;
   };
 });
 
-// Mock Next.js Head component
-jest.mock("next/head", () => {
-  return {
-    __esModule: true,
-    default: ({ children }) => {
-      return <>{children}</>;
-    },
-  };
-});
+jest.mock("next/head", () => ({
+  __esModule: true,
+  default: ({ children }) => <>{children}</>,
+}));
 
 describe("Layout Component", () => {
   const mockToggleDarkMode = jest.fn();
@@ -40,7 +34,7 @@ describe("Layout Component", () => {
     expect(screen.getByTestId("navbar")).toBeInTheDocument();
   });
 
-  test("renders footer", () => {
+  test("renders footer copyright", () => {
     render(
       <Layout darkMode={false} toggleDarkMode={mockToggleDarkMode}>
         <div>Test</div>
@@ -48,7 +42,7 @@ describe("Layout Component", () => {
     );
     const currentYear = new Date().getFullYear();
     expect(
-      screen.getByText(new RegExp(`© ${currentYear} BlockGuardian`)),
+      screen.getByText(new RegExp(`${currentYear} BlockGuardian`)),
     ).toBeInTheDocument();
   });
 
@@ -68,5 +62,32 @@ describe("Layout Component", () => {
       </Layout>,
     );
     expect(container.querySelector(".dark")).not.toBeInTheDocument();
+  });
+
+  test("renders footer platform links", () => {
+    render(
+      <Layout darkMode={false} toggleDarkMode={mockToggleDarkMode}>
+        <div>Test</div>
+      </Layout>,
+    );
+    expect(
+      screen.getByRole("link", { name: /Portfolio/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /Dashboard/i }),
+    ).toBeInTheDocument();
+  });
+
+  test("renders custom title when provided", () => {
+    render(
+      <Layout
+        darkMode={false}
+        toggleDarkMode={mockToggleDarkMode}
+        title="Test Page"
+      >
+        <div>Test</div>
+      </Layout>,
+    );
+    expect(document.title).toMatch(/Test Page/i);
   });
 });

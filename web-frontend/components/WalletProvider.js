@@ -1,13 +1,11 @@
 import CoinbaseWalletSDK from "@coinbase/wallet-sdk";
 import WalletConnectProvider from "@walletconnect/web3-provider";
 import { ethers } from "ethers";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import Web3Modal from "web3modal";
 
-// Create a context for the wallet
 export const WalletContext = React.createContext();
 
-// Provider configuration
 const providerOptions = {
   walletconnect: {
     package: WalletConnectProvider,
@@ -24,13 +22,12 @@ const providerOptions = {
   },
 };
 
-// Web3Modal instance
 let web3Modal;
 if (typeof window !== "undefined") {
   web3Modal = new Web3Modal({
-    network: "mainnet", // optional
-    cacheProvider: true, // optional
-    providerOptions, // required
+    network: "mainnet",
+    cacheProvider: true,
+    providerOptions,
     theme: "dark",
   });
 }
@@ -45,35 +42,47 @@ export const WalletProvider = ({ children }) => {
   const [error, setError] = useState(null);
   const [balance, setBalance] = useState(null);
 
-  // Connect to wallet
-  const connectWallet = async () => {
-    try {
-      const provider = await web3Modal.connect();
-      const library = new ethers.providers.Web3Provider(provider);
-      const accounts = await library.listAccounts();
-      const network = await library.getNetwork();
+  const updateBalance = useCallback(
+    async (address) => {
+      if (library) {
+        try {
+          const bal = await library.getBalance(address);
+          setBalance(ethers.utils.formatEther(bal));
+        } catch (err) {
+          console.error("Error updating balance:", err);
+        }
+      }
+    },
+    [library],
+  );
 
-      setProvider(provider);
-      setLibrary(library);
+  const connectWallet = useCallback(async () => {
+    try {
+      const web3Provider = await web3Modal.connect();
+      const lib = new ethers.providers.Web3Provider(web3Provider);
+      const accounts = await lib.listAccounts();
+      const net = await lib.getNetwork();
+
+      setProvider(web3Provider);
+      setLibrary(lib);
 
       if (accounts.length > 0) {
         setAccount(accounts[0]);
-        const balance = await library.getBalance(accounts[0]);
-        setBalance(ethers.utils.formatEther(balance));
+        const bal = await lib.getBalance(accounts[0]);
+        setBalance(ethers.utils.formatEther(bal));
       }
 
-      setNetwork(network.name);
-      setChainId(network.chainId);
+      setNetwork(net.name);
+      setChainId(net.chainId);
       setConnected(true);
       setError(null);
-    } catch (error) {
-      setError(error);
-      console.error("Connection error:", error);
+    } catch (err) {
+      setError(err);
+      console.error("Connection error:", err);
     }
-  };
+  }, []);
 
-  // Disconnect wallet
-  const disconnectWallet = async () => {
+  const disconnectWallet = useCallback(async () => {
     try {
       await web3Modal.clearCachedProvider();
       setProvider(null);
@@ -83,76 +92,70 @@ export const WalletProvider = ({ children }) => {
       setChainId(null);
       setConnected(false);
       setBalance(null);
-    } catch (error) {
-      setError(error);
-      console.error("Disconnection error:", error);
+    } catch (err) {
+      setError(err);
+      console.error("Disconnection error:", err);
     }
-  };
+  }, []);
 
-  // Switch network
-  const switchNetwork = async (chainId) => {
-    try {
-      if (!provider) return;
+  const switchNetwork = useCallback(
+    async (targetChainId) => {
+      try {
+        if (!provider) return;
+        await provider.request({
+          method: "wallet_switchEthereumChain",
+          params: [{ chainId: ethers.utils.hexValue(targetChainId) }],
+        });
+      } catch (err) {
+        setError(err);
+        console.error("Network switch error:", err);
+      }
+    },
+    [provider],
+  );
 
-      await provider.request({
-        method: "wallet_switchEthereumChain",
-        params: [{ chainId: ethers.utils.hexValue(chainId) }],
-      });
-    } catch (error) {
-      setError(error);
-      console.error("Network switch error:", error);
-    }
-  };
+  const handleAccountsChanged = useCallback(
+    (accounts) => {
+      if (accounts.length > 0) {
+        setAccount(accounts[0]);
+        updateBalance(accounts[0]);
+      } else {
+        setAccount(null);
+        setBalance(null);
+      }
+    },
+    [updateBalance],
+  );
 
-  // Handle account changes
-  const handleAccountsChanged = (accounts) => {
-    if (accounts.length > 0) {
-      setAccount(accounts[0]);
-      updateBalance(accounts[0]);
-    } else {
-      setAccount(null);
-      setBalance(null);
-    }
-  };
+  const handleChainChanged = useCallback(
+    (newChainId) => {
+      const parsedChainId = parseInt(newChainId, 16);
+      setChainId(parsedChainId);
 
-  // Handle chain changes
-  const handleChainChanged = (chainId) => {
-    const newChainId = parseInt(chainId, 16);
-    setChainId(newChainId);
+      const networkMap = {
+        1: "mainnet",
+        5: "goerli",
+        11155111: "sepolia",
+        137: "polygon",
+        42161: "arbitrum",
+        10: "optimism",
+        8453: "base",
+      };
+      setNetwork(networkMap[parsedChainId] || `chain-${parsedChainId}`);
 
-    // Get network name
-    if (newChainId === 1) {
-      setNetwork("mainnet");
-    } else if (newChainId === 5) {
-      setNetwork("goerli");
-    } else if (newChainId === 11155111) {
-      setNetwork("sepolia");
-    } else {
-      setNetwork(`chain-${newChainId}`);
-    }
+      if (account) {
+        updateBalance(account);
+      }
+    },
+    [account, updateBalance],
+  );
 
-    // Update balance for new chain
-    if (account) {
-      updateBalance(account);
-    }
-  };
-
-  // Update balance
-  const updateBalance = async (address) => {
-    if (library) {
-      const balance = await library.getBalance(address);
-      setBalance(ethers.utils.formatEther(balance));
-    }
-  };
-
-  // Auto connect if cached
   useEffect(() => {
-    if (web3Modal.cachedProvider) {
+    if (web3Modal && web3Modal.cachedProvider) {
       connectWallet();
     }
   }, [connectWallet]);
 
-  // Set up event listeners
   useEffect(() => {
     if (provider) {
       provider.on("accountsChanged", handleAccountsChanged);
@@ -169,32 +172,34 @@ export const WalletProvider = ({ children }) => {
     }
   }, [provider, disconnectWallet, handleAccountsChanged, handleChainChanged]);
 
-  // Contract interaction helpers
-  const getContract = (address, abi) => {
-    if (!library) return null;
-    return new ethers.Contract(address, abi, library.getSigner());
-  };
+  const getContract = useCallback(
+    (address, abi) => {
+      if (!library) return null;
+      return new ethers.Contract(address, abi, library.getSigner());
+    },
+    [library],
+  );
 
-  const callContractMethod = async (contract, method, ...args) => {
+  const callContractMethod = useCallback(async (contract, method, ...args) => {
     try {
       return await contract[method](...args);
-    } catch (error) {
-      setError(error);
-      console.error(`Error calling ${method}:`, error);
-      throw error;
+    } catch (err) {
+      setError(err);
+      console.error(`Error calling ${method}:`, err);
+      throw err;
     }
-  };
+  }, []);
 
-  const sendTransaction = async (contract, method, ...args) => {
+  const sendTransaction = useCallback(async (contract, method, ...args) => {
     try {
       const tx = await contract[method](...args);
       return await tx.wait();
-    } catch (error) {
-      setError(error);
-      console.error(`Error in transaction ${method}:`, error);
-      throw error;
+    } catch (err) {
+      setError(err);
+      console.error(`Error in transaction ${method}:`, err);
+      throw err;
     }
-  };
+  }, []);
 
   return (
     <WalletContext.Provider
@@ -221,7 +226,6 @@ export const WalletProvider = ({ children }) => {
   );
 };
 
-// Custom hook to use the wallet context
 export const useWallet = () => {
   const context = React.useContext(WalletContext);
   if (context === undefined) {

@@ -1,40 +1,40 @@
 import { ethers } from "ethers";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useWallet } from "./WalletProvider";
 
 const BlockchainExplorer = () => {
   const { library, account, network, chainId, connected } = useWallet();
 
-  const [view, setView] = useState("transactions"); // 'transactions', 'blocks', 'contracts'
+  const [view, setView] = useState("transactions");
   const [transactions, setTransactions] = useState([]);
   const [blocks, setBlocks] = useState([]);
   const [contractData, setContractData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchType, setSearchType] = useState("address"); // 'address', 'tx', 'block', 'token'
+  const [searchType, setSearchType] = useState("address");
   const [searchResults, setSearchResults] = useState(null);
   const [searchLoading, setSearchLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Contract addresses (would be imported from config in production)
-  const contractAddresses = {
-    TokenizedAsset: "0x123...", // Replace with actual deployed address
-    PortfolioManager: "0x456...", // Replace with actual deployed address
-    TradingPlatform: "0x789...", // Replace with actual deployed address
-    DeFiIntegration: "0xabc...", // Replace with actual deployed address
-  };
+  const contractAddresses = useMemo(
+    () => ({
+      TokenizedAsset: "0x123...",
+      PortfolioManager: "0x456...",
+      TradingPlatform: "0x789...",
+      DeFiIntegration: "0xabc...",
+    }),
+    [],
+  );
 
-  // Fetch recent transactions
-  const fetchRecentTransactions = async () => {
+  const fetchRecentTransactions = useCallback(async () => {
     if (!library || !connected) return;
 
     try {
       setLoading(true);
+      setError(null);
 
-      // Get latest block number
       const blockNumber = await library.getBlockNumber();
 
-      // Fetch last 10 blocks
       const blockPromises = [];
       for (let i = 0; i < 10; i++) {
         if (blockNumber - i >= 0) {
@@ -42,12 +42,11 @@ const BlockchainExplorer = () => {
         }
       }
 
-      const blocks = await Promise.all(blockPromises);
+      const fetchedBlocks = await Promise.all(blockPromises);
 
-      // Extract transactions
       let allTransactions = [];
-      blocks.forEach((block) => {
-        // Add block timestamp to each transaction
+      fetchedBlocks.forEach((block) => {
+        if (!block) return;
         const txsWithTimestamp = block.transactions.map((tx) => ({
           ...tx,
           blockTimestamp: new Date(block.timestamp * 1000),
@@ -56,30 +55,25 @@ const BlockchainExplorer = () => {
         allTransactions = [...allTransactions, ...txsWithTimestamp];
       });
 
-      // Sort by timestamp (newest first)
       allTransactions.sort((a, b) => b.blockTimestamp - a.blockTimestamp);
-
-      // Take only the first 20
       setTransactions(allTransactions.slice(0, 20));
       setLoading(false);
-    } catch (error) {
-      console.error("Error fetching transactions:", error);
+    } catch (err) {
+      console.error("Error fetching transactions:", err);
       setError("Failed to fetch recent transactions");
       setLoading(false);
     }
-  };
+  }, [library, connected]);
 
-  // Fetch recent blocks
-  const fetchRecentBlocks = async () => {
+  const fetchRecentBlocks = useCallback(async () => {
     if (!library || !connected) return;
 
     try {
       setLoading(true);
+      setError(null);
 
-      // Get latest block number
       const blockNumber = await library.getBlockNumber();
 
-      // Fetch last 10 blocks
       const blockPromises = [];
       for (let i = 0; i < 10; i++) {
         if (blockNumber - i >= 0) {
@@ -88,48 +82,45 @@ const BlockchainExplorer = () => {
       }
 
       const fetchedBlocks = await Promise.all(blockPromises);
-      setBlocks(fetchedBlocks);
+      setBlocks(fetchedBlocks.filter(Boolean));
       setLoading(false);
-    } catch (error) {
-      console.error("Error fetching blocks:", error);
+    } catch (err) {
+      console.error("Error fetching blocks:", err);
       setError("Failed to fetch recent blocks");
       setLoading(false);
     }
-  };
+  }, [library, connected]);
 
-  // Fetch contract data
-  const fetchContractData = async (contractAddress) => {
-    if (!library || !connected || !contractAddress) return;
+  const fetchContractData = useCallback(
+    async (contractAddress) => {
+      if (!library || !connected || !contractAddress) return;
 
-    try {
-      setLoading(true);
+      try {
+        setLoading(true);
+        setError(null);
 
-      // Get contract code
-      const code = await library.getCode(contractAddress);
+        const code = await library.getCode(contractAddress);
+        const txCount = await library.getTransactionCount(contractAddress);
+        const bal = await library.getBalance(contractAddress);
 
-      // Get transaction count
-      const txCount = await library.getTransactionCount(contractAddress);
+        setContractData({
+          address: contractAddress,
+          code: code,
+          codeSize: (code.length - 2) / 2,
+          txCount: txCount,
+          balance: ethers.utils.formatEther(bal),
+        });
 
-      // Get balance
-      const balance = await library.getBalance(contractAddress);
+        setLoading(false);
+      } catch (err) {
+        console.error("Error fetching contract data:", err);
+        setError("Failed to fetch contract data");
+        setLoading(false);
+      }
+    },
+    [library, connected],
+  );
 
-      setContractData({
-        address: contractAddress,
-        code: code,
-        codeSize: (code.length - 2) / 2, // Remove '0x' and divide by 2 for byte count
-        txCount: txCount,
-        balance: ethers.utils.formatEther(balance),
-      });
-
-      setLoading(false);
-    } catch (error) {
-      console.error("Error fetching contract data:", error);
-      setError("Failed to fetch contract data");
-      setLoading(false);
-    }
-  };
-
-  // Handle search
   const handleSearch = async () => {
     if (!searchQuery || !library || !connected) return;
 
@@ -140,39 +131,33 @@ const BlockchainExplorer = () => {
       let result = null;
 
       if (searchType === "address") {
-        // Check if address is valid
         if (!ethers.utils.isAddress(searchQuery)) {
           throw new Error("Invalid Ethereum address");
         }
 
-        // Get address details
         const code = await library.getCode(searchQuery);
         const txCount = await library.getTransactionCount(searchQuery);
-        const balance = await library.getBalance(searchQuery);
+        const bal = await library.getBalance(searchQuery);
 
         result = {
           type: "address",
           address: searchQuery,
           isContract: code !== "0x",
           txCount: txCount,
-          balance: ethers.utils.formatEther(balance),
+          balance: ethers.utils.formatEther(bal),
         };
 
         if (code !== "0x") {
           result.codeSize = (code.length - 2) / 2;
         }
       } else if (searchType === "tx") {
-        // Get transaction details
         const tx = await library.getTransaction(searchQuery);
 
         if (!tx) {
           throw new Error("Transaction not found");
         }
 
-        // Get transaction receipt
         const receipt = await library.getTransactionReceipt(searchQuery);
-
-        // Get block for timestamp
         const block = await library.getBlock(tx.blockNumber);
 
         result = {
@@ -182,19 +167,17 @@ const BlockchainExplorer = () => {
           to: tx.to,
           value: ethers.utils.formatEther(tx.value),
           blockNumber: tx.blockNumber,
-          timestamp: new Date(block.timestamp * 1000),
+          timestamp: block ? new Date(block.timestamp * 1000) : null,
           status: receipt ? (receipt.status ? "Success" : "Failed") : "Pending",
           gasUsed: receipt ? receipt.gasUsed.toString() : "N/A",
         };
       } else if (searchType === "block") {
-        // Check if input is a number
         const blockNumber = parseInt(searchQuery, 10);
 
         if (Number.isNaN(blockNumber)) {
           throw new Error("Invalid block number");
         }
 
-        // Get block details
         const block = await library.getBlock(blockNumber);
 
         if (!block) {
@@ -212,12 +195,10 @@ const BlockchainExplorer = () => {
           miner: block.miner,
         };
       } else if (searchType === "token") {
-        // Check if address is valid
         if (!ethers.utils.isAddress(searchQuery)) {
           throw new Error("Invalid token address");
         }
 
-        // Create ERC20 interface
         const erc20Interface = new ethers.utils.Interface([
           "function name() view returns (string)",
           "function symbol() view returns (string)",
@@ -225,7 +206,6 @@ const BlockchainExplorer = () => {
           "function totalSupply() view returns (uint256)",
         ]);
 
-        // Create contract instance
         const tokenContract = new ethers.Contract(
           searchQuery,
           erc20Interface,
@@ -233,7 +213,6 @@ const BlockchainExplorer = () => {
         );
 
         try {
-          // Try to get token details
           const [name, symbol, decimals, totalSupply] = await Promise.all([
             tokenContract.name(),
             tokenContract.symbol(),
@@ -249,41 +228,43 @@ const BlockchainExplorer = () => {
             decimals: decimals,
             totalSupply: ethers.utils.formatUnits(totalSupply, decimals),
           };
-        } catch (_error) {
+        } catch (_err) {
           throw new Error("Not a valid ERC20 token");
         }
       }
 
       setSearchResults(result);
       setSearchLoading(false);
-    } catch (error) {
-      console.error("Search error:", error);
-      setError(error.message || "Search failed");
+    } catch (err) {
+      console.error("Search error:", err);
+      setError(err.message || "Search failed");
       setSearchResults(null);
       setSearchLoading(false);
     }
   };
 
-  // Format timestamp
+  const handleSearchKeyDown = (e) => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
+  };
+
   const formatTimestamp = (timestamp) => {
     if (!timestamp) return "N/A";
     return timestamp.toLocaleString();
   };
 
-  // Format address
   const formatAddress = (address) => {
     if (!address) return "N/A";
     return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
   };
 
-  // Load data based on selected view
   useEffect(() => {
     if (view === "transactions") {
       fetchRecentTransactions();
     } else if (view === "blocks") {
       fetchRecentBlocks();
     } else if (view === "contracts") {
-      // Default to first contract in the list
       const firstContract = Object.values(contractAddresses)[0];
       if (firstContract) {
         fetchContractData(firstContract);
@@ -297,12 +278,28 @@ const BlockchainExplorer = () => {
     fetchRecentTransactions,
   ]);
 
-  // Render loading state
   if (!connected) {
     return (
       <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
         <div className="text-center py-10">
-          <p className="text-gray-600 dark:text-gray-400">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-16 w-16 mx-auto text-gray-400 mb-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+            />
+          </svg>
+          <p className="text-gray-600 dark:text-gray-400 text-lg font-medium">
+            Wallet Not Connected
+          </p>
+          <p className="text-gray-500 dark:text-gray-500 text-sm mt-1">
             Please connect your wallet to use the blockchain explorer
           </p>
         </div>
@@ -316,9 +313,8 @@ const BlockchainExplorer = () => {
         Blockchain Explorer
       </h2>
 
-      {/* Network info */}
       <div className="mb-6 p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
-        <div className="flex flex-wrap items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <span className="text-sm text-gray-500 dark:text-gray-400">
               Network:{" "}
@@ -341,14 +337,13 @@ const BlockchainExplorer = () => {
             <span className="text-sm text-gray-500 dark:text-gray-400">
               Connected Account:{" "}
             </span>
-            <span className="font-medium text-gray-900 dark:text-white">
+            <span className="font-medium text-gray-900 dark:text-white font-mono">
               {account ? formatAddress(account) : "None"}
             </span>
           </div>
         </div>
       </div>
 
-      {/* Search bar */}
       <div className="mb-6">
         <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2">
           <div className="flex-1">
@@ -356,6 +351,7 @@ const BlockchainExplorer = () => {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={handleSearchKeyDown}
               placeholder="Search by address, transaction hash, block number, or token address"
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
             />
@@ -374,7 +370,7 @@ const BlockchainExplorer = () => {
             <button
               onClick={handleSearch}
               disabled={searchLoading || !searchQuery}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50"
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {searchLoading ? "Searching..." : "Search"}
             </button>
@@ -382,7 +378,6 @@ const BlockchainExplorer = () => {
         </div>
       </div>
 
-      {/* Search results */}
       {searchResults && (
         <div className="mb-6 p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
           <h3 className="text-lg font-medium mb-4 text-gray-900 dark:text-white">
@@ -395,7 +390,7 @@ const BlockchainExplorer = () => {
                 <span className="text-gray-500 dark:text-gray-400">
                   Address:
                 </span>
-                <span className="font-mono text-gray-900 dark:text-white">
+                <span className="font-mono text-gray-900 dark:text-white break-all">
                   {searchResults.address}
                 </span>
               </div>
@@ -438,21 +433,21 @@ const BlockchainExplorer = () => {
 
           {searchResults.type === "transaction" && (
             <div className="space-y-2">
-              <div className="flex justify-between">
+              <div className="flex justify-between flex-wrap gap-1">
                 <span className="text-gray-500 dark:text-gray-400">Hash:</span>
-                <span className="font-mono text-gray-900 dark:text-white">
+                <span className="font-mono text-gray-900 dark:text-white text-sm break-all">
                   {searchResults.hash}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500 dark:text-gray-400">From:</span>
-                <span className="font-mono text-gray-900 dark:text-white">
+                <span className="font-mono text-gray-900 dark:text-white text-sm">
                   {searchResults.from}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500 dark:text-gray-400">To:</span>
-                <span className="font-mono text-gray-900 dark:text-white">
+                <span className="font-mono text-gray-900 dark:text-white text-sm">
                   {searchResults.to || "Contract Creation"}
                 </span>
               </div>
@@ -481,7 +476,7 @@ const BlockchainExplorer = () => {
                   Status:
                 </span>
                 <span
-                  className={`${
+                  className={`font-medium ${
                     searchResults.status === "Success"
                       ? "text-green-600 dark:text-green-400"
                       : searchResults.status === "Failed"
@@ -513,9 +508,9 @@ const BlockchainExplorer = () => {
                   {searchResults.number}
                 </span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between flex-wrap gap-1">
                 <span className="text-gray-500 dark:text-gray-400">Hash:</span>
-                <span className="font-mono text-gray-900 dark:text-white">
+                <span className="font-mono text-gray-900 dark:text-white text-sm break-all">
                   {searchResults.hash}
                 </span>
               </div>
@@ -553,7 +548,7 @@ const BlockchainExplorer = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500 dark:text-gray-400">Miner:</span>
-                <span className="font-mono text-gray-900 dark:text-white">
+                <span className="font-mono text-gray-900 dark:text-white text-sm">
                   {searchResults.miner}
                 </span>
               </div>
@@ -566,7 +561,7 @@ const BlockchainExplorer = () => {
                 <span className="text-gray-500 dark:text-gray-400">
                   Token Address:
                 </span>
-                <span className="font-mono text-gray-900 dark:text-white">
+                <span className="font-mono text-gray-900 dark:text-white text-sm break-all">
                   {searchResults.address}
                 </span>
               </div>
@@ -605,108 +600,64 @@ const BlockchainExplorer = () => {
         </div>
       )}
 
-      {/* Error message */}
       {error && (
-        <div className="mb-6 p-4 bg-red-100 text-red-800 rounded-lg">
+        <div className="mb-6 p-4 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 rounded-lg border border-red-200 dark:border-red-800">
           {error}
         </div>
       )}
 
-      {/* View selector */}
       <div className="mb-6">
         <div className="flex border-b border-gray-200 dark:border-gray-700">
-          <button
-            className={`py-2 px-4 font-medium ${
-              view === "transactions"
-                ? "text-indigo-600 border-b-2 border-indigo-600 dark:text-indigo-400 dark:border-indigo-400"
-                : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-            }`}
-            onClick={() => setView("transactions")}
-          >
-            Transactions
-          </button>
-          <button
-            className={`py-2 px-4 font-medium ${
-              view === "blocks"
-                ? "text-indigo-600 border-b-2 border-indigo-600 dark:text-indigo-400 dark:border-indigo-400"
-                : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-            }`}
-            onClick={() => setView("blocks")}
-          >
-            Blocks
-          </button>
-          <button
-            className={`py-2 px-4 font-medium ${
-              view === "contracts"
-                ? "text-indigo-600 border-b-2 border-indigo-600 dark:text-indigo-400 dark:border-indigo-400"
-                : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-            }`}
-            onClick={() => setView("contracts")}
-          >
-            Smart Contracts
-          </button>
+          {["transactions", "blocks", "contracts"].map((tab) => (
+            <button
+              key={tab}
+              className={`py-2 px-4 font-medium capitalize ${
+                view === tab
+                  ? "text-indigo-600 border-b-2 border-indigo-600 dark:text-indigo-400 dark:border-indigo-400"
+                  : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+              }`}
+              onClick={() => setView(tab)}
+            >
+              {tab === "contracts"
+                ? "Smart Contracts"
+                : tab.charAt(0).toUpperCase() + tab.slice(1)}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Loading indicator */}
       {loading && (
         <div className="flex justify-center my-10">
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600"></div>
         </div>
       )}
 
-      {/* Transactions view */}
       {view === "transactions" && !loading && (
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-                >
-                  Hash
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-                >
-                  Block
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-                >
-                  From
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-                >
-                  To
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-                >
-                  Value
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-                >
-                  Timestamp
-                </th>
+                {["Hash", "Block", "From", "To", "Value", "Timestamp"].map(
+                  (col) => (
+                    <th
+                      key={col}
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                    >
+                      {col}
+                    </th>
+                  ),
+                )}
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
               {transactions.length > 0 ? (
                 transactions.map((tx, index) => (
                   <tr
-                    key={index}
+                    key={`${tx.hash}-${index}`}
                     className="hover:bg-gray-50 dark:hover:bg-gray-700"
                   >
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900 dark:text-white">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-indigo-600 dark:text-indigo-400">
                       {formatAddress(tx.hash)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
@@ -730,7 +681,7 @@ const BlockchainExplorer = () => {
                 <tr>
                   <td
                     colSpan="6"
-                    className="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400"
+                    className="px-6 py-10 text-center text-sm text-gray-500 dark:text-gray-400"
                   >
                     No transactions found
                   </td>
@@ -741,58 +692,37 @@ const BlockchainExplorer = () => {
         </div>
       )}
 
-      {/* Blocks view */}
       {view === "blocks" && !loading && (
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-                >
-                  Number
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-                >
-                  Hash
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-                >
-                  Timestamp
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-                >
-                  Transactions
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-                >
-                  Gas Used
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-                >
-                  Gas Limit
-                </th>
+                {[
+                  "Number",
+                  "Hash",
+                  "Timestamp",
+                  "Transactions",
+                  "Gas Used",
+                  "Gas Limit",
+                ].map((col) => (
+                  <th
+                    key={col}
+                    scope="col"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                  >
+                    {col}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
               {blocks.length > 0 ? (
                 blocks.map((block, index) => (
                   <tr
-                    key={index}
+                    key={`${block.number}-${index}`}
                     className="hover:bg-gray-50 dark:hover:bg-gray-700"
                   >
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-indigo-600 dark:text-indigo-400">
                       {block.number}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900 dark:text-white">
@@ -816,7 +746,7 @@ const BlockchainExplorer = () => {
                 <tr>
                   <td
                     colSpan="6"
-                    className="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400"
+                    className="px-6 py-10 text-center text-sm text-gray-500 dark:text-gray-400"
                   >
                     No blocks found
                   </td>
@@ -827,7 +757,6 @@ const BlockchainExplorer = () => {
         </div>
       )}
 
-      {/* Contracts view */}
       {view === "contracts" && !loading && (
         <div>
           <div className="mb-6">
@@ -837,6 +766,7 @@ const BlockchainExplorer = () => {
             <select
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
               onChange={(e) => fetchContractData(e.target.value)}
+              defaultValue={Object.values(contractAddresses)[0]}
             >
               {Object.entries(contractAddresses).map(([name, address]) => (
                 <option key={address} value={address}>
@@ -853,11 +783,11 @@ const BlockchainExplorer = () => {
               </h3>
 
               <div className="space-y-2">
-                <div className="flex justify-between">
+                <div className="flex justify-between flex-wrap gap-1">
                   <span className="text-gray-500 dark:text-gray-400">
                     Address:
                   </span>
-                  <span className="font-mono text-gray-900 dark:text-white">
+                  <span className="font-mono text-gray-900 dark:text-white text-sm break-all">
                     {contractData.address}
                   </span>
                 </div>
@@ -891,7 +821,7 @@ const BlockchainExplorer = () => {
                 <h4 className="text-md font-medium mb-2 text-gray-900 dark:text-white">
                   Contract Bytecode
                 </h4>
-                <div className="bg-gray-200 dark:bg-gray-800 p-3 rounded-lg overflow-x-auto">
+                <div className="bg-gray-200 dark:bg-gray-800 p-3 rounded-lg overflow-x-auto max-h-48">
                   <pre className="text-xs font-mono text-gray-900 dark:text-white whitespace-pre-wrap break-all">
                     {contractData.code}
                   </pre>

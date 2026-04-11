@@ -1,10 +1,9 @@
 import "react-native-get-random-values";
 import "@walletconnect/react-native-compat";
 import { WalletConnectModal } from "@walletconnect/modal-react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import AppNavigator from "./src/navigation/AppNavigator";
 
-// --- WalletConnect Configuration ---
-// Get project ID from environment variables or use demo ID
 const projectId =
   process.env.EXPO_PUBLIC_WALLETCONNECT_PROJECT_ID ||
   "demo-project-id-change-this";
@@ -23,7 +22,6 @@ const providerMetadata = {
   },
 };
 
-// Session parameters for WalletConnect
 const sessionParams = {
   namespaces: {
     eip155: {
@@ -34,23 +32,22 @@ const sessionParams = {
         "personal_sign",
         "eth_signTypedData",
       ],
-      chains: ["eip155:1"], // Ethereum Mainnet
+      chains: ["eip155:1"],
       events: ["accountsChanged", "chainChanged"],
       rpcMap: {},
     },
   },
 };
-// --- End WalletConnect Configuration ---
 
 export default function App() {
   return (
-    <>
+    <SafeAreaProvider>
       <AppNavigator />
       <WalletConnectModal
         projectId={projectId}
         providerMetadata={providerMetadata}
         sessionParams={sessionParams}
       />
-    </>
+    </SafeAreaProvider>
   );
 }

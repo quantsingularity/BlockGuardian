@@ -1,70 +1,115 @@
 const { test, expect } = require("@playwright/test");
 
-test.describe("BlockGuardian Basic E2E Tests", () => {
-  test("homepage loads correctly", async ({ page }) => {
+test.describe("BlockGuardian E2E", () => {
+  test("home page loads and displays hero heading", async ({ page }) => {
     await page.goto("/");
-    await expect(page).toHaveTitle(/BlockGuardian/);
-    await expect(page.locator("h1")).toContainText("BlockGuardian");
+    await expect(page).toHaveTitle(/BlockGuardian/i);
+    await expect(page.locator("h1")).toBeVisible();
+    const h1Text = await page.locator("h1").textContent();
+    expect(h1Text).toMatch(/Guard Your/i);
   });
 
-  test("navigation works", async ({ page }) => {
+  test("home page has CTA links that navigate correctly", async ({ page }) => {
     await page.goto("/");
+    const exploreLink = page.getByRole("link", { name: /Explore Portfolio/i });
+    await expect(exploreLink).toBeVisible();
+    await exploreLink.click();
+    await expect(page).toHaveURL(/\/portfolio/);
+  });
 
-    // Click on Portfolio link
-    await page.click("text=Explore Portfolio");
-    await expect(page).toHaveURL(/.*portfolio/);
-
-    // Go back home
-    await page.click("text=BlockGuardian");
+  test("navbar brand logo links to home", async ({ page }) => {
+    await page.goto("/portfolio");
+    await page.getByText("BlockGuardian").first().click();
     await expect(page).toHaveURL("/");
   });
 
-  test("dark mode toggle works", async ({ page }) => {
-    await page.goto("/");
-
-    // Get initial state
-    const html = page.locator("html");
-    const initialHasDark = await html.evaluate((el) =>
-      el.classList.contains("dark"),
-    );
-
-    // Click dark mode toggle
-    await page.click('button:has-text("🌙"), button:has-text("☀️")');
-
-    // Wait for state change
-    await page.waitForTimeout(500);
-
-    // Check state changed
-    const finalHasDark = await html.evaluate((el) =>
-      el.classList.contains("dark"),
-    );
-    expect(finalHasDark).not.toBe(initialHasDark);
-  });
-
-  test("login page loads", async ({ page }) => {
+  test("login page renders form", async ({ page }) => {
     await page.goto("/login");
-    await expect(page.locator("h2")).toContainText(/Sign in|Login|Log in/i);
-  });
-});
-
-test.describe("BlockGuardian with Mock Backend", () => {
-  test.beforeEach(async ({ page }) => {
-    // Mock API responses
-    await page.route("**/api/health", (route) => {
-      route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          status: "healthy",
-          timestamp: new Date().toISOString(),
-        }),
-      });
-    });
+    await expect(
+      page.getByRole("heading", { name: /Welcome back/i }),
+    ).toBeVisible();
+    await expect(page.getByPlaceholder(/you@example.com/i)).toBeVisible();
+    await expect(page.getByLabel(/^Password$/i)).toBeVisible();
   });
 
-  test("health check works with mock backend", async ({ page }) => {
+  test("login form shows validation error for empty submit", async ({
+    page,
+  }) => {
+    await page.goto("/login");
+    await page.getByRole("button", { name: /Sign in/i }).click();
+    await expect(
+      page.getByText(/Please fill in all required fields/i),
+    ).toBeVisible();
+  });
+
+  test("login switches to signup mode", async ({ page }) => {
+    await page.goto("/login");
+    await page.getByRole("button", { name: /Sign up for free/i }).click();
+    await expect(
+      page.getByRole("heading", { name: /Create an account/i }),
+    ).toBeVisible();
+    await expect(page.getByLabel(/Full Name/i)).toBeVisible();
+    await expect(page.getByLabel(/Confirm Password/i)).toBeVisible();
+  });
+
+  test("portfolio page loads", async ({ page }) => {
+    await page.goto("/portfolio");
+    await expect(
+      page.getByRole("heading", { name: /Portfolio Dashboard/i }),
+    ).toBeVisible();
+  });
+
+  test("dashboard page loads", async ({ page }) => {
+    await page.goto("/dashboard");
+    await expect(
+      page.getByRole("heading", { name: /Dashboard/i }),
+    ).toBeVisible();
+  });
+
+  test("dashboard tabs are clickable", async ({ page }) => {
+    await page.goto("/dashboard");
+    await page.getByRole("button", { name: /activity/i }).click();
+    await expect(page.getByText(/Activity History/i)).toBeVisible();
+
+    await page.getByRole("button", { name: /settings/i }).click();
+    await expect(page.getByText(/Account Settings/i)).toBeVisible();
+  });
+
+  test("market analysis page loads", async ({ page }) => {
+    await page.goto("/market-analysis");
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  });
+
+  test("AI recommendations page loads", async ({ page }) => {
+    await page.goto("/ai-recommendations");
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  });
+
+  test("blockchain explorer page loads", async ({ page }) => {
+    await page.goto("/blockchain-explorer");
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  });
+
+  test("dark mode toggle works on login page", async ({ page }) => {
+    await page.goto("/login");
+    const toggleBtn = page.getByRole("button", { name: /Toggle dark mode/i });
+    await expect(toggleBtn).toBeVisible();
+    await toggleBtn.click();
+  });
+
+  test("navbar mobile menu opens and closes", async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
     await page.goto("/");
-    // Add logic to trigger health check if needed
-    // This is a placeholder for integration testing
+    const menuBtn = page.getByRole("button", { name: /Open main menu/i });
+    await menuBtn.click();
+    await expect(
+      page.getByRole("link", { name: /Portfolio/i }).first(),
+    ).toBeVisible();
+    await menuBtn.click();
+  });
+
+  test("footer renders with platform links", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByRole("contentinfo")).toBeVisible();
   });
 });

@@ -7,7 +7,6 @@ const WalletConnection = () => {
     disconnectWallet,
     account,
     network,
-    chainId,
     connected,
     balance,
     error,
@@ -16,27 +15,27 @@ const WalletConnection = () => {
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  // Format account address for display
   const formatAddress = (address) => {
     if (!address) return "";
     return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
   };
 
-  // Format balance for display
-  const formatBalance = (balance) => {
-    if (!balance) return "0.00";
-    return parseFloat(balance).toFixed(4);
+  const formatBalance = (bal) => {
+    if (!bal) return "0.0000";
+    return parseFloat(bal).toFixed(4);
   };
 
-  // Get network color
   const getNetworkColor = () => {
     if (network === "mainnet") return "text-green-500";
     if (network === "goerli") return "text-yellow-500";
     if (network === "sepolia") return "text-purple-500";
+    if (network === "polygon") return "text-violet-500";
+    if (network === "arbitrum") return "text-blue-500";
+    if (network === "optimism") return "text-red-500";
+    if (network === "base") return "text-cyan-500";
     return "text-gray-500";
   };
 
-  // Handle network switch
   const handleNetworkSwitch = (newChainId) => {
     switchNetwork(newChainId);
     setIsDropdownOpen(false);
@@ -103,16 +102,22 @@ const WalletConnection = () => {
                       Ethereum Mainnet
                     </button>
                     <button
-                      onClick={() => handleNetworkSwitch(5)}
-                      className={`text-left px-2 py-1 rounded text-xs ${network === "goerli" ? "bg-yellow-100 text-yellow-800" : "hover:bg-gray-100"}`}
-                    >
-                      Goerli Testnet
-                    </button>
-                    <button
                       onClick={() => handleNetworkSwitch(11155111)}
                       className={`text-left px-2 py-1 rounded text-xs ${network === "sepolia" ? "bg-purple-100 text-purple-800" : "hover:bg-gray-100"}`}
                     >
                       Sepolia Testnet
+                    </button>
+                    <button
+                      onClick={() => handleNetworkSwitch(137)}
+                      className={`text-left px-2 py-1 rounded text-xs ${network === "polygon" ? "bg-violet-100 text-violet-800" : "hover:bg-gray-100"}`}
+                    >
+                      Polygon
+                    </button>
+                    <button
+                      onClick={() => handleNetworkSwitch(8453)}
+                      className={`text-left px-2 py-1 rounded text-xs ${network === "base" ? "bg-cyan-100 text-cyan-800" : "hover:bg-gray-100"}`}
+                    >
+                      Base
                     </button>
                   </div>
                 </div>

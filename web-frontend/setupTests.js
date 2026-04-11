@@ -1,5 +1,19 @@
-// Jest setup file for testing environment
 import "@testing-library/jest-dom";
+
+// Suppress noisy console output in tests
+beforeAll(() => {
+  jest.spyOn(console, "error").mockImplementation((msg) => {
+    // Allow React key warnings through to catch real issues
+    if (typeof msg === "string" && msg.includes("Warning: Each child")) {
+      console.warn(msg);
+    }
+  });
+  jest.spyOn(console, "warn").mockImplementation(() => {});
+});
+
+afterAll(() => {
+  jest.restoreAllMocks();
+});
 
 // Mock window.matchMedia
 Object.defineProperty(window, "matchMedia", {
@@ -16,21 +30,20 @@ Object.defineProperty(window, "matchMedia", {
   })),
 });
 
-// Mock localStorage
-const localStorageMock = {
-  getItem: jest.fn(),
-  setItem: jest.fn(),
-  removeItem: jest.fn(),
-  clear: jest.fn(),
+// Mock IntersectionObserver
+global.IntersectionObserver = class IntersectionObserver {
+  constructor() {}
+  observe() {}
+  unobserve() {}
+  disconnect() {}
 };
-global.localStorage = localStorageMock;
 
-// Mock fetch
-global.fetch = jest.fn();
-
-// Suppress console errors in tests (optional)
-global.console = {
-  ...console,
-  error: jest.fn(),
-  warn: jest.fn(),
+// Mock ResizeObserver
+global.ResizeObserver = class ResizeObserver {
+  constructor(cb) {
+    this.cb = cb;
+  }
+  observe() {}
+  unobserve() {}
+  disconnect() {}
 };

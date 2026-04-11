@@ -1,8 +1,3 @@
-/**
- * Constants for blockchain networks and configuration
- */
-
-// Supported blockchain networks
 export const NETWORKS = {
   ETHEREUM: {
     id: 1,
@@ -45,7 +40,6 @@ export const NETWORKS = {
       process.env.EXPO_PUBLIC_BSC_RPC_URL || "https://bsc-dataseed.binance.org",
     blockExplorerUrl: "https://bscscan.com",
   },
-  // Test networks
   GOERLI: {
     id: 5,
     name: "Goerli Testnet",
@@ -72,10 +66,8 @@ export const NETWORKS = {
   },
 };
 
-// Default network
 export const DEFAULT_NETWORK = NETWORKS.ETHEREUM;
 
-// WalletConnect configuration
 export const WALLET_CONNECT_CONFIG = {
   projectId:
     process.env.EXPO_PUBLIC_WALLETCONNECT_PROJECT_ID ||
@@ -91,7 +83,6 @@ export const WALLET_CONNECT_CONFIG = {
   },
 };
 
-// API endpoints
 export const API_ENDPOINTS = {
   AUTH: {
     LOGIN: "/auth/login",
@@ -107,26 +98,26 @@ export const API_ENDPOINTS = {
   },
   PORTFOLIO: {
     LIST: "/portfolios",
-    DETAILS: "/portfolios/:id",
+    DETAILS: "/portfolios",
     CREATE: "/portfolios",
-    UPDATE: "/portfolios/:id",
-    DELETE: "/portfolios/:id",
-    ASSETS: "/portfolios/:id/assets",
-    PERFORMANCE: "/portfolios/:id/performance",
+    UPDATE: "/portfolios",
+    DELETE: "/portfolios",
+    ASSETS: "/portfolios/assets",
+    PERFORMANCE: "/portfolios/performance",
   },
   MARKET: {
     PRICES: "/market/prices",
     TRENDS: "/market/trends",
-    DETAILS: "/market/:coinId",
+    DETAILS: "/market",
     SEARCH: "/market/search",
-    CHART: "/market/:coinId/chart",
+    CHART: "/market/chart",
   },
   BLOCKCHAIN: {
     TRANSACTIONS: "/blockchain/transactions",
     BALANCE: "/blockchain/balance",
     EXPLORER: "/blockchain/explorer",
-    ADDRESS_INFO: "/blockchain/address/:address",
-    TX_INFO: "/blockchain/tx/:txHash",
+    ADDRESS_INFO: "/blockchain/address",
+    TX_INFO: "/blockchain/tx",
   },
   AI: {
     RECOMMENDATIONS: "/ai/recommendations",
@@ -150,7 +141,6 @@ export const API_ENDPOINTS = {
   },
 };
 
-// Local storage keys
 export const STORAGE_KEYS = {
   AUTH_TOKEN: "blockguardian_auth_token",
   USER_PROFILE: "blockguardian_user_profile",
@@ -162,18 +152,16 @@ export const STORAGE_KEYS = {
   PORTFOLIO_CACHE: "blockguardian_portfolio_cache",
 };
 
-// App configuration
 export const APP_CONFIG = {
   DEBUG_MODE: process.env.EXPO_PUBLIC_DEBUG_MODE === "true",
   ENABLE_ANALYTICS: process.env.EXPO_PUBLIC_ENABLE_ANALYTICS === "true",
   ENABLE_CRASH_REPORTING:
     process.env.EXPO_PUBLIC_ENABLE_CRASH_REPORTING === "true",
-  API_TIMEOUT: 30000, // 30 seconds
-  CACHE_DURATION: 300000, // 5 minutes
-  POLLING_INTERVAL: 60000, // 1 minute
+  API_TIMEOUT: 30000,
+  CACHE_DURATION: 300000,
+  POLLING_INTERVAL: 60000,
 };
 
-// Risk levels
 export const RISK_LEVELS = {
   LOW: "low",
   MEDIUM: "medium",
@@ -181,12 +169,11 @@ export const RISK_LEVELS = {
   CRITICAL: "critical",
 };
 
-// Risk level colors
 export const RISK_COLORS = {
-  [RISK_LEVELS.LOW]: "#10b981", // green
-  [RISK_LEVELS.MEDIUM]: "#f59e0b", // yellow
-  [RISK_LEVELS.HIGH]: "#f97316", // orange
-  [RISK_LEVELS.CRITICAL]: "#ef4444", // red
+  [RISK_LEVELS.LOW]: "#10b981",
+  [RISK_LEVELS.MEDIUM]: "#f59e0b",
+  [RISK_LEVELS.HIGH]: "#f97316",
+  [RISK_LEVELS.CRITICAL]: "#ef4444",
 };
 
 export default {

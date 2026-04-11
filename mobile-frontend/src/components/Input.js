@@ -1,25 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { styled } from "nativewind";
-import { Text, TextInput, View } from "react-native";
+import { StyleSheet, Text, TextInput, View } from "react-native";
 
-const StyledView = styled(View);
-const StyledText = styled(Text);
-const StyledTextInput = styled(TextInput);
-
-/**
- * Custom Input component with various styles and states
- *
- * @param {Object} props - Component props
- * @param {string} props.label - Input label
- * @param {string} props.placeholder - Input placeholder
- * @param {string} props.value - Input value
- * @param {Function} props.onChangeText - Text change handler
- * @param {boolean} props.isSecure - Whether input is for password
- * @param {string} props.icon - Ionicons icon name
- * @param {string} props.error - Error message
- * @param {string} props.keyboardType - Keyboard type
- * @param {string} props.className - Additional tailwind classes
- */
 const Input = ({
   label,
   placeholder,
@@ -29,44 +10,97 @@ const Input = ({
   icon,
   error,
   keyboardType = "default",
-  className = "",
+  autoCapitalize = "none",
+  autoCorrect = false,
+  style,
+  testID,
+  editable = true,
+  multiline = false,
+  numberOfLines,
+  onBlur,
+  onFocus,
+  returnKeyType,
+  onSubmitEditing,
 }) => {
   return (
-    <StyledView className={`mb-4 ${className}`}>
-      {label && (
-        <StyledText className="text-gray-300 mb-1 font-medium">
-          {label}
-        </StyledText>
-      )}
+    <View style={[styles.wrapper, style]}>
+      {label && <Text style={styles.label}>{label}</Text>}
 
-      <StyledView
-        className={`flex-row items-center bg-gray-700 rounded-lg border ${error ? "border-red-500" : "border-gray-600"} px-3 py-2`}
+      <View
+        style={[
+          styles.inputRow,
+          error ? styles.inputRowError : styles.inputRowNormal,
+          !editable && styles.inputRowDisabled,
+        ]}
       >
         {icon && (
           <Ionicons
             name={icon}
-            size={20}
-            color="#9ca3af"
-            style={{ marginRight: 8 }}
+            size={18}
+            color={error ? "#ef4444" : "#64748b"}
+            style={styles.icon}
           />
         )}
-
-        <StyledTextInput
+        <TextInput
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
-          placeholderTextColor="#9ca3af"
+          placeholderTextColor="#475569"
           secureTextEntry={isSecure}
           keyboardType={keyboardType}
-          className="flex-1 text-white text-base"
+          autoCapitalize={autoCapitalize}
+          autoCorrect={autoCorrect}
+          editable={editable}
+          multiline={multiline}
+          numberOfLines={numberOfLines}
+          onBlur={onBlur}
+          onFocus={onFocus}
+          returnKeyType={returnKeyType}
+          onSubmitEditing={onSubmitEditing}
+          style={[styles.input, multiline && styles.inputMultiline]}
+          testID={testID}
         />
-      </StyledView>
+      </View>
 
       {error && (
-        <StyledText className="text-red-500 text-sm mt-1">{error}</StyledText>
+        <View style={styles.errorRow}>
+          <Ionicons name="alert-circle-outline" size={13} color="#ef4444" />
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
       )}
-    </StyledView>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  wrapper: { marginBottom: 16 },
+  label: { color: "#94a3b8", fontSize: 13, fontWeight: "600", marginBottom: 8 },
+  inputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    backgroundColor: "#0f172a",
+  },
+  inputRowNormal: { borderColor: "#334155" },
+  inputRowError: { borderColor: "#ef4444" },
+  inputRowDisabled: { opacity: 0.5 },
+  icon: { marginRight: 10 },
+  input: { flex: 1, color: "#f1f5f9", fontSize: 15, height: 48 },
+  inputMultiline: {
+    height: "auto",
+    minHeight: 80,
+    paddingTop: 12,
+    textAlignVertical: "top",
+  },
+  errorRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 6,
+  },
+  errorText: { color: "#ef4444", fontSize: 12 },
+});
 
 export default Input;

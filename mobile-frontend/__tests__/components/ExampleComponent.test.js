@@ -1,26 +1,40 @@
-// Component Test: /BlockGuardian_Tests/BlockGuardian_tests/mobile-frontend/__tests__/components/ExampleComponent.test.js
+import { fireEvent, render, screen } from "@testing-library/react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 
-import { render, screen } from "@testing-library/react-native";
-import { Text, View } from "react-native";
-
-// Note: The directory /BlockGuardian_Project/mobile-frontend/src/components was found to be empty.
-// This test file likely corresponds to a placeholder or example component that does not exist in the project.
-// Keeping the basic structure as a placeholder for potential future components.
-
-const PlaceholderComponent = ({ children }) => (
-  <View testID="placeholder-component">
-    <Text>Placeholder Test - No component found at expected location</Text>
-    {children}
+const TestButton = ({ onPress, label, disabled }) => (
+  <View testID="test-button-container">
+    <TouchableOpacity
+      onPress={onPress}
+      disabled={disabled}
+      testID="test-button"
+    >
+      <Text testID="test-button-label">{label}</Text>
+    </TouchableOpacity>
   </View>
 );
 
-describe("Placeholder Component Test", () => {
-  test("renders placeholder message", () => {
-    render(<PlaceholderComponent />);
-    expect(
-      screen.getByText(/Placeholder Test - No component found/i),
-    ).toBeTruthy();
+describe("TestButton Component", () => {
+  test("renders label text", () => {
+    render(<TestButton onPress={jest.fn()} label="Click Me" />);
+    expect(screen.getByText("Click Me")).toBeTruthy();
   });
 
-  // Add tests here if components are added to src/components later.
+  test("calls onPress when pressed", () => {
+    const onPress = jest.fn();
+    render(<TestButton onPress={onPress} label="Click" />);
+    fireEvent.press(screen.getByTestId("test-button"));
+    expect(onPress).toHaveBeenCalledTimes(1);
+  });
+
+  test("does not call onPress when disabled", () => {
+    const onPress = jest.fn();
+    render(<TestButton onPress={onPress} label="Disabled" disabled />);
+    fireEvent.press(screen.getByTestId("test-button"));
+    expect(onPress).not.toHaveBeenCalled();
+  });
+
+  test("renders container", () => {
+    render(<TestButton onPress={jest.fn()} label="Test" />);
+    expect(screen.getByTestId("test-button-container")).toBeTruthy();
+  });
 });

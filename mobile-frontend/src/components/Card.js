@@ -1,25 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { styled } from "nativewind";
-import React from "react";
-import { Image, Text, TouchableOpacity, View } from "react-native";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-const StyledView = styled(View);
-const StyledText = styled(Text);
-const StyledImage = styled(Image);
-const StyledTouchableOpacity = styled(TouchableOpacity);
-
-/**
- * Card component for displaying content in a contained, styled box
- *
- * @param {Object} props - Component props
- * @param {string} props.title - Card title
- * @param {string} props.subtitle - Optional subtitle
- * @param {string} props.imageUri - Optional image URI
- * @param {React.ReactNode} props.children - Card content
- * @param {Function} props.onPress - Optional press handler
- * @param {string} props.icon - Optional Ionicons icon name
- * @param {string} props.className - Additional tailwind classes
- */
 const Card = ({
   title,
   subtitle,
@@ -27,49 +8,66 @@ const Card = ({
   children,
   onPress,
   icon,
-  className = "",
+  style,
+  testID,
 }) => {
-  const CardContainer = onPress ? StyledTouchableOpacity : StyledView;
+  const Container = onPress ? TouchableOpacity : View;
 
   return (
-    <CardContainer
-      className={`bg-gray-800 rounded-xl overflow-hidden border border-gray-700 shadow-md mb-4 ${className}`}
+    <Container
+      style={[styles.card, style]}
       onPress={onPress}
-      activeOpacity={onPress ? 0.7 : 1}
+      activeOpacity={onPress ? 0.75 : 1}
+      testID={testID}
     >
       {imageUri && (
-        <StyledImage
+        <Image
           source={{ uri: imageUri }}
-          className="w-full h-40"
+          style={styles.image}
           resizeMode="cover"
         />
       )}
-
-      <StyledView className="p-4">
-        <StyledView className="flex-row items-center mb-2">
-          {icon && (
-            <Ionicons
-              name={icon}
-              size={20}
-              color="#4f46e5"
-              style={{ marginRight: 8 }}
-            />
-          )}
-          <StyledText className="text-white font-bold text-lg">
-            {title}
-          </StyledText>
-        </StyledView>
-
-        {subtitle && (
-          <StyledText className="text-gray-400 text-sm mb-3">
-            {subtitle}
-          </StyledText>
+      <View style={styles.body}>
+        {(icon || title) && (
+          <View style={styles.titleRow}>
+            {icon && (
+              <Ionicons
+                name={icon}
+                size={18}
+                color="#6366f1"
+                style={styles.titleIcon}
+              />
+            )}
+            {title && <Text style={styles.title}>{title}</Text>}
+          </View>
         )}
-
+        {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
         {children}
-      </StyledView>
-    </CardContainer>
+      </View>
+    </Container>
   );
 };
+
+const styles = StyleSheet.create({
+  card: {
+    backgroundColor: "#1e293b",
+    borderRadius: 16,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#334155",
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  image: { width: "100%", height: 160 },
+  body: { padding: 16 },
+  titleRow: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
+  titleIcon: { marginRight: 8 },
+  title: { color: "#f8fafc", fontWeight: "700", fontSize: 16, flex: 1 },
+  subtitle: { color: "#94a3b8", fontSize: 13, marginBottom: 12 },
+});
 
 export default Card;

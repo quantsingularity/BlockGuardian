@@ -4,11 +4,10 @@ import AdminScreen from "../screens/AdminScreen";
 import AIRecommendationsScreen from "../screens/AIRecommendationsScreen";
 import BlockchainExplorerScreen from "../screens/BlockchainExplorerScreen";
 import DashboardScreen from "../screens/DashboardScreen";
-// Import screens
 import LoginScreen from "../screens/LoginScreen";
 import MarketAnalysisScreen from "../screens/MarketAnalysisScreen";
 import PortfolioScreen from "../screens/PortfolioScreen";
-import SecurityCheckScreen from "../screens/SecurityCheckScreen"; // Import the new screen
+import SecurityCheckScreen from "../screens/SecurityCheckScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -18,15 +17,15 @@ const AppNavigator = () => {
       <Stack.Navigator
         initialRouteName="Login"
         screenOptions={{
-          // Use a darker, more modern header style consistent with the screens
           headerStyle: {
-            backgroundColor: "#1f2937", // gray-800
+            backgroundColor: "#0f172a",
           },
-          headerTintColor: "#ffffff", // White text
+          headerTintColor: "#ffffff",
           headerTitleStyle: {
             fontWeight: "bold",
           },
-          headerBackTitleVisible: false, // Hide back button text on iOS
+          headerBackTitleVisible: false,
+          contentStyle: { backgroundColor: "#0f172a" },
         }}
       >
         <Stack.Screen
@@ -38,8 +37,7 @@ const AppNavigator = () => {
           name="Dashboard"
           component={DashboardScreen}
           options={{ headerShown: false }}
-        />{" "}
-        {/* Hide header for dashboard too */}
+        />
         <Stack.Screen name="Portfolio" component={PortfolioScreen} />
         <Stack.Screen
           name="MarketAnalysis"
@@ -60,8 +58,7 @@ const AppNavigator = () => {
           name="SecurityCheck"
           component={SecurityCheckScreen}
           options={{ title: "Security Check" }}
-        />{" "}
-        {/* Add the new screen */}
+        />
         <Stack.Screen
           name="Admin"
           component={AdminScreen}

@@ -95,8 +95,8 @@ python-socketio==5.11.3
 # Background Tasks
 APScheduler==3.10.4
 
-# Core dependencies
-blinker==1.8.2
+# Core dependencies (Updated to resolve Flask 3.1.1 conflicts)
+blinker==1.9.0
 greenlet==3.0.3
 idna==3.7
 itsdangerous==2.2.0

@@ -268,10 +268,10 @@ Example:
  * @return portfolioId The ID of the created portfolio
  */
 function createPortfolio(
-    string memory _name,
-    string memory _description
+  string memory _name,
+  string memory _description
 ) external returns (uint256 portfolioId) {
-    // Implementation
+  // Implementation
 }
 ```
 
